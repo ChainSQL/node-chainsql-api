@@ -1,2 +1,1 @@
-# node-chainsql
-ChainSQL API for Node.js
+# chainsql-driver
