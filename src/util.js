@@ -90,6 +90,7 @@ function getUserToken(that, name) {
     }
 
   }).then(function(data) {
+    if(data.status == 'error') throw new Error(data.error_message);
     var json = {};
     json[name] = data.token;
     return json;

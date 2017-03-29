@@ -37,12 +37,16 @@ var createTable = async function(table, confidential) {
 };
 
 var insertData = async function(tb) {
-	await connect();
-	var rs = await r.table(tb).insert({
-		name: 'feipeng'
-	}).submit();
-	console.log(rs);
-	await r.disconnect();
+	try {
+		await connect();
+		var rs = await r.table(tb).insert({
+			name: 'feipeng'
+		}).submit();
+		console.log(rs);
+		// await r.disconnect();
+	} catch (e) {
+		console.log(e)
+	}
 }
 var getData = async function(tb) {
 	await connect();
@@ -61,7 +65,7 @@ var getData = async function(tb) {
 	// r.disconnect();
 }
 var connect = async function() {
-	await r.connect('ws://192.168.0.164:6006');
+	await r.connect('ws://192.168.0.197:6007');
 	console.log('连接成功')
 	r.as({
 		"secret": "snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
@@ -73,10 +77,14 @@ var connect = async function() {
 	// })
 }
 var assgin = async function(tb, user) {
-	await connect();
-	var rs = await r.assign(tb, user.address, [r.perm.update], user.publickKey);
-	console.log(rs)
-	await r.disconnect();
+	try {
+		await connect();
+		var rs = await r.assign(tb, user.address, [r.perm.update], user.publickKey);
+		console.log(rs)
+	} catch (e) {
+		console.log(e)
+	}
+	// await r.disconnect();
 }
 
 var del = async function(tb) {
@@ -109,13 +117,22 @@ var transaction = async function() {
 	}
 }
 
-createTable('abb', true); //aab,加密的表
+var testTableEvent = async function() {
+	await connect();
+	r.event.subTable('aad', 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', function(data) {
+		console.log(data)
+	});
+}
+var run = async function() {
+	// createTable('aad', true); //aab,加密的表
 
-// insertData('aab');//往表aab插入一条数据
-// getData('aab');//从aab查询数据
+	// insertData('aad'); //往表aab插入一条数据
+	// getData('aad');//从aab查询数据
 
-// assgin('aab',user);//授权操作
-// del('aab');//删除操作
-// 
+	// assgin('aad', user); //授权操作
+	// del('aad');//删除操作
+	// testTableEvent();
 
-// transaction();//事务
+	// transaction();//事务
+};
+run();

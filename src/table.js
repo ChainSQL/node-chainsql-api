@@ -171,7 +171,7 @@ Table.prototype.limit = function(limit) {
     this.query.push({});
     indx = this.query.length - 1;
   }
-  
+
   //var limit = {};
   //limit.index = index;
   //limit.total = count;
@@ -284,7 +284,9 @@ Table.prototype.submit = function() {
           let signedRet = connect.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
           return connect.api.submit(signedRet.signedTransaction).then(function(result) {
             if (result.resultCode == 'tesSUCCESS') {
-              return signedRet.id
+              return that.event.subTx(signedRet.id).then(function(data) {
+                return data;
+              });
             } else {
               throw new Error(result.resultMessage);
             }
@@ -293,7 +295,6 @@ Table.prototype.submit = function() {
       });
     })
   }
-
 
 }
 

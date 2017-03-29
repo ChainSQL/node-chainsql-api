@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const uuid = require('uuid/v1');
 const crypto = require('../lib/crypto');
-
+const EventManager = require('./eventManager')
 
 var basePath = path.join(require.resolve('ripple-binary-codec'), '../enums/definitions.json');
 var data = fs.readFileSync(path.join(__dirname, '../lib/definitions.json'))
@@ -13,6 +13,9 @@ basePath = path.join(require.resolve('ripple-lib'), '../ledger/parse/transaction
 fs.writeFileSync(basePath, data)
 data = fs.readFileSync(path.join(__dirname, '../lib/tx-type.json'));
 basePath = path.join(require.resolve('ripple-lib'), '../common/schemas/objects/tx-type.json');
+fs.writeFileSync(basePath, data);
+basePath = path.join(require.resolve('ripple-lib'), '../common/connection.json');
+data = fs.readFileSync(path.join(__dirname, '../lib/connection.js'));
 fs.writeFileSync(basePath, data)
 const RippleAPI = new require('ripple-lib').RippleAPI;
 
@@ -61,6 +64,7 @@ ChainsqlAPI.prototype.connect = function(url) {
   con.api = ra;
   this.api = ra;
   this.connect = con;
+  this.event = new EventManager(this.connect.api.connection);
   return con.connect();
 }
 ChainsqlAPI.prototype.disconnect = function() {
@@ -80,8 +84,9 @@ ChainsqlAPI.prototype.table = function(name) {
   if (this.transaction) {
     this.tab.transaction = this.transaction;
     this.tab.cache = this.cache;
-    this.tab.strictMode = this.strictMode;
   }
+  this.tab.strictMode = this.strictMode;
+  this.tab.event = this.event;
   return this.tab;
 }
 ChainsqlAPI.prototype.create = function(name, raw, opt) {
@@ -212,11 +217,11 @@ ChainsqlAPI.prototype.assign = function(name, user, flags, publicKey) {
         tsType: 'TableListSet'
       };
       return getUserToken(that, name).then(function(data) {
-        var token = data[name].toUpperCase();
+        var token = data[name];
         if (token != '') {
           var secret = decodeToken(that, token);
           try {
-            var token = generateToken(publicKey,secret).toUpperCase();
+            token = generateToken(publicKey, secret).toUpperCase();
           } catch (e) {
             console.log(e)
             throw new Error('your publicKey is not validate')
@@ -349,7 +354,9 @@ ChainsqlAPI.prototype.commit = function() {
         let signedRet = that.api.sign(tx_json.txJSON, that.connect.secret);
         return that.api.submit(signedRet.signedTransaction).then(function(result) {
           if (result.resultCode == 'tesSUCCESS') {
-            return signedRet.id;
+            return that.event.subTx(signedRet.id).then(function(data) {
+              return data;
+            });
           } else {
             throw new Error(result.resultMessage);
           }
@@ -357,6 +364,13 @@ ChainsqlAPI.prototype.commit = function() {
       })
     })
   })
+};
+
+ChainsqlAPI.prototype.getLedger = function(opt) {
+  return this.api.getLedger(opt);
+}
+ChainsqlAPI.prototype.getLedgerVersion = function() {
+  return this.api.getLedgerVersion();
 }
 
 function submit(that, payment) {
@@ -368,7 +382,9 @@ function submit(that, payment) {
       let signedRet = that.api.sign(tx_json.txJSON, that.connect.secret);
       return that.api.submit(signedRet.signedTransaction).then(function(result) {
         if (result.resultCode == 'tesSUCCESS') {
-          return signedRet.id;
+          return that.event.subTx(signedRet.id).then(function(data) {
+            return data;
+          });
         } else {
           throw new Error(result.resultMessage);
         }
