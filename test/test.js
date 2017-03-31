@@ -97,42 +97,40 @@ var del = async function(tb) {
 }
 
 var transaction = async function() {
-	try {
-		await connect();
-		r.beginTran();
+		try {
+			await connect();
+			r.beginTran();
 
-		r.table('aac').insert({
-			name: 'feipeng'
-		});
-		r.table('aac').get({
-			name: 'feipeng'
-		}).update({
-			name: 'xiaopeng'
-		})
-		var rs = await r.commit();
-		console.log(rs);
-		await r.disconnect();
-	} catch (e) {
-		console.log(e)
+			r.table('aac').insert({
+				name: 'feipeng'
+			});
+			r.table('aac').get({
+				name: 'feipeng'
+			}).update({
+				name: 'xiaopeng'
+			})
+			var rs = await r.commit();
+			console.log(rs);
+			await r.disconnect();
+		} catch (e) {
+			console.log(e)
+		}
 	}
-}
-
+	//监听一张表
 var testTableEvent = async function() {
 	await connect();
 	r.event.subTable('aad', 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', function(data) {
 		console.log(data)
 	});
 }
-var run = async function() {
-	// createTable('aad', true); //aab,加密的表
 
-	// insertData('aad'); //往表aab插入一条数据
-	// getData('aad');//从aab查询数据
+// createTable('aad', true); //aab,加密的表
 
-	// assgin('aad', user); //授权操作
-	// del('aad');//删除操作
-	// testTableEvent();
+insertData('aad'); //往表aab插入一条数据
+// getData('aad');//从aab查询数据
 
-	// transaction();//事务
-};
-run();
+// assgin('aad', user); //授权操作
+// del('aad');//删除操作
+// testTableEvent();//监听一张表
+
+// transaction();//事务

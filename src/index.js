@@ -1,7 +1,6 @@
 'use strict'
 const path = require('path');
 const fs = require('fs');
-const uuid = require('uuid/v1');
 const crypto = require('../lib/crypto');
 const EventManager = require('./eventManager')
 
@@ -14,7 +13,7 @@ fs.writeFileSync(basePath, data)
 data = fs.readFileSync(path.join(__dirname, '../lib/tx-type.json'));
 basePath = path.join(require.resolve('ripple-lib'), '../common/schemas/objects/tx-type.json');
 fs.writeFileSync(basePath, data);
-basePath = path.join(require.resolve('ripple-lib'), '../common/connection.json');
+basePath = path.join(require.resolve('ripple-lib'), '../common/connection.js');
 data = fs.readFileSync(path.join(__dirname, '../lib/connection.js'));
 fs.writeFileSync(basePath, data)
 const RippleAPI = new require('ripple-lib').RippleAPI;
