@@ -124,7 +124,7 @@ var testTableEvent = async function() {
 	});
 }
 
-// createTable('aad', true); //aab,加密的表
+// createTable('aab', true); //aab,加密的表
 
 insertData('aad'); //往表aab插入一条数据
 // getData('aad');//从aab查询数据
