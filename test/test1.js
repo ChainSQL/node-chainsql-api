@@ -16,7 +16,7 @@ r.connect('ws://192.168.0.197:6007', function(err, data) {
 	});
 	// createTable('aagdddd', false);//创建表
 	// 
-	// insertData('aagdd');//插入数据
+	insertData('aagdd');//插入数据
 	// del('aagdddd')//删除数据
 	// updateData('aagdddd')//更新数据
 	// getData('aagdddd');//获取数据
