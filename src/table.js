@@ -225,7 +225,11 @@ Table.prototype.order = function(orderObject) {
   return this;
 }
 
-Table.prototype.submit = function() {
+Table.prototype.submit = function(cb) {
+  var cb = cb;
+  if(!cb){
+     cb = callback;
+  }
   var connect = this.connect;
   var that = this;
 
@@ -233,7 +237,7 @@ Table.prototype.submit = function() {
     if (Object.prototype.toString.call(this.query[0]) !== '[object Array]') {
       this.query.unshift([]);
     };
-    return connect.api.connection.request({
+    connect.api.connection.request({
       command: 'r_get',
       tx_json: {
         Owner: connect.scope,
@@ -247,7 +251,9 @@ Table.prototype.submit = function() {
       }
     }).then(function(data) {
       if (data.status != 'success') throw new Error(data)
-      return data.lines;
+      cb(null,data.lines);
+    }).catch(function(err){
+      cb(err)
     })
   } else {
     var payment = {
@@ -266,7 +272,7 @@ Table.prototype.submit = function() {
     if (that.exec == 'r_insert' && that.field) {
       payment.autoFillField = convertStringToHex(that.field);
     }
-    return getUserToken(that, that.tab).then(function(token) {
+    getUserToken(that, that.tab).then(function(token) {
       token = token[that.tab];
       if (token && token != '') {
         var secret = decodeToken(that, token);
@@ -275,18 +281,16 @@ Table.prototype.submit = function() {
         payment.raw = convertStringToHex(payment.raw);
       };
 
-      return connect.api.prepareTable(payment).then(function(tx_json) {
-        return getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
+      connect.api.prepareTable(payment).then(function(tx_json) {
+        getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
           if (data.status == 'error') {
             throw new Error('getTxJson error');
           }
           var payment = data.tx_json;
           let signedRet = connect.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
-          return connect.api.submit(signedRet.signedTransaction).then(function(result) {
+          connect.api.submit(signedRet.signedTransaction).then(function(result) {
             if (result.resultCode == 'tesSUCCESS') {
-              return that.event.subTx(signedRet.id).then(function(data) {
-                return data;
-              });
+              that.event.subTx(signedRet.id,cb);
             } else {
               throw new Error(result.resultMessage);
             }

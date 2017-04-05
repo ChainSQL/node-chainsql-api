@@ -55,7 +55,11 @@ const ChainsqlAPI = function() {
   this.needVerify = 1;
 };
 
-ChainsqlAPI.prototype.connect = function(url) {
+ChainsqlAPI.prototype.connect = function(url, cb) {
+  var cb = cb;
+  if(!cb){
+     cb = callback;
+  }
   let ra = new RippleAPI({
     server: url
   });
@@ -64,10 +68,22 @@ ChainsqlAPI.prototype.connect = function(url) {
   this.api = ra;
   this.connect = con;
   this.event = new EventManager(this.connect.api.connection);
-  return con.connect();
+  con.connect().then(function(data) {
+    cb(null, data)
+  }).catch(function(err) {
+    cb(err);
+  });
 }
-ChainsqlAPI.prototype.disconnect = function() {
-  return this.api.disconnect();
+ChainsqlAPI.prototype.disconnect = function(cb) {
+  var cb = cb;
+  if(!cb){
+     cb = callback;
+  }
+  this.api.disconnect().then(function(data) {
+    cb(null, data)
+  }).catch(function(err) {
+    cb(err);
+  });
 }
 ChainsqlAPI.prototype.as = function(account) {
   this.connect.as(account);
@@ -88,7 +104,11 @@ ChainsqlAPI.prototype.table = function(name) {
   this.tab.event = this.event;
   return this.tab;
 }
-ChainsqlAPI.prototype.create = function(name, raw, opt) {
+ChainsqlAPI.prototype.create = function(name, raw, opt, cb) {
+  var cb = cb;
+  if(!cb){
+     cb = callback;
+  }
   validate.create(raw);
   var opt = opt;
   let that = this;
@@ -108,7 +128,7 @@ ChainsqlAPI.prototype.create = function(name, raw, opt) {
     this.cache.push(json);
     return;
   } else {
-    return getTableName(that, name).then(function(nameInDB) {
+    getTableName(that, name).then(function(nameInDB) {
       let payment = {
         address: that.connect.address,
         opType: opType['t_create'],
@@ -128,13 +148,17 @@ ChainsqlAPI.prototype.create = function(name, raw, opt) {
         payment.token = token.toUpperCase();
       } else {
         payment.raw = convertStringToHex(payment.raw)
-      }
-      return submit(that, payment)
+      };
+      submit(that, payment, cb)
     })
   }
 }
 
-ChainsqlAPI.prototype.drop = function(name) {
+ChainsqlAPI.prototype.drop = function(name, cb) {
+  var cb = cb;
+  if(!cb){
+     cb = callback;
+  }
   let that = this;
   if (that.transaction) {
     this.cache.push({
@@ -144,7 +168,7 @@ ChainsqlAPI.prototype.drop = function(name) {
     });
     return;
   } else {
-    return getTableName(that, name).then(function(nameInDB) {
+    getTableName(that, name).then(function(nameInDB) {
       let payment = {
         address: that.connect.address,
         opType: opType['t_drop'],
@@ -156,11 +180,15 @@ ChainsqlAPI.prototype.drop = function(name) {
         }],
         tsType: 'TableListSet'
       };
-      return submit(that, payment)
+      submit(that, payment, cb)
     })
   }
 }
-ChainsqlAPI.prototype.rename = function(oldName, newName) {
+ChainsqlAPI.prototype.rename = function(oldName, newName, cb) {
+  var cb = cb;
+  if(!cb){
+     cb = callback;
+  }
   let that = this;
   if (that.transaction) {
     this.cache.push({
@@ -170,7 +198,7 @@ ChainsqlAPI.prototype.rename = function(oldName, newName) {
     });
     return;
   } else {
-    return getTableName(that, oldName).then(function(nameInDB) {
+    getTableName(that, oldName).then(function(nameInDB) {
       let payment = {
         address: that.connect.address,
         opType: opType['t_rename'],
@@ -184,11 +212,15 @@ ChainsqlAPI.prototype.rename = function(oldName, newName) {
         tsType: 'TableListSet'
       }
 
-      return submit(that, payment)
+      submit(that, payment, cb)
     })
   }
 }
-ChainsqlAPI.prototype.assign = function(name, user, flags, publicKey) {
+ChainsqlAPI.prototype.assign = function(name, user, flags, publicKey, cb) {
+  var cb = cb;
+  if(!cb){
+     cb = callback;
+  }
   if (!(name && user && flags)) throw new Error('args is not enough')
   flags = validate.assign(flags);
   let that = this;
@@ -201,7 +233,7 @@ ChainsqlAPI.prototype.assign = function(name, user, flags, publicKey) {
     });
     return;
   } else {
-    return getTableName(that, name).then(function(nameInDB) {
+    getTableName(that, name).then(function(nameInDB) {
       let payment = {
         address: that.connect.address,
         opType: opType['t_assign'],
@@ -215,7 +247,7 @@ ChainsqlAPI.prototype.assign = function(name, user, flags, publicKey) {
         user: user,
         tsType: 'TableListSet'
       };
-      return getUserToken(that, name).then(function(data) {
+      getUserToken(that, name).then(function(data) {
         var token = data[name];
         if (token != '') {
           var secret = decodeToken(that, token);
@@ -227,12 +259,17 @@ ChainsqlAPI.prototype.assign = function(name, user, flags, publicKey) {
           }
           payment.token = token;
         }
-        return submit(that, payment)
+        console.log(payment)
+        submit(that, payment, cb)
       })
     })
   }
 }
-ChainsqlAPI.prototype.assignCancle = function(name, user, flags) {
+ChainsqlAPI.prototype.assignCancle = function(name, user, flags, cb) {
+  var cb = cb;
+  if(!cb){
+     cb = callback;
+  }
   if (!(name && user && flags)) throw new Error('args is not enough')
   flags = validate.assign(flags)
   let that = this;
@@ -244,7 +281,7 @@ ChainsqlAPI.prototype.assignCancle = function(name, user, flags) {
     });
     return;
   } else {
-    return getTableName(that, name).then(function(nameInDB) {
+    getTableName(that, name).then(function(nameInDB) {
       let payment = {
         address: that.connect.address,
         opType: opType['t_assignCancle'],
@@ -258,16 +295,24 @@ ChainsqlAPI.prototype.assignCancle = function(name, user, flags) {
         user: user,
         tsType: 'TableListSet'
       }
-      return submit(that, payment)
+      submit(that, payment, cb)
     })
   }
 }
-ChainsqlAPI.prototype.getTransactions = function(opts) {
+ChainsqlAPI.prototype.getTransactions = function(opts, cb) {
+  var cb = cb;
+  if(!cb){
+     cb = callback;
+  }
   if (this.connect && this.connect.address) {
     if (!opts) {
       opts = {}
     }
-    return this.api.getTransactions(this.connect.address, opts);
+    this.api.getTransactions(this.connect.address, opts).then(function(data) {
+      cb(null, data);
+    }).catch(function(err) {
+      cb(err);
+    });
   }
 }
 ChainsqlAPI.prototype.beginTran = function() {
@@ -282,7 +327,11 @@ ChainsqlAPI.prototype.assert = function(json) {
   this.query.unshift(json);
   return this;
 }
-ChainsqlAPI.prototype.commit = function() {
+ChainsqlAPI.prototype.commit = function(cb) {
+  var cb = cb;
+  if(!cb){
+     cb = callback;
+  }
   var that = this;
   var ary = [];
   var secretMap = {};
@@ -301,7 +350,7 @@ ChainsqlAPI.prototype.commit = function() {
       }
     }
   };
-  return Promise.all(ary).then(function(data) {
+  Promise.all(ary).then(function(data) {
     for (var i = 0; i < data.length; i++) {
       for (var key in data[i]) {
         secretMap[key] = data[i][key];
@@ -342,20 +391,17 @@ ChainsqlAPI.prototype.commit = function() {
       delete cache[i].confidential;
       payment.Statements.push(cache[i]);
     };
-    return getTxJson(that, payment).then(function(data) {
+    getTxJson(that, payment).then(function(data) {
       if (data.status == 'error') {
-        console.log(data)
         throw new Error('getTxJson error');
       }
       var payment = data.tx_json;
       payment.Statements = convertStringToHex(JSON.stringify(payment.Statements));
-      return that.api.prepareTx(payment).then(function(tx_json) {
+      that.api.prepareTx(payment).then(function(tx_json) {
         let signedRet = that.api.sign(tx_json.txJSON, that.connect.secret);
-        return that.api.submit(signedRet.signedTransaction).then(function(result) {
+        that.api.submit(signedRet.signedTransaction).then(function(result) {
           if (result.resultCode == 'tesSUCCESS') {
-            return that.event.subTx(signedRet.id).then(function(data) {
-              return data;
-            });
+            that.event.subTx(signedRet.id, cb);
           } else {
             throw new Error(result.resultMessage);
           }
@@ -365,25 +411,43 @@ ChainsqlAPI.prototype.commit = function() {
   })
 };
 
-ChainsqlAPI.prototype.getLedger = function(opt) {
-  return this.api.getLedger(opt);
+ChainsqlAPI.prototype.getLedger = function(opt,cb) {
+  var cb = cb;
+  if(!cb){
+     cb = callback;
+  }
+  this.api.getLedger(opt).then(function(data) {
+    cb(null, data);
+  }).catch(function(err) {
+    cb(err);
+  });
 }
-ChainsqlAPI.prototype.getLedgerVersion = function() {
-  return this.api.getLedgerVersion();
+ChainsqlAPI.prototype.getLedgerVersion = function(cb) {
+  var cb = cb;
+  if(!cb){
+     cb = callback;
+  }
+  this.api.getLedgerVersion().then(function(data) {
+    cb(null, data);
+  }).catch(function(err) {
+    cb(err);
+  });
 }
 
-function submit(that, payment) {
+function submit(that, payment, cb) {
+  var cb = cb;
+  if(!cb){
+     cb = callback;
+  }
   if (that.transaction) {
     throw new Error('you are now in transaction,can not be submit')
   } else {
-    return that.api.prepareTable(payment).then(function(tx_json) {
+    that.api.prepareTable(payment).then(function(tx_json) {
 
       let signedRet = that.api.sign(tx_json.txJSON, that.connect.secret);
-      return that.api.submit(signedRet.signedTransaction).then(function(result) {
+      that.api.submit(signedRet.signedTransaction).then(function(result) {
         if (result.resultCode == 'tesSUCCESS') {
-          return that.event.subTx(signedRet.id).then(function(data) {
-            return data;
-          });
+          that.event.subTx(signedRet.id, cb);
         } else {
           throw new Error(result.resultMessage);
         }
@@ -393,4 +457,7 @@ function submit(that, payment) {
 }
 
 
+function callback(data, callback) {
+  
+}
 exports.ChainsqlAPI = ChainsqlAPI;

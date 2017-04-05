@@ -14,23 +14,21 @@ EventManager.prototype.subTable = function(name, owner, cb) {
     _onMessage(that, cb);
     that.onMessage = true;
   };
-  console.log(messageTx);
   that.connect.request(messageTx);
+  that.cache[name + owner] = true;
 };
-EventManager.prototype.subTx = function(id) {
+EventManager.prototype.subTx = function(id, cb) {
   var that = this;
-  return new Promise(function(resolve, reject) {
-    var messageTx = {
-      "command": "subscribe",
-      "transaction": id
-    };
-    if (!this.onMessage) {
-      _onMessage(that, resolve);
-      that.onMessage = true;
-    };
-    that.connect.request(messageTx);
-    that.cache[id] = true;
-  })
+  var messageTx = {
+    "command": "subscribe",
+    "transaction": id
+  };
+  if (!that.onMessage) {
+    _onMessage(that, cb);
+    that.onMessage = true;
+  };
+  that.connect.request(messageTx);
+  that.cache[id] = true;
 };
 EventManager.prototype.unsubTable = function(name, owner) {
   var messageTx = {
@@ -59,22 +57,24 @@ EventManager.prototype.unsubTx = function(id) {
   delete that.cache[id];
 };
 
-function _onMessage(that, resolve) {
+function _onMessage(that, cb) {
   that.connect._ws.on('message', function(data) {
     var data = JSON.parse(data);
     if (data.type === 'table' || data.type === 'singleTransaction') {
       var key;
       if (data.type === 'table') {
         key = data.tablename + data.owner;
-        delete that.cache[key];
-        resolve(data);
+        
+        cb(null, data);
       };
       if (data.type === 'singleTransaction') {
         key = data.transaction.hash;
       }
       if (that.cache[key]) {
-        delete that.cache[key];
-        resolve(data);
+        if (data.status != 'validate_success') {
+          delete that.cache[key];
+        }
+        cb(null, data);
       }
     }
   });
