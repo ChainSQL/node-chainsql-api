@@ -288,10 +288,10 @@ Table.prototype.submit = function(cb) {
           }
           var payment = data.tx_json;
           let signedRet = connect.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
+          that.event.subTx(signedRet.id,cb);
           connect.api.submit(signedRet.signedTransaction).then(function(result) {
-            if (result.resultCode == 'tesSUCCESS') {
-              that.event.subTx(signedRet.id,cb);
-            } else {
+            if (result.resultCode != 'tesSUCCESS') {
+              that.event.unsubTx(signedRet.id);
               throw new Error(result.resultMessage);
             }
           });

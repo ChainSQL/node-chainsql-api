@@ -11,11 +11,11 @@ EventManager.prototype.subTable = function(name, owner, cb) {
     "tablename": name
   };
   if (!that.onMessage) {
-    _onMessage(that, cb);
+    _onMessage(that);
     that.onMessage = true;
   };
   that.connect.request(messageTx);
-  that.cache[name + owner] = true;
+  that.cache[name + owner] = cb;
 };
 EventManager.prototype.subTx = function(id, cb) {
   var that = this;
@@ -24,11 +24,11 @@ EventManager.prototype.subTx = function(id, cb) {
     "transaction": id
   };
   if (!that.onMessage) {
-    _onMessage(that, cb);
+    _onMessage(that);
     that.onMessage = true;
   };
   that.connect.request(messageTx);
-  that.cache[id] = true;
+  that.cache[id] = cb;
 };
 EventManager.prototype.unsubTable = function(name, owner) {
   var messageTx = {
@@ -57,24 +57,22 @@ EventManager.prototype.unsubTx = function(id) {
   delete that.cache[id];
 };
 
-function _onMessage(that, cb) {
+function _onMessage(that) {
   that.connect._ws.on('message', function(data) {
     var data = JSON.parse(data);
     if (data.type === 'table' || data.type === 'singleTransaction') {
       var key;
       if (data.type === 'table') {
         key = data.tablename + data.owner;
-        
-        cb(null, data);
       };
       if (data.type === 'singleTransaction') {
         key = data.transaction.hash;
       }
       if (that.cache[key]) {
-        if (data.status != 'validate_success') {
+        that.cache[key](null, data);
+        if (data.status != 'validate_success' && data.type === 'singleTransaction') {
           delete that.cache[key];
         }
-        cb(null, data);
       }
     }
   });

@@ -7,27 +7,29 @@ var user = {
 };
 
 r.connect('ws://192.168.0.197:6007', function(err, data) {
-	if (err) {
+	if (!err) {
 		console.log('连接成功');
 	}
+	var tb = 'aad'
 	r.as({
 		"secret": "snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
 		"address": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
 	});
-	// createTable('aagdddd', false);//创建表
+	// createTable(tb, true); //创建表
 	// 
-	insertData('aagdd');//插入数据
-	// del('aagdddd')//删除数据
-	// updateData('aagdddd')//更新数据
-	// getData('aagdddd');//获取数据
-	// assign('aagdddd',user);//授权表
+	insertData(tb); //插入数据
+	// del(tb)//删除数据
+	// updateData(tb)//更新数据
+	// getData(tb);//获取数据
+	// assign(tb,user);//授权表
 	// transaction();//事务
+	// subTable('aad','rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh');
 });
 
 function createTable(table, confidential) {
 	r.setRestrict(true);
 	// 创建表
-	r.create(table, [{
+	r.createTable(table, [{
 		"field": "id",
 		"type": "int",
 		"length": 11,
@@ -49,11 +51,10 @@ function createTable(table, confidential) {
 
 function insertData(tb) {
 	r.table(tb).insert({
-		name: 'xiaopeng'
+		name: 'xiaopeng1'
 	}).submit(function(err, data) {
-		console.log('insert', data)
+		console.log('insert', data);
 	});
-
 };
 
 function updateData(tb) {
@@ -99,10 +100,10 @@ function assign(tb, user) {
 
 function transaction() {
 	r.beginTran();
-	r.table('aagdddd').insert({
+	r.table('aad').insert({
 		name: 'feipeng'
 	});
-	r.table('aagdddd').get({
+	r.table('aad').get({
 		name: 'feipeng'
 	}).update({
 		name: 'xiaopeng'
@@ -110,4 +111,11 @@ function transaction() {
 	r.commit(function(err, data) {
 		console.log(err, data)
 	});
+}
+
+function subTable(tb, owner) {
+	var event = r.event;
+	event.subTable(tb, owner, function(err, data) {
+		console.log(err, data)
+	})
 }

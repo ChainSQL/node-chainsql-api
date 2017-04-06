@@ -9,6 +9,7 @@ Connection.prototype.as = function(account) {
   this.scope = this.address;
 }
 Connection.prototype.use = function(address) {
+  if (!this.address) throw new Error('please invoke as method before use!')
   this.scope = address;
 }
 Connection.prototype.connect = function() {
