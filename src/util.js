@@ -68,7 +68,6 @@ function getTableName(that, name) {
       Account: that.connect.address,
       TableName: name
     }
-
   }).then(function(data) {
     return data.nameInDB;
   })

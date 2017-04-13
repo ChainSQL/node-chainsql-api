@@ -12,7 +12,7 @@ const opType = {
 	t_create: 1,
 	t_drop: 2,
 	t_rename: 3,
-	t_assign: 4,
+	t_grant: 11,
 	t_assignCancle: 5,
 	r_insert: 6,
 	r_get: 7,

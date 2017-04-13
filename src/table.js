@@ -227,8 +227,8 @@ Table.prototype.order = function(orderObject) {
 
 Table.prototype.submit = function(cb) {
   var cb = cb;
-  if(!cb){
-     cb = callback;
+  if (!cb) {
+    cb = callback;
   }
   var connect = this.connect;
   var that = this;
@@ -251,8 +251,8 @@ Table.prototype.submit = function(cb) {
       }
     }).then(function(data) {
       if (data.status != 'success') throw new Error(data)
-      cb(null,data.lines);
-    }).catch(function(err){
+      cb(null, data.lines);
+    }).catch(function(err) {
       cb(err)
     })
   } else {
@@ -271,33 +271,88 @@ Table.prototype.submit = function(cb) {
     };
     if (that.exec == 'r_insert' && that.field) {
       payment.autoFillField = convertStringToHex(that.field);
-    }
-    getUserToken(that, that.tab).then(function(token) {
-      token = token[that.tab];
-      if (token && token != '') {
-        var secret = decodeToken(that, token);
-        payment.raw = crypto.aesEncrypt(secret, payment.raw).toUpperCase();
-      } else {
-        payment.raw = convertStringToHex(payment.raw);
-      };
+    };
+    if ((typeof cb) != 'function') {
+      return new Promise(function(resolve, reject) {
+        getUserToken(that, that.tab).then(function(token) {
+          token = token[that.tab];
+          if (token && token != '') {
+            var secret = decodeToken(that, token);
+            payment.raw = crypto.aesEncrypt(secret, payment.raw).toUpperCase();
+          } else {
+            payment.raw = convertStringToHex(payment.raw);
+          };
 
-      connect.api.prepareTable(payment).then(function(tx_json) {
-        getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
-          if (data.status == 'error') {
-            throw new Error('getTxJson error');
-          }
-          var payment = data.tx_json;
-          let signedRet = connect.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
-          that.event.subTx(signedRet.id,cb);
-          connect.api.submit(signedRet.signedTransaction).then(function(result) {
-            if (result.resultCode != 'tesSUCCESS') {
-              that.event.unsubTx(signedRet.id);
-              throw new Error(result.resultMessage);
-            }
+          connect.api.prepareTable(payment).then(function(tx_json) {
+            getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
+              if (data.status == 'error') {
+                throw new Error('getTxJson error');
+              }
+              var payment = data.tx_json;
+              let signedRet = connect.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
+              that.event.subscriptTx(signedRet.id, function(err, data) {
+                console.log(err,data)
+                if (err) {
+                  reject(err);
+                } else {
+                  if (cb.expect == data.status && data.type === 'singleTransaction') {
+                    resolve({
+                      status: cb.expect,
+                      tx_hash: signedRet.id
+                    })
+                  }
+                  if (data.status == '') {
+
+                  }
+                }
+              });
+              connect.api.submit(signedRet.signedTransaction).then(function(result) {
+                if (result.resultCode != 'tesSUCCESS') {
+                  that.event.unsubscriptTx(signedRet.id);
+                  reject(result);
+                } else {
+                  if (cb.expect == 'send_success') {
+                    resolve({
+                      status: 'send_success',
+                      tx_hash: signedRet.id
+                    })
+                  }
+                }
+              });
+            })
           });
         })
-      });
-    })
+      })
+
+    } else {
+      getUserToken(that, that.tab).then(function(token) {
+        token = token[that.tab];
+        if (token && token != '') {
+          var secret = decodeToken(that, token);
+          payment.raw = crypto.aesEncrypt(secret, payment.raw).toUpperCase();
+        } else {
+          payment.raw = convertStringToHex(payment.raw);
+        };
+
+        connect.api.prepareTable(payment).then(function(tx_json) {
+          getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
+            if (data.status == 'error') {
+              throw new Error('getTxJson error');
+            }
+            var payment = data.tx_json;
+            let signedRet = connect.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
+            that.event.subscriptTx(signedRet.id, cb);
+            connect.api.submit(signedRet.signedTransaction).then(function(result) {
+              if (result.resultCode != 'tesSUCCESS') {
+                that.event.unsubscriptTx(signedRet.id);
+                throw new Error(result.resultMessage);
+              }
+            });
+          })
+        });
+      })
+    }
+
   }
 
 }

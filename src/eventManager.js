@@ -1,9 +1,12 @@
+'use strict'
+const EventEmitter = require('events');
+
 function EventManager(connect) {
   this.connect = connect;
   this.cache = {};
   this.onMessage = false;
 };
-EventManager.prototype.subTable = function(name, owner, cb) {
+EventManager.prototype.subscriptTable = function(name, owner, cb) {
   var that = this;
   var messageTx = {
     "command": "subscribe",
@@ -15,9 +18,9 @@ EventManager.prototype.subTable = function(name, owner, cb) {
     that.onMessage = true;
   };
   that.connect.request(messageTx);
-  that.cache[name + owner] = cb;
+  that.cache[name + owner].fn = cb;
 };
-EventManager.prototype.subTx = function(id, cb) {
+EventManager.prototype.subscriptTx = function(id, cb) {
   var that = this;
   var messageTx = {
     "command": "subscribe",
@@ -28,9 +31,10 @@ EventManager.prototype.subTx = function(id, cb) {
     that.onMessage = true;
   };
   that.connect.request(messageTx);
+  var event = new EventEmitter();
   that.cache[id] = cb;
 };
-EventManager.prototype.unsubTable = function(name, owner) {
+EventManager.prototype.unsubscriptTable = function(owner, name) {
   var messageTx = {
     "command": "unsubscribe",
     "owner": owner,
@@ -43,7 +47,7 @@ EventManager.prototype.unsubTable = function(name, owner) {
   this.connect.request(JSON.stringify(messageTx));
   delete this.cache[name + owner];
 };
-EventManager.prototype.unsubTx = function(id) {
+EventManager.prototype.unsubscriptTx = function(id) {
   var that = this;
   var messageTx = {
     "command": "unsubscribe",
@@ -67,7 +71,7 @@ function _onMessage(that) {
       };
       if (data.type === 'singleTransaction') {
         key = data.transaction.hash;
-      }
+      };
       if (that.cache[key]) {
         that.cache[key](null, data);
         if (data.status != 'validate_success' && data.type === 'singleTransaction') {

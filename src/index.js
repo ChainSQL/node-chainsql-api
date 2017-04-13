@@ -56,9 +56,6 @@ const ChainsqlAPI = function() {
 };
 
 ChainsqlAPI.prototype.connect = function(url, cb) {
-  if (!cb) {
-    cb = callback;
-  }
   let ra = new RippleAPI({
     server: url
   });
@@ -67,21 +64,26 @@ ChainsqlAPI.prototype.connect = function(url, cb) {
   this.api = ra;
   this.connect = con;
   this.event = new EventManager(this.connect.api.connection);
-  con.connect().then(function(data) {
-    cb(null, data)
-  }).catch(function(err) {
-    cb(err);
-  });
+  if ((typeof cb) != 'function') {
+    return con.connect();
+  } else {
+    con.connect().then(function(data) {
+      cb(null, data)
+    }).catch(function(err) {
+      cb(err);
+    });
+  }
 }
 ChainsqlAPI.prototype.disconnect = function(cb) {
-  if (!cb) {
-    cb = callback;
+  if ((typeof cb) != 'function') {
+    return this.api.disconnect();
+  } else {
+    this.api.disconnect().then(function(data) {
+      cb(null, data)
+    }).catch(function(err) {
+      cb(err);
+    });
   }
-  this.api.disconnect().then(function(data) {
-    cb(null, data)
-  }).catch(function(err) {
-    cb(err);
-  });
 }
 ChainsqlAPI.prototype.as = function(account) {
   this.connect.as(account);
@@ -102,10 +104,7 @@ ChainsqlAPI.prototype.table = function(name) {
   this.tab.event = this.event;
   return this.tab;
 }
-ChainsqlAPI.prototype.createTable = function(name, raw, opt, cb) {
-  if (!cb) {
-    cb = callback;
-  }
+ChainsqlAPI.prototype.createTable = function(name, raw, opt) {
   validate.create(raw);
   var opt = opt;
   let that = this;
@@ -125,37 +124,32 @@ ChainsqlAPI.prototype.createTable = function(name, raw, opt, cb) {
     this.cache.push(json);
     return;
   } else {
-    getTableName(that, name).then(function(nameInDB) {
-      let payment = {
-        address: that.connect.address,
-        opType: opType['t_create'],
-        tables: [{
-          Table: {
-            TableName: convertStringToHex(name),
-            NameInDB: nameInDB
-          }
-        }],
-        raw: JSON.stringify(raw),
-        tsType: 'TableListSet'
-      };
-      if (confidential) {
-        var token = generateToken(that.connect.secret);
-        var secret = decodeToken(that, token);
-        payment.raw = crypto.aesEncrypt(secret, payment.raw).toUpperCase();
-        payment.token = token.toUpperCase();
-      } else {
-        payment.raw = convertStringToHex(payment.raw)
-      };
-      submit(that, payment, cb)
-    })
+    let payment = {
+      address: that.connect.address,
+      opType: opType['t_create'],
+      tables: [{
+        Table: {
+          TableName: convertStringToHex(name)
+        }
+      }],
+      raw: JSON.stringify(raw),
+      tsType: 'TableListSet'
+    };
+    if (confidential) {
+      var token = generateToken(that.connect.secret);
+      var secret = decodeToken(that, token);
+      payment.raw = crypto.aesEncrypt(secret, payment.raw).toUpperCase();
+      payment.token = token.toUpperCase();
+    } else {
+      payment.raw = convertStringToHex(payment.raw)
+    };
+    this.payment = payment;
+    return this;
   }
 }
 
-ChainsqlAPI.prototype.dropTable = function(name, cb) {
-  var cb = cb;
-  if (!cb) {
-    cb = callback;
-  }
+ChainsqlAPI.prototype.dropTable = function(name) {
+
   let that = this;
   if (that.transaction) {
     this.cache.push({
@@ -165,27 +159,21 @@ ChainsqlAPI.prototype.dropTable = function(name, cb) {
     });
     return;
   } else {
-    getTableName(that, name).then(function(nameInDB) {
-      let payment = {
-        address: that.connect.address,
-        opType: opType['t_drop'],
-        tables: [{
-          Table: {
-            TableName: convertStringToHex(name),
-            NameInDB: nameInDB
-          }
-        }],
-        tsType: 'TableListSet'
-      };
-      submit(that, payment, cb)
-    })
+    let payment = {
+      address: that.connect.address,
+      opType: opType['t_drop'],
+      tables: [{
+        Table: {
+          TableName: convertStringToHex(name)
+        }
+      }],
+      tsType: 'TableListSet'
+    };
+    this.payment = payment;
+    return this;
   }
 }
-ChainsqlAPI.prototype.renameTable = function(oldName, newName, cb) {
-  var cb = cb;
-  if (!cb) {
-    cb = callback;
-  }
+ChainsqlAPI.prototype.renameTable = function(oldName, newName) {
   let that = this;
   if (that.transaction) {
     this.cache.push({
@@ -195,78 +183,53 @@ ChainsqlAPI.prototype.renameTable = function(oldName, newName, cb) {
     });
     return;
   } else {
-    getTableName(that, oldName).then(function(nameInDB) {
-      let payment = {
-        address: that.connect.address,
-        opType: opType['t_rename'],
-        tables: [{
-          Table: {
-            TableName: convertStringToHex(oldName),
-            NameInDB: nameInDB,
-            TableNewName: convertStringToHex(newName)
-          }
-        }],
-        tsType: 'TableListSet'
-      }
+    let payment = {
+      address: that.connect.address,
+      opType: opType['t_rename'],
+      tables: [{
+        Table: {
+          TableName: convertStringToHex(oldName),
+          TableNewName: convertStringToHex(newName)
+        }
+      }],
+      tsType: 'TableListSet'
+    }
 
-      submit(that, payment, cb)
-    })
+    this.payment = payment;
+    return this;
   }
 }
-ChainsqlAPI.prototype.assignTable = function(name, user, flags, publicKey, cb) {
-  var cb = cb;
-  if (!cb) {
-    cb = callback;
-  }
+ChainsqlAPI.prototype.grant = function(name, user, flags, publicKey) {
   if (!(name && user && flags)) throw new Error('args is not enough')
-  flags = validate.assign(flags);
   let that = this;
   if (that.transaction) {
     this.cache.push({
-      OpType: opType['t_create'],
+      OpType: opType['t_grant'],
       TableName: name,
-      Raw: raw,
+      Raw: flags,
       publicKey: publicKey
     });
     return;
   } else {
-    getTableName(that, name).then(function(nameInDB) {
-      let payment = {
-        address: that.connect.address,
-        opType: opType['t_assign'],
-        tables: [{
-          Table: {
-            TableName: convertStringToHex(name),
-            NameInDB: nameInDB
-          }
-        }],
-        flags: flags,
-        user: user,
-        tsType: 'TableListSet'
-      };
-      getUserToken(that, name).then(function(data) {
-        var token = data[name];
-        if (token != '') {
-          var secret = decodeToken(that, token);
-          try {
-            token = generateToken(publicKey, secret).toUpperCase();
-          } catch (e) {
-            console.log(e)
-            throw new Error('your publicKey is not validate')
-          }
-          payment.token = token;
+    let payment = {
+      address: that.connect.address,
+      opType: opType['t_grant'],
+      tables: [{
+        Table: {
+          TableName: convertStringToHex(name)
         }
-        console.log(payment)
-        submit(that, payment, cb)
-      })
-    })
+      }],
+      raw: convertStringToHex(JSON.stringify([flags])),
+      user: user,
+      tsType: 'TableListSet',
+      name: name,
+      publicKey: publicKey
+    };
+    this.payment = payment;
+    return this;
   }
 }
-ChainsqlAPI.prototype.assignCancelTable = function(name, user, flags, cb) {
-  var cb = cb;
-  if (!cb) {
-    cb = callback;
-  }
+ChainsqlAPI.prototype.assignCancelTable = function(name, user, flags) {
   if (!(name && user && flags)) throw new Error('args is not enough')
   flags = validate.assign(flags)
   let that = this;
@@ -278,38 +241,37 @@ ChainsqlAPI.prototype.assignCancelTable = function(name, user, flags, cb) {
     });
     return;
   } else {
-    getTableName(that, name).then(function(nameInDB) {
-      let payment = {
-        address: that.connect.address,
-        opType: opType['t_assignCancle'],
-        tables: [{
-          Table: {
-            TableName: convertStringToHex(name),
-            NameInDB: nameInDB
-          }
-        }],
-        flags: flags,
-        user: user,
-        tsType: 'TableListSet'
-      }
-      submit(that, payment, cb)
-    })
+    let payment = {
+      address: that.connect.address,
+      opType: opType['t_assignCancle'],
+      tables: [{
+        Table: {
+          TableName: convertStringToHex(name),
+          NameInDB: nameInDB
+        }
+      }],
+      flags: flags,
+      user: user,
+      tsType: 'TableListSet'
+    }
+    this.payment = payment;
+    return this;
   }
 }
 ChainsqlAPI.prototype.getTransactions = function(opts, cb) {
-  var cb = cb;
-  if (!cb) {
-    cb = callback;
-  }
   if (this.connect && this.connect.address) {
     if (!opts) {
       opts = {}
+    };
+    if ((typeof cb) != 'function') {
+      return this.api.getTransactions(this.connect.address, opts)
+    } else {
+      this.api.getTransactions(this.connect.address, opts).then(function(data) {
+        cb(null, data);
+      }).catch(function(err) {
+        cb(err);
+      });
     }
-    this.api.getTransactions(this.connect.address, opts).then(function(data) {
-      cb(null, data);
-    }).catch(function(err) {
-      cb(err);
-    });
   }
 }
 ChainsqlAPI.prototype.beginTran = function() {
@@ -343,65 +305,128 @@ ChainsqlAPI.prototype.commit = function(cb) {
       }
     }
   };
-  Promise.all(ary).then(function(data) {
-    for (var i = 0; i < data.length; i++) {
-      for (var key in data[i]) {
-        secretMap[key] = data[i][key];
-      }
-    };
-    var payment = {
-      "TransactionType": "SQLTransaction",
-      "Account": that.connect.address,
-      "Statements": [],
-      "StrictMode": that.strictMode,
-      "NeedVerify": that.needVerify
-    };
-    for (var i = 0; i < cache.length; i++) {
-      if (secretMap[cache[i].TableName]) {
-
-        var token = secretMap[cache[i].TableName];
-
-        var secret = decodeToken(that, secretMap[cache[i].TableName]);
-        if (cache[i].Raw) {
-          cache[i].Raw = crypto.aesEncrypt(secret, JSON.stringify(cache[i].Raw)).toUpperCase();
-        };
-        if (cache[i].OpType == 4) {
-          token = crypto.eciesEncrypt(secret, cache[i].publicKey);
-        };
-        if (cache[i].OpType == 4 || cache[i].OpType == 1) {
-          cache[i].Token = token;
+  if ((typeof cb) != 'function') {
+    return Promise.all(ary).then(function(data) {
+      for (var i = 0; i < data.length; i++) {
+        for (var key in data[i]) {
+          secretMap[key] = data[i][key];
         }
-      } else {
-        cache[i].Raw = convertStringToHex(JSON.stringify(cache[i].Raw));
-      }
-      var tableName = cache[i].TableName;
-      cache[i].Tables = [{
-        Table: {
-          TableName: convertStringToHex(tableName)
-        }
-      }];
-      delete cache[i].TableName;
-      delete cache[i].confidential;
-      payment.Statements.push(cache[i]);
-    };
-    getTxJson(that, payment).then(function(data) {
-      if (data.status == 'error') {
-        throw new Error('getTxJson error');
-      }
-      var payment = data.tx_json;
-      payment.Statements = convertStringToHex(JSON.stringify(payment.Statements));
-      that.api.prepareTx(payment).then(function(tx_json) {
-        let signedRet = that.api.sign(tx_json.txJSON, that.connect.secret);
-        that.event.subTx(signedRet.id, cb);
-        that.api.submit(signedRet.signedTransaction).then(function(result) {
-          if (result.resultCode != 'tesSUCCESS') {
-            that.event.unsubTx(signedRet.id, cb);
-            throw new Error(result.resultMessage);
+      };
+      var payment = {
+        "TransactionType": "SQLTransaction",
+        "Account": that.connect.address,
+        "Statements": [],
+        "StrictMode": that.strictMode,
+        "NeedVerify": that.needVerify
+      };
+      for (var i = 0; i < cache.length; i++) {
+        if (secretMap[cache[i].TableName]) {
+
+          var token = secretMap[cache[i].TableName];
+
+          var secret = decodeToken(that, secretMap[cache[i].TableName]);
+          if (cache[i].Raw) {
+            cache[i].Raw = crypto.aesEncrypt(secret, JSON.stringify(cache[i].Raw)).toUpperCase();
+          };
+          if (cache[i].OpType == 4) {
+            token = crypto.eciesEncrypt(secret, cache[i].publicKey);
+          };
+          if (cache[i].OpType == 4 || cache[i].OpType == 1) {
+            cache[i].Token = token;
           }
-        });
+        } else {
+          cache[i].Raw = convertStringToHex(JSON.stringify(cache[i].Raw));
+        }
+        var tableName = cache[i].TableName;
+        cache[i].Tables = [{
+          Table: {
+            TableName: convertStringToHex(tableName)
+          }
+        }];
+        delete cache[i].TableName;
+        delete cache[i].confidential;
+        payment.Statements.push(cache[i]);
+      };
+      return getTxJson(that, payment).then(function(data) {
+        if (data.status == 'error') {
+          throw new Error('getTxJson error');
+        }
+        var payment = data.tx_json;
+        payment.Statements = convertStringToHex(JSON.stringify(payment.Statements));
+        return that.api.prepareTx(payment).then(function(tx_json) {
+          let signedRet = that.api.sign(tx_json.txJSON, that.connect.secret);
+          return that.event.subscriptTx(signedRet.id, cb);
+          that.api.submit(signedRet.signedTransaction).then(function(result) {
+            if (result.resultCode != 'tesSUCCESS') {
+              that.event.unsubscriptTx(signedRet.id, cb);
+              throw new Error(result.resultMessage);
+            }
+          });
+        })
       })
     })
-  })
+  } else {
+    Promise.all(ary).then(function(data) {
+      for (var i = 0; i < data.length; i++) {
+        for (var key in data[i]) {
+          secretMap[key] = data[i][key];
+        }
+      };
+      var payment = {
+        "TransactionType": "SQLTransaction",
+        "Account": that.connect.address,
+        "Statements": [],
+        "StrictMode": that.strictMode,
+        "NeedVerify": that.needVerify
+      };
+      for (var i = 0; i < cache.length; i++) {
+        if (secretMap[cache[i].TableName]) {
+
+          var token = secretMap[cache[i].TableName];
+
+          var secret = decodeToken(that, secretMap[cache[i].TableName]);
+          if (cache[i].Raw) {
+            cache[i].Raw = crypto.aesEncrypt(secret, JSON.stringify(cache[i].Raw)).toUpperCase();
+          };
+          if (cache[i].OpType == 4) {
+            token = crypto.eciesEncrypt(secret, cache[i].publicKey);
+          };
+          if (cache[i].OpType == 4 || cache[i].OpType == 1) {
+            cache[i].Token = token;
+          }
+        } else {
+          cache[i].Raw = convertStringToHex(JSON.stringify(cache[i].Raw));
+        }
+        var tableName = cache[i].TableName;
+        cache[i].Tables = [{
+          Table: {
+            TableName: convertStringToHex(tableName)
+          }
+        }];
+        delete cache[i].TableName;
+        delete cache[i].confidential;
+        payment.Statements.push(cache[i]);
+      };
+      getTxJson(that, payment).then(function(data) {
+        if (data.status == 'error') {
+          throw new Error('getTxJson error');
+        }
+        var payment = data.tx_json;
+        payment.Statements = convertStringToHex(JSON.stringify(payment.Statements));
+        that.api.prepareTx(payment).then(function(tx_json) {
+          let signedRet = that.api.sign(tx_json.txJSON, that.connect.secret);
+          that.event.subscriptTx(signedRet.id, cb);
+          that.api.submit(signedRet.signedTransaction).then(function(result) {
+            if (result.resultCode != 'tesSUCCESS') {
+              that.event.unsubscriptTx(signedRet.id, cb);
+              throw new Error(result.resultMessage);
+            }
+          });
+        })
+      })
+    })
+  }
+
 };
 
 ChainsqlAPI.prototype.getLedger = function(opt, cb) {
@@ -427,27 +452,173 @@ ChainsqlAPI.prototype.getLedgerVersion = function(cb) {
   });
 }
 
-function submit(that, payment, cb) {
-  var cb = cb;
-  if (!cb) {
-    cb = callback;
-  }
+ChainsqlAPI.prototype.submit = function(cb) {
+  var that = this;
   if (that.transaction) {
     throw new Error('you are now in transaction,can not be submit')
   } else {
-    that.api.prepareTable(payment).then(function(tx_json) {
-      let signedRet = that.api.sign(tx_json.txJSON, that.connect.secret);
-      that.event.subTx(signedRet.id, cb);
-      that.api.submit(signedRet.signedTransaction).then(function(result) {
-        if (result.resultCode != 'tesSUCCESS') {
-          that.event.unsubTx(signedRet.id, cb);
-          throw new Error(result.resultMessage);
+    if ((typeof cb) != 'function') {
+      return new Promise(function(resolve, reject) {
+        if (that.payment.opType == opType['t_grant']) {
+          var payment = that.payment;
+          var name = payment.name;
+          var publicKey = payment.publicKey;
+          getUserToken(that, name).then(function(data) {
+            var token = data[name];
+            if (token != '') {
+              var secret = decodeToken(that, token);
+              try {
+                token = generateToken(publicKey, secret).toUpperCase();
+              } catch (e) {
+                console.log(e)
+                throw new Error('your publicKey is not validate')
+              }
+              payment.token = token;
+              delete that.payment.name;
+              delete that.payment.publicKey;
+              that.api.prepareTable(that.payment).then(function(tx_json) {
+                getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
+                  if (data.status == 'error') {
+                    reject(new Error('getTxJson error'));
+                  }
+                  var payment = data.tx_json;
+                  let signedRet = that.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
+                  that.event.subscriptTx(signedRet.id, function(err, data) {
+                    if (err) {
+                      reject(err);
+                    } else {
+                      console.log(data.status)
+                      if (cb.expect == data.status && data.type === 'singleTransaction') {
+                        resolve({
+                          status: cb.expect,
+                          tx_hash: signedRet.id
+                        })
+                      }
+                      if (data.status != 'validate_success' || data.status != 'db_success') {
+                        reject({
+                          error: data.status,
+                          tx_hash: signedRet.id
+                        })
+                      }
+                    }
+                  });
+                  that.api.submit(signedRet.signedTransaction).then(function(result) {
+                    if (result.resultCode != 'tesSUCCESS') {
+                      that.event.unsubscriptTx(signedRet.id);
+                      reject(result);
+                    } else {
+                      if (cb.expect == 'send_success') {
+                        resolve({
+                          status: 'send_success',
+                          tx_hash: signedRet.id
+                        })
+                      }
+                    }
+                  });
+                })
+              })
+            }
+          });
+        } else {
+          that.api.prepareTable(that.payment).then(function(tx_json) {
+            getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
+              if (data.status == 'error') {
+                throw new Error('getTxJson error');
+              }
+              var payment = data.tx_json;
+              let signedRet = that.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
+              that.event.subscriptTx(signedRet.id, function(err, data) {
+                if (err) {
+                  reject(err);
+                } else {
+                  if (cb.expect == data.status && data.type === 'singleTransaction') {
+                    resolve({
+                      status: cb.expect,
+                      tx_hash: signedRet.id
+                    })
+                  }
+                  if (data.status != 'validate_success' || data.status != 'db_success') {
+                    reject({
+                      error: data.status,
+                      tx_hash: signedRet.id
+                    })
+                  }
+                }
+              });
+              that.api.submit(signedRet.signedTransaction).then(function(result) {
+                if (result.resultCode != 'tesSUCCESS') {
+                  that.event.unsubscriptTx(signedRet.id);
+                  reject(result);
+                } else {
+                  if (cb.expect == 'send_success') {
+                    resolve({
+                      status: 'send_success',
+                      tx_hash: signedRet.id
+                    })
+                  }
+                }
+              });
+            })
+          })
         }
-      });
-    })
+      })
+    } else {
+      if (that.payment.opType == opType['t_grant']) {
+        var payment = that.payment;
+        var name = payment.name;
+        var publicKey = payment.publicKey;
+        getUserToken(that, name).then(function(data) {
+          var token = data[name];
+          if (token != '') {
+            var secret = decodeToken(that, token);
+            try {
+              token = generateToken(publicKey, secret).toUpperCase();
+            } catch (e) {
+              console.log(e)
+              throw new Error('your publicKey is not validate')
+            }
+            payment.token = token;
+            delete that.payment.name;
+            delete that.payment.publicKey;
+            that.api.prepareTable(that.payment).then(function(tx_json) {
+              getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
+                if (data.status == 'error') {
+                  throw new Error('getTxJson error');
+                };
+                var payment = data.tx_json;
+                let signedRet = that.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
+                that.event.subscriptTx(signedRet.id, cb);
+                that.api.submit(signedRet.signedTransaction).then(function(result) {
+                  if (result.resultCode != 'tesSUCCESS') {
+                    that.event.unsubscriptTx(signedRet.id);
+                    throw new Error(result.resultMessage);
+                  }
+                });
+              })
+            })
+          }
+        });
+      } else {
+        that.api.prepareTable(that.payment).then(function(tx_json) {
+          getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
+            if (data.status == 'error') {
+              throw new Error('getTxJson error');
+            }
+            var payment = data.tx_json;
+            let signedRet = that.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
+            that.event.subscriptTx(signedRet.id, cb);
+            that.api.submit(signedRet.signedTransaction).then(function(result) {
+              if (result.resultCode != 'tesSUCCESS') {
+                that.event.unsubscriptTx(signedRet.id);
+                throw new Error(result.resultMessage);
+              }
+            });
+          })
+        })
+      }
+    }
   }
 }
-
 
 function callback(data, callback) {
 
