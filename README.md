@@ -304,7 +304,7 @@ c.commit();
 
 ### 运算符
 
-#### 比较运算符  
+#### 1. 比较运算符  
 | 运算符 | 说明 | 语法 |
 |--------|------|------|
 | $eq | 字段值等于 | {"field":{"$eq":"value">} or {"field":"value"} |
@@ -316,19 +316,19 @@ c.commit();
 | $in | 字段值在指定的数组中 | {"field":{"$in":["value1","value2",...,"valueN"]}} |
 | $nin | 字段值不在指定的数组中 | {"field":{"$nin":["value1","value2",...,"valueN"]}} |
 
-#### 逻辑符  
+#### 2. 逻辑符  
 | 运算符 | 说明 | 语法 |
 |--------|------|------|
 | $and | 逻辑与 | {$and:[{express1},{express2},...,{expressN}]} |
 | $or | 逻辑或 | {$or:[{express1},{express2},...,{expressN}]} |
 
-#### 模糊匹配  
+#### 3. 模糊匹配  
 | 语法 | 说明 |
 |------|------|
 |{"field":{"$regex":"/value/"}} | like "%value%" |
 |{"field":{"$regex":"/^value/"}} | like "%value" |
 
-### Examples:  
+### 4. Examples:  
 ```sql
 where id > 10 and id < 100
 {$and:[{id:{$gt:10}},{id:{$lt:100}}]}
