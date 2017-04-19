@@ -24,10 +24,11 @@ r.connect('ws://192.168.0.197:6007', function(err, data) {
 	// insertData(tb); //插入数据
 	// del(tb)//删除数据
 	// updateData(tb)//更新数据
-	// getData(tb);//获取数据
-	assign(tb, user); //授权表
+	getData(tb);//获取数据
+	// assign(tb, user); //授权表
 	// transaction();//事务
-	// subTable('aad','rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh');
+	// subTable(tb,'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh');
+	 // getLedger();
 });
 
 function createTable(table, confidential) {
@@ -115,20 +116,6 @@ function updateData(tb) {
 };
 
 function getData(tb) {
-	// r.table(tb).get({
-	// 	$or: [{
-	// 		id: 2
-	// 	}, {
-	// 		name: 'feipeng'
-	// 	}],
-	// 	$limit: {
-	// 		index: 0,
-	// 		total: 9
-	// 	}
-	// }).submit(function(err, data) {
-	// 	console.log(err)
-	// 	console.log('get', data)
-	// });
 	r.table(tb).get({
 		$or: [{
 			id: 2
@@ -139,13 +126,25 @@ function getData(tb) {
 			index: 0,
 			total: 9
 		}
-	}).submit({
-		expect: 'db_success'
-	}).then(function(data) {
-		console.log(data);
-	}).catch(function(e) {
-		console.log(e)
-	})
+	}).submit(function(err, data) {
+		console.log(err)
+		console.log('get', data)
+	});
+	// r.table(tb).get({
+	// 	$or: [{
+	// 		id: 2
+	// 	}, {
+	// 		name: 'feipeng'
+	// 	}],
+	// 	$limit: {
+	// 		index: 0,
+	// 		total: 9
+	// 	}
+	// }).submit().then(function(data) {
+	// 	console.log('data',data);
+	// }).catch(function(e) {
+	// 	console.log('err',e)
+	// })
 }
 
 function del(tb) {
@@ -188,13 +187,13 @@ function transaction() {
 		name: 'feipeng'
 	});
 	r.table('aad').get({
-		name: 'feipeng'
-	}).update({
-		name: 'xiaopeng'
-	})
-	// r.commit(function(err, data) {
-	// 	console.log(err, data)
-	// });
+			name: 'feipeng'
+		}).update({
+			name: 'xiaopeng'
+		})
+		// r.commit(function(err, data) {
+		// 	console.log(err, data)
+		// });
 	r.commit({
 		expect: 'send_success'
 	}).then(function(data) {
@@ -206,7 +205,15 @@ function transaction() {
 
 function subTable(tb, owner) {
 	var event = r.event;
-	event.subTable(tb, owner, function(err, data) {
+	event.subscriptTable(tb, owner, function(err, data) {
+		console.log(err, data)
+	})
+}
+
+function getLedger() {
+	r.getLedger({
+		ledgerVersion: 22
+	}, function(err, data) {
 		console.log(err, data)
 	})
 }

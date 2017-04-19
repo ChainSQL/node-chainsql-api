@@ -18,7 +18,7 @@ EventManager.prototype.subscriptTable = function(name, owner, cb) {
     that.onMessage = true;
   };
   that.connect.request(messageTx);
-  that.cache[name + owner].fn = cb;
+  that.cache[name + owner] = cb;
 };
 EventManager.prototype.subscriptTx = function(id, cb) {
   var that = this;

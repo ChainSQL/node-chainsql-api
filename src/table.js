@@ -226,10 +226,6 @@ Table.prototype.order = function(orderObject) {
 }
 
 Table.prototype.submit = function(cb) {
-  var cb = cb;
-  if (!cb) {
-    cb = callback;
-  }
   var connect = this.connect;
   var that = this;
 
@@ -237,24 +233,49 @@ Table.prototype.submit = function(cb) {
     if (Object.prototype.toString.call(this.query[0]) !== '[object Array]') {
       this.query.unshift([]);
     };
-    connect.api.connection.request({
-      command: 'r_get',
-      tx_json: {
-        Owner: connect.scope,
-        Tables: [{
-          Table: {
-            TableName: that.tab
+    if ((typeof cb) != 'function') {
+      return new Promise(function(resolve, reject) {
+        connect.api.connection.request({
+          command: 'r_get',
+          tx_json: {
+            Owner: connect.scope,
+            Tables: [{
+              Table: {
+                TableName: that.tab
+              }
+            }],
+            Raw: JSON.stringify(that.query),
+            opType: opType[that.exec]
           }
-        }],
-        Raw: JSON.stringify(that.query),
-        opType: opType[that.exec]
-      }
-    }).then(function(data) {
-      if (data.status != 'success') throw new Error(data)
-      cb(null, data.lines);
-    }).catch(function(err) {
-      cb(err)
-    })
+        }).then(function(data) {
+          if (data.status != 'success') reject(new Error(data))
+          resolve(data.lines);
+        }).catch(function(err) {
+          reject(err)
+        })
+      })
+
+    } else {
+      connect.api.connection.request({
+        command: 'r_get',
+        tx_json: {
+          Owner: connect.scope,
+          Tables: [{
+            Table: {
+              TableName: that.tab
+            }
+          }],
+          Raw: JSON.stringify(that.query),
+          opType: opType[that.exec]
+        }
+      }).then(function(data) {
+        if (data.status != 'success') throw new Error(data)
+        cb(null, data.lines);
+      }).catch(function(err) {
+        cb(err)
+      })
+    }
+
   } else {
     var payment = {
       address: connect.address,
@@ -291,7 +312,7 @@ Table.prototype.submit = function(cb) {
               var payment = data.tx_json;
               let signedRet = connect.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
               that.event.subscriptTx(signedRet.id, function(err, data) {
-                console.log(err,data)
+                console.log(err, data)
                 if (err) {
                   reject(err);
                 } else {
