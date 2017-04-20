@@ -1008,75 +1008,95 @@
       }
     ],
     [
-      "Token",
-      {
-        "nth": 15,
-        "isVLEncoded": true,
-        "isSerialized": true,
-        "isSigningField": true,
-        "type": "Blob"
-      }
-       ],
+        "Fulfillment",
+        {
+            "nth": 16,
+            "isVLEncoded": true,
+            "isSerialized": true,
+            "isSigningField": true,
+            "type": "Blob"
+        }
+    ],
     [
-      "Proof",
-      {
-        "nth": 17,
-        "isVLEncoded": true,
-        "isSerialized": true,
-        "isSigningField": true,
-        "type": "Blob"
-      }
+        "Condition",
+        {
+            "nth": 17,
+            "isVLEncoded": true,
+            "isSerialized": true,
+            "isSigningField": true,
+            "type": "Blob"
+        }
     ],
-     [ 
-      "TableName",
-      {
-        "nth": 19,
-        "isVLEncoded": true,
-        "isSerialized": true,
-        "isSigningField": true,
-        "type": "Blob"
-      }
-      ],
-      [
-      "Raw",
-      {
-        "nth": 20,
-        "isVLEncoded": true,
-        "isSerialized": true,
-        "isSigningField": true,
-        "type": "Blob"
-      }
-       ],
-       [
-      "TableNewName",
-      {
-        "nth": 21,
-        "isVLEncoded": true,
-        "isSerialized": true,
-        "isSigningField": true,
-        "type": "Blob"
-      }
+    [
+        "MasterSignature",
+        {
+            "nth": 18,
+            "isVLEncoded": true,
+            "isSerialized": true,
+            "isSigningField": false,
+            "type": "Blob"
+        }
     ],
-      [
-      "AutoFillField",
-      {
-        "nth": 22,
-        "isVLEncoded": true,
-        "isSerialized": true,
-        "isSigningField": true,
-        "type": "Blob"
-      }
-       ],
-        [
-      "Statements",
-      {
-        "nth": 23,
-        "isVLEncoded": true,
-        "isSerialized": true,
-        "isSigningField": true,
-        "type": "Blob"
-      }
-       ],
+    [
+        "Token",
+        {
+            "nth": 19,
+            "isVLEncoded": true,
+            "isSerialized": true,
+            "isSigningField": true,
+            "type": "Blob"
+        }
+    ],
+    [
+        "TableName",
+        {
+            "nth": 20,
+            "isVLEncoded": true,
+            "isSerialized": true,
+            "isSigningField": true,
+            "type": "Blob"
+        }
+    ],
+    [
+        "Raw",
+        {
+            "nth": 21,
+            "isVLEncoded": true,
+            "isSerialized": true,
+            "isSigningField": true,
+            "type": "Blob"
+        }
+    ],
+    [
+        "TableNewName",
+        {
+            "nth": 22,
+            "isVLEncoded": true,
+            "isSerialized": true,
+            "isSigningField": true,
+            "type": "Blob"
+        }
+    ],
+    [
+        "AutoFillField",
+        {
+            "nth": 23,
+            "isVLEncoded": true,
+            "isSerialized": true,
+            "isSigningField": true,
+            "type": "Blob"
+        }
+    ],
+    [
+        "Statements",
+        {
+            "nth": 24,
+            "isVLEncoded": true,
+            "isSerialized": true,
+            "isSigningField": true,
+            "type": "Blob"
+        }
+    ],
     [
       "Account",
       {
