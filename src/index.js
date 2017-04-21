@@ -531,7 +531,8 @@ ChainsqlAPI.prototype.submit = function(cb) {
               }
               var payment = data.tx_json;
               let signedRet = that.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
-              that.event.subscriptTx(signedRet.id, function(err, data) {
+              that.event.subscriptTx(signedRet.id, function(err, data) {  
+                //console.log('status: ',data.status);
                 if (err) {
                   reject(err);
                 } else {
@@ -541,7 +542,7 @@ ChainsqlAPI.prototype.submit = function(cb) {
                       tx_hash: signedRet.id
                     })
                   }
-                  if (data.status != 'validate_success' || data.status != 'db_success') {
+                  if (data.status == 'db_error' || data.status == 'db_timeout' || data.status == 'validate_timeout') {
                     reject({
                       error: data.status,
                       tx_hash: signedRet.id

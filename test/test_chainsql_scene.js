@@ -35,17 +35,10 @@ var user = {
 	publickKey: "02F039E54B3A0D209D348F1B2C93BE3689F2A7595DDBFB1530499D03264B87A61F"
 };
 
-function setup_invoke(tableName) {
-    //funcChain.push(new functionEntry(insertRecord,{tableName:tableName}));
-    //funcChain.push(new functionEntry(expectValue,
-    //            {tableName:tableName,
-    //            expect:[{id:1,age:3,name:'peersafe'},
-    //            {id:2,age:10,name:'guichuideng'}],
-    //            message:'insert'}));
-                    
+function setup_invoke(tableName) {                    
     
-    /*funcChain.push(new functionEntry(createTable,{tableName:tableName}));
-    
+    funcChain.push(new functionEntry(createTable,{tableName:tableName}));
+    /*
     funcChain.push(new functionEntry(assign,{tableName:tableName,user:user}));
     
     funcChain.push(new functionEntry(insertRecord,{tableName:tableName}));
@@ -65,7 +58,7 @@ function setup_invoke(tableName) {
     funcChain.push(new functionEntry(deleteRecord,{tableName:tableName}));
     funcChain.push(new functionEntry(expectValue,{tableName:tableName,expect:[{id:2,age:10,name:'guichuideng'}],message:'delete'}));
     */
-    funcChain.push(new functionEntry(dropTable,{tableName:tableName}));
+    //funcChain.push(new functionEntry(dropTable,{tableName:tableName}));
     
 }
 
@@ -104,7 +97,7 @@ api.connect('ws://127.0.0.1:6006',function(error, data) {
 		"address": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
 	});
     
-    var tableName = 'aabbcc';
+    var tableName = 'aabbccdd';
     setup_invoke(tableName);
     invoke();
 });
@@ -136,9 +129,9 @@ function createTable(tableName) {
 	}], {
 		confidential: false
 	}).submit({
-		expect: 'validate_success'
+		expect: 'db_success'
 	}).then(function(data) {
-        if (data.status === 'validate_success') {
+        if (data.status === 'db_success') {
             console.log('ok     : create table.');
             // insert record
             invoke();
@@ -152,9 +145,9 @@ function createTable(tableName) {
 function dropTable(tableName) {
     api.dropTable(tableName)
     .submit({
-        expect: 'validate_success'
+        expect: 'db_success'
     }).then(function(data) {
-        if (data.status === 'validate_success') {
+        if (data.status === 'db_success') {
             console.log('ok     : drop table.');
             exit();
         }
