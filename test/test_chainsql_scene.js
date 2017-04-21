@@ -38,7 +38,7 @@ var user = {
 function setup_invoke(tableName) {                    
     
     funcChain.push(new functionEntry(createTable,{tableName:tableName}));
-    /*
+    
     funcChain.push(new functionEntry(assign,{tableName:tableName,user:user}));
     
     funcChain.push(new functionEntry(insertRecord,{tableName:tableName}));
@@ -57,8 +57,8 @@ function setup_invoke(tableName) {
     
     funcChain.push(new functionEntry(deleteRecord,{tableName:tableName}));
     funcChain.push(new functionEntry(expectValue,{tableName:tableName,expect:[{id:2,age:10,name:'guichuideng'}],message:'delete'}));
-    */
-    //funcChain.push(new functionEntry(dropTable,{tableName:tableName}));
+    
+    funcChain.push(new functionEntry(dropTable,{tableName:tableName}));
     
 }
 
@@ -84,7 +84,7 @@ function invoke_expect() {
     }
 }
 
-api.connect('ws://127.0.0.1:6006',function(error, data) {
+api.connect('ws://192.168.0.199:6006',function(error, data) {
     if (error) {
         console.log('Connect ChainSQL failure.' + error)
         exit();
