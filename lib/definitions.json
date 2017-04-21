@@ -1499,6 +1499,16 @@
       }
     ],
     [
+      "NameInDB",
+      {
+        "nth": 5,
+        "isVLEncoded": false,
+        "isSerialized": true,
+        "isSigningField": true,
+        "type": "Hash160"
+      }
+    ],
+    [
       "Paths",
       {
         "nth": 1,

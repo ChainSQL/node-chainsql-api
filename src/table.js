@@ -226,6 +226,7 @@ Table.prototype.order = function(orderObject) {
 }
 
 Table.prototype.submit = function(cb) {
+	debugger;
   var connect = this.connect;
   var that = this;
 
