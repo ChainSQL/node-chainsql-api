@@ -153,7 +153,7 @@ ChainsqlAPI.prototype.dropTable = function(name) {
   let that = this;
   if (that.transaction) {
     this.cache.push({
-      OpType: opType['t_create'],
+      OpType: opType['t_drop'],
       TableName: name,
       Raw: raw
     });
@@ -177,7 +177,7 @@ ChainsqlAPI.prototype.renameTable = function(oldName, newName) {
   let that = this;
   if (that.transaction) {
     this.cache.push({
-      OpType: opType['t_create'],
+      OpType: opType['t_rename'],
       TableName: name,
       Raw: raw
     });
@@ -474,9 +474,11 @@ ChainsqlAPI.prototype.submit = function(cb) {
                 throw new Error('your publicKey is not validate')
               }
               payment.token = token;
-              delete that.payment.name;
-              delete that.payment.publicKey;
-              that.api.prepareTable(that.payment).then(function(tx_json) {
+            }
+            
+            delete that.payment.name;
+            delete that.payment.publicKey;
+            that.api.prepareTable(that.payment).then(function(tx_json) {
                 getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
                   if (data.status == 'error') {
                     reject(new Error('getTxJson error'));
@@ -516,8 +518,8 @@ ChainsqlAPI.prototype.submit = function(cb) {
                     }
                   });
                 })
-              })
-            }
+            });
+            
           });
         } else {
           that.api.prepareTable(that.payment).then(function(tx_json) {
