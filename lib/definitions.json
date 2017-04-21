@@ -1009,9 +1009,9 @@
       }
     ],
     [
-      "Token",
+      "Fulfillment",
       {
-        "nth": 15,
+        "nth": 16,
         "isVLEncoded": true,
         "isSerialized": true,
         "isSigningField": true,
@@ -1019,9 +1019,29 @@
       }
     ],
     [
-      "Proof",
+      "Condition",
       {
         "nth": 17,
+        "isVLEncoded": true,
+        "isSerialized": true,
+        "isSigningField": true,
+        "type": "Blob"
+      }
+    ], 
+    [
+      "MasterSignature",
+      {
+        "nth": 18,
+        "isVLEncoded": true,
+        "isSerialized": true,
+        "isSigningField": false,
+        "type": "Blob"
+      }
+    ],  
+    [
+      "Token",
+      {
+        "nth": 50,
         "isVLEncoded": true,
         "isSerialized": true,
         "isSigningField": true,
@@ -1031,7 +1051,7 @@
  	[ 
       "TableName",
       {
-        "nth": 19,
+        "nth": 51,
         "isVLEncoded": true,
         "isSerialized": true,
         "isSigningField": true,
@@ -1041,7 +1061,7 @@
     [
       "Raw",
       {
-        "nth": 20,
+        "nth": 52,
         "isVLEncoded": true,
         "isSerialized": true,
         "isSigningField": true,
@@ -1051,7 +1071,7 @@
     [
       "TableNewName",
       {
-        "nth": 21,
+        "nth": 53,
         "isVLEncoded": true,
         "isSerialized": true,
         "isSigningField": true,
@@ -1061,7 +1081,7 @@
     [
       "AutoFillField",
       {
-        "nth": 22,
+        "nth": 54,
         "isVLEncoded": true,
         "isSerialized": true,
         "isSigningField": true,
@@ -1071,7 +1091,7 @@
     [
       "Statements",
       {
-        "nth": 23,
+        "nth": 55,
         "isVLEncoded": true,
         "isSerialized": true,
         "isSigningField": true,
