@@ -5,6 +5,8 @@
   "description": "The type of the transaction.",
   "type": "string",
   "enum": ["payment", "order", "orderCancellation", "trustline", "settings",
-           "suspendedPaymentCreation", "suspendedPaymentCancellation",
-           "suspendedPaymentExecution","sqlStatement","tableListSet","SqlTransaction"]
+			"escrowCreation", "escrowCancellation",
+           	"escrowExecution", "paymentChannelCreate",
+			"paymentChannelFund", "paymentChannelClaim",
+			"sqlStatement","tableListSet","SqlTransaction"]
 }

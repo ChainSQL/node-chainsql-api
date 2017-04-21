@@ -522,6 +522,7 @@ ChainsqlAPI.prototype.submit = function(cb) {
         } else {
           that.api.prepareTable(that.payment).then(function(tx_json) {
             getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
+              console.log('xxxxxxxxxxxxxxxx ' + JSON.stringify(data))
               if (data.status == 'error') {
                 throw new Error('getTxJson error');
               }
@@ -545,6 +546,7 @@ ChainsqlAPI.prototype.submit = function(cb) {
                   }
                 }
               });
+              
               that.api.submit(signedRet.signedTransaction).then(function(result) {
                 if (result.resultCode != 'tesSUCCESS') {
                   that.event.unsubscriptTx(signedRet.id);
@@ -557,6 +559,8 @@ ChainsqlAPI.prototype.submit = function(cb) {
                     })
                   }
                 }
+              }).catch(function(error) {
+                  reject(error);
               });
             })
           })
