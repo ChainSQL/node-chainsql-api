@@ -476,11 +476,10 @@ ChainsqlAPI.prototype.submit = function(cb) {
               }
               payment.token = token;
             }
-            console.log(token);
+            
             delete that.payment.name;
             delete that.payment.publicKey;
             that.api.prepareTable(that.payment).then(function(tx_json) {
-		    console.log(tx_json);
             getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
               if (data.status == 'error') {
                 reject(new Error('getTxJson error'));
@@ -491,14 +490,14 @@ ChainsqlAPI.prototype.submit = function(cb) {
                 if (err) {
                   reject(err);
                 } else {
-                  console.log(data.status)
                   if (cb.expect == data.status && data.type === 'singleTransaction') {
                     resolve({
                       status: cb.expect,
                       tx_hash: signedRet.id
                     })
                   }
-                  if (data.status != 'validate_success' || data.status != 'db_success') {
+                  
+                  if (data.status == 'db_error' || data.status == 'db_timeout' || data.status == 'validate_timeout') {
                     reject({
                       error: data.status,
                       tx_hash: signedRet.id
