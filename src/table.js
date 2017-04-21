@@ -148,6 +148,34 @@ function hasOrder(item) {
   return false;
 }
 
+function hasGroupBy(item) {
+  for (var key in item) {
+    if (key === '$group' && item[key] instanceof Array) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function hasHaving(item) {
+  for (var key in item) {
+    if (key === '$$having' && item[key] instanceof Object) {
+      return true;
+    }
+  }
+  return false;    
+}
+
+function hasExtraCond(item) {
+    if (hasLimit(item) 
+        || hasOrder(item) 
+        || hasGroupBy(item) 
+        || hasHaving(item)) {
+            return true;
+        }
+    return false;
+}
+
 Table.prototype.limit = function(limit) {
   if (this.exec !== 'r_get')
     throw new Error('Object can not hava function limit');
@@ -160,9 +188,13 @@ Table.prototype.limit = function(limit) {
       return;
     }
 
-    if (hasOrder(item)) {
-      flag = flag | 2;
-      return;
+    //if (hasOrder(item)) {
+    //  flag = flag | 2;
+    //  return;
+    //}
+    if (hasExtraCond(item)) {
+        flag = flag | 2;
+        return;
     }
     indx++;
   });
@@ -172,9 +204,6 @@ Table.prototype.limit = function(limit) {
     indx = this.query.length - 1;
   }
 
-  //var limit = {};
-  //limit.index = index;
-  //limit.total = count;
   this.query[indx]['$limit'] = limit;
   return this;
 }
@@ -191,11 +220,14 @@ Table.prototype.order = function(orderObject) {
       return;
     }
 
-    if (hasLimit(item)) {
-      flag = flag | 1;
-      return;
+    //if (hasLimit(item)) {
+    //  flag = flag | 1;
+    //  return;
+    //}
+    if (hasExtraCond(item)) {
+        flag = flag | 1;
+        return; 
     }
-
     index++;
   });
 
@@ -225,10 +257,80 @@ Table.prototype.order = function(orderObject) {
   return this;
 }
 
+Table.prototype.groupby = function(group) {
+  if (this.exec !== 'r_get')
+    throw new Error('Object can not hava function groupby');
+
+  if (Object.prototype.toString.call(group) != '[object Array]')
+    throw new Error('Argument of groupby must be string array.');
+
+  var index = 0;
+  var flag = 0;
+  this.query.forEach(function(item) {
+    if (hasGroupBy(item)) {
+      flag = flag | 2;
+      return;
+    }
+
+    if (hasExtraCond(item)) {
+        flag = flag | 1;
+        return; 
+    }
+    index++;
+  });
+
+  if (flag === 0) {
+    this.query.push({});
+    index = this.query.length - 1;
+  }
+
+  if ((flag & 2) === 2) {
+    var temp_this = this;
+    group.forEach(function(e) {
+      temp_this.query[index]['$group'].push(e);
+    });
+  } else {
+    this.query[index]['$group'] = group;
+  }
+  
+  return this;
+}
+
+Table.prototype.having = function(value) {
+  console.log(this.exec)
+  if (this.exec !== 'r_get')
+    throw new Error('Object can not hava function having');
+
+  if (Object.prototype.toString.call(value) != '[object Object]')
+    throw new Error('Argument of groupby must be Object.');
+
+  var flag = 0;
+  var indx = 0;
+  this.query.forEach(function(item) {
+    if (hasHaving(item)) {
+      flag = flag | 1;
+      return;
+    }
+
+    if (hasExtraCond(item)) {
+        flag = flag | 2;
+        return;
+    }
+    indx++;
+  });
+
+  if (flag == 0) {
+    this.query.push({});
+    indx = this.query.length - 1;
+  }
+
+  this.query[indx]['$having'] = value;  
+  return this;
+}
+
 Table.prototype.submit = function(cb) {
   var connect = this.connect;
   var that = this;
-
   if (that.exec == 'r_get') {
     if (Object.prototype.toString.call(this.query[0]) !== '[object Array]') {
       this.query.unshift([]);
