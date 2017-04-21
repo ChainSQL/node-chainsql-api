@@ -6,11 +6,11 @@ var user = {
 	publickKey: "02F039E54B3A0D209D348F1B2C93BE3689F2A7595DDBFB1530499D03264B87A61F"
 };
 
-r.connect('ws://192.168.0.197:6007', function(err, data) {
+r.connect('ws://127.0.0.1:6006', function(err, data) {
 	if (!err) {
 		console.log('连接成功');
 	}
-	var tb = 'aaf'
+	var tb = 'gege'
 	r.as({
 		"secret": "snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
 		"address": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
@@ -24,8 +24,9 @@ r.connect('ws://192.168.0.197:6007', function(err, data) {
 	// insertData(tb); //插入数据
 	// del(tb)//删除数据
 	// updateData(tb)//更新数据
-	getData(tb);//获取数据
-	// assign(tb, user); //授权表
+	//getData(tb);//获取数据
+    //getData_with_groupby(tb)
+	 assign(tb, user); //授权表
 	// transaction();//事务
 	// subTable(tb,'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh');
 	 // getLedger();
@@ -75,6 +76,33 @@ function createTable(table, confidential) {
 		console.log(e)
 	})
 };
+
+function createTable_with_foreignkey(table, confidential) {
+    r.createTable(table, [{
+		"field": "id",
+		"type": "int",
+		"length": 11,
+		"PK": 1,
+		"NN": 1,
+		"UQ": 1,
+		"AI": 1
+	}, {
+		"field": "oid",
+		"type": "int",
+		"length": 1,
+        "FK":1,
+		"NN": 1,
+        "REFERENCES":{"table":"goods","field":"id"}
+	}], {
+		confidential: confidential
+	}).submit({
+		expect: 'validate_success'
+	}).then(function(data) {
+		console.log(data);
+	}).catch(function(e) {
+		console.log(e)
+	})
+}
 
 function insertData(tb) {
 	// r.table(tb).insert({
@@ -145,6 +173,53 @@ function getData(tb) {
 	// }).catch(function(e) {
 	// 	console.log('err',e)
 	// })
+}
+
+function getData_with_groupby(tb) {
+    try {
+        r.table(tb).get({
+            $or: [{
+                id: 2
+            }, {
+                name: 'feipeng'
+            }]
+        })
+        .groupby(['id','name'])
+        .submit(function(err, data) {
+            if (err) {
+                console.log(err)
+            } else {
+                console.log(data)
+            }
+        });
+    } catch (e){
+        console.log('getData_with_groupby: ' + e)
+    }
+}
+
+
+function getData_with_groupby_and_having(tb) {
+    try {
+        r.table(tb).get({
+            $or: [{
+                id: 2
+            }, {
+                name: 'feipeng'
+            }]
+        })
+        .groupby(['id','name'])
+        .having({'id':{'$gt':100}})
+        .submit(function(err, data) {
+            if (err) {
+                console.log(err)
+            } else {
+                console.log(data)
+            }
+        });
+    } catch (e){
+        console.log('getData_with_groupby: ' + e)
+    }
+
 }
 
 function del(tb) {
