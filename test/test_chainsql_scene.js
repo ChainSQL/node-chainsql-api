@@ -46,7 +46,7 @@ var user = {
 };
 
 function setup_invoke(tableName) {       
-    
+        
     funcChain.push(new functionEntry(createTable,{tableName:tableName}));
     
     funcChain.push(new functionEntry(assign,{tableName:tableName,user:user}));
@@ -63,19 +63,22 @@ function setup_invoke(tableName) {
                     {tableName:tableName,
                     expect:[{id:1,age:3,name:'zongxiang'},
                     {id:2,age:10,name:'guichuideng'}],
-                    message:'update'}));
+                    message:'update.'}));
     
     funcChain.push(new functionEntry(deleteRecord,{tableName:tableName}));
-    funcChain.push(new functionEntry(expectValue,{tableName:tableName,expect:[{id:2,age:10,name:'guichuideng'}],message:'delete'}));
+    funcChain.push(new functionEntry(expectValue,{tableName:tableName,expect:[{id:2,age:10,name:'guichuideng'}],message:'delete.'}));
     
     funcChain.push(new functionEntry(transaction,{tableName:tableName}));
     funcChain.push(new functionEntry(expectValue,
                     {tableName:tableName,
                     expect:[{id:2,age:10,name:'guichuideng'},
                     {id:4,age:33,name:'zhouxingchi'}],
-                    message:'transaction'}));
+                    message:'transaction.'}));
+                    
+    newTableName = 'new_' + tableName;
+    funcChain.push(new functionEntry(renameTable,{tableName:tableName,newTableName:newTableName}));
     
-    funcChain.push(new functionEntry(dropTable,{tableName:tableName}));
+    funcChain.push(new functionEntry(dropTable,{tableName:newTableName}));
 }
 
 Function.prototype.getName = function(){
@@ -87,6 +90,8 @@ function invoke() {
     if(f != null) {
         if (f.fun.getName() === 'assign') {
             f.fun(f.arguments.tableName,f.arguments.user); 
+        } else if (f.fun.getName() === 'renameTable') {
+            f.fun(f.arguments.tableName,f.arguments.newTableName);
         } else {
             f.fun(f.arguments.tableName);   
         }
@@ -171,6 +176,21 @@ function dropTable(tableName) {
         console.log('failure: drop table. ' + JSON.stringify(e));
         exit();
     });
+}
+
+function renameTable(oldTableName, newTableName) {
+    api.renameTable(oldTableName,newTableName)
+    .submit({
+        expect: 'db_success'
+    }).then(function(data) {
+        if (data.status === 'db_success') {
+            console.log('ok     : rename table.');
+            invoke();
+        }
+    }).catch(function(e) {
+        console.log('failure: rename table. ' + JSON.stringify(e));
+        exit();
+    });    
 }
 
 function insertRecord(tableName) {
