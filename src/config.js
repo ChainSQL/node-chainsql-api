@@ -18,7 +18,8 @@ const opType = {
 	r_get: 7,
 	r_update: 8,
 	r_delete: 9,
-	t_assert:10
+	t_assert:10,
+	t_recreate:12
 }
 exports.permission = permission;
 exports.opType = opType;

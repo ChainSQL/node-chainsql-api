@@ -148,6 +148,32 @@ ChainsqlAPI.prototype.createTable = function(name, raw, opt) {
   }
 }
 
+ChainsqlAPI.prototype.recreateTable = function(name) {
+  let that = this;
+  if (that.transaction) {
+    var json = {
+      OpType: opType['t_create'],
+      TableName: name,
+      confidential: confidential
+    };
+    this.cache.push(json);
+    return;
+  } else {
+    let payment = {
+      address: that.connect.address,
+      opType: opType['t_recreate'],
+      tables: [{
+        Table: {
+          TableName: convertStringToHex(name)
+        }
+      }],
+      tsType: 'TableListSet'
+    };
+    this.payment = payment;
+    return this;
+  }
+}
+
 ChainsqlAPI.prototype.dropTable = function(name) {
 
   let that = this;
@@ -484,6 +510,8 @@ ChainsqlAPI.prototype.submit = function(cb) {
               if (data.status == 'error') {
                 reject(new Error('getTxJson error'));
               }
+			  console.log("getTxJson:");
+			  console.log(data);
               var payment = data.tx_json;
               let signedRet = that.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
               that.event.subscriptTx(signedRet.id, function(err, data) {
@@ -524,15 +552,19 @@ ChainsqlAPI.prototype.submit = function(cb) {
             })
           });
         } else {
+        console.log("data.tx_json in line 555:");
+			  console.log(that.payment);
           that.api.prepareTable(that.payment).then(function(tx_json) {
-            getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
+			getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
               if (data.status == 'error') {
                 throw new Error('getTxJson error');
               }
               var payment = data.tx_json;
+			  console.log("data.tx_json in line 561:");
+			  console.log(data.tx_json);
               let signedRet = that.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
-              that.event.subscriptTx(signedRet.id, function(err, data) {  
-                //console.log('status: ',data.status);
+			  that.event.subscriptTx(signedRet.id, function(err, data) {  
+              console.log('status: ',data.status);
                 if (err) {
                   reject(err);
                 } else {
@@ -594,6 +626,7 @@ ChainsqlAPI.prototype.submit = function(cb) {
                   throw new Error('getTxJson error');
                 };
                 var payment = data.tx_json;
+						  console.log(data);
                 let signedRet = that.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
                 that.event.subscriptTx(signedRet.id, cb);
                 that.api.submit(signedRet.signedTransaction).then(function(result) {
@@ -613,6 +646,7 @@ ChainsqlAPI.prototype.submit = function(cb) {
               throw new Error('getTxJson error');
             }
             var payment = data.tx_json;
+					  console.log(data);
             let signedRet = that.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
             that.event.subscriptTx(signedRet.id, cb);
             that.api.submit(signedRet.signedTransaction).then(function(result) {
