@@ -6,7 +6,7 @@ var user = {
 	publickKey: "02F039E54B3A0D209D348F1B2C93BE3689F2A7595DDBFB1530499D03264B87A61F"
 };
 
-r.connect('ws://127.0.0.1:6006', function(err, data) {
+r.connect('ws://192.168.0.151:6006', function(err, data) {
 	if (err) {
 		console.log('连接失败. ', JSON.stringify(e));
         return
@@ -270,13 +270,21 @@ function transaction() {
 		// r.commit(function(err, data) {
 		// 	console.log(err, data)
 		// });
-	r.commit({
-		expect: 'send_success'
-	}).then(function(data) {
-		console.log(data)
-	}).catch(function(e) {
-		console.log(e)
-	})
+    try {
+        api.commit({
+            expect: 'db_success',
+            cb: function(error, data) {
+                if (error) {
+                    console.log('failure: transaction. ' + error);
+                } else {
+                    //console.log('ok     : transaction.');
+                    invoke_expect();
+                }
+            }
+        })        
+    } catch (e) {
+        console.log('ok     : transaction. exception: ', e);
+    };
 }
 
 function subTable(tb, owner) {

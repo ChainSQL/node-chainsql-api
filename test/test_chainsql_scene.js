@@ -11,6 +11,7 @@ const functionChain = function(callback) {
     this.functionlist = []; // list of functionEntry
     this.stack_head = -1;
     this.stack_tail = -1;
+    this.default_callback = null;
 }
 
 functionChain.prototype.push = function(entry) {
@@ -26,6 +27,15 @@ functionChain.prototype.pop = function() {
     return this.functionlist[this.stack_head];
 }
 
+functionChain.prototype.setDefaultCallback = function(callback) {
+    this.default_callback = callback;
+}
+
+functionChain.prototype.callDefaultCallback = function() {
+    if (this.default_callback) {
+        this.default_callback.fun(this.default_callback.arguments.tableName);
+    }
+}
 
 funcChain = new functionChain();
 
@@ -35,7 +45,7 @@ var user = {
 	publickKey: "02F039E54B3A0D209D348F1B2C93BE3689F2A7595DDBFB1530499D03264B87A61F"
 };
 
-function setup_invoke(tableName) {                    
+function setup_invoke(tableName) {       
     
     funcChain.push(new functionEntry(createTable,{tableName:tableName}));
     
@@ -58,8 +68,14 @@ function setup_invoke(tableName) {
     funcChain.push(new functionEntry(deleteRecord,{tableName:tableName}));
     funcChain.push(new functionEntry(expectValue,{tableName:tableName,expect:[{id:2,age:10,name:'guichuideng'}],message:'delete'}));
     
-    funcChain.push(new functionEntry(dropTable,{tableName:tableName}));
+    funcChain.push(new functionEntry(transaction,{tableName:tableName}));
+    funcChain.push(new functionEntry(expectValue,
+                    {tableName:tableName,
+                    expect:[{id:2,age:10,name:'guichuideng'},
+                    {id:4,age:33,name:'zhouxingchi'}],
+                    message:'transaction'}));
     
+    funcChain.push(new functionEntry(dropTable,{tableName:tableName}));
 }
 
 Function.prototype.getName = function(){
@@ -84,7 +100,7 @@ function invoke_expect() {
     }
 }
 
-api.connect('ws://192.168.0.199:6006',function(error, data) {
+api.connect('ws://127.0.0.1:6006',function(error, data) {
     if (error) {
         console.log('Connect ChainSQL failure.' + error)
         exit();
@@ -215,6 +231,7 @@ function deleteRecord(tableName) {
 
 function expectValue(tableName, expect, message) {
     if (Object.prototype.toString.call(expect) != '[object Array]') {
+        console.log('type is ', Object.prototype.toString.call(expect));
         throw new Error('Type of expect must be array in function `expectValue`.');
     }
     
@@ -230,7 +247,7 @@ function expectValue(tableName, expect, message) {
             }
             
             compare = function(left, right) {
-                if (left.id === right.id && left.age === right.age && left.name === right.name) {
+                if (/*left.id === right.id && */ left.age === right.age && left.name === right.name) {
                     return true;
                 }
                 return false;
@@ -274,4 +291,34 @@ function assign(tableName, user) {
 		console.log('failure: assign. ' + JSON.stringify(e));
         exit();
 	})
+}
+
+function transaction(tableName) {
+	api.beginTran();
+	api.table(tableName).insert({
+        age: 33,
+		name: 'dahuaxiyou'
+	});
+    
+	api.table(tableName).get({
+        age: 33
+    }).update({
+        name: 'zhouxingchi'
+    });
+        
+    try {
+        api.commit({
+            expect: 'db_success',
+            cb: function(error, data) {
+                if (error) {
+                    console.log('failure: transaction. ' + error);
+                } else {
+                    //console.log('ok     : transaction.');
+                    invoke_expect();
+                }
+            }
+        })        
+    } catch (e) {
+        console.log('ok     : transaction. exception: ', e);
+    };
 }

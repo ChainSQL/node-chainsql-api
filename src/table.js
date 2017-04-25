@@ -329,7 +329,6 @@ Table.prototype.having = function(value) {
 }
 
 Table.prototype.submit = function(cb) {
-	debugger;
   var connect = this.connect;
   var that = this;
   if (that.exec == 'r_get') {

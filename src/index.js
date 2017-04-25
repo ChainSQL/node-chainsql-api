@@ -149,7 +149,6 @@ ChainsqlAPI.prototype.createTable = function(name, raw, opt) {
 }
 
 ChainsqlAPI.prototype.dropTable = function(name) {
-
   let that = this;
   if (that.transaction) {
     this.cache.push({
@@ -283,10 +282,6 @@ ChainsqlAPI.prototype.beginTran = function() {
 }
 
 ChainsqlAPI.prototype.commit = function(cb) {
-  var cb = cb;
-  if (!cb) {
-    cb = callback;
-  }
   var that = this;
   var ary = [];
   var secretMap = {};
@@ -305,13 +300,19 @@ ChainsqlAPI.prototype.commit = function(cb) {
       }
     }
   };
+  
   if ((typeof cb) != 'function') {
+    if (!cb.cb) {
+      cb.cb = callback;
+    }
+    
     return Promise.all(ary).then(function(data) {
       for (var i = 0; i < data.length; i++) {
         for (var key in data[i]) {
           secretMap[key] = data[i][key];
         }
       };
+      
       var payment = {
         "TransactionType": "SQLTransaction",
         "Account": that.connect.address,
@@ -319,6 +320,7 @@ ChainsqlAPI.prototype.commit = function(cb) {
         "StrictMode": that.strictMode,
         "NeedVerify": that.needVerify
       };
+      
       for (var i = 0; i < cache.length; i++) {
         if (secretMap[cache[i].TableName]) {
 
@@ -346,26 +348,55 @@ ChainsqlAPI.prototype.commit = function(cb) {
         delete cache[i].TableName;
         delete cache[i].confidential;
         payment.Statements.push(cache[i]);
-      };
+      }
+      
       return getTxJson(that, payment).then(function(data) {
         if (data.status == 'error') {
+          that.transaction = false;
           throw new Error('getTxJson error');
         }
         var payment = data.tx_json;
         payment.Statements = convertStringToHex(JSON.stringify(payment.Statements));
         return that.api.prepareTx(payment).then(function(tx_json) {
           let signedRet = that.api.sign(tx_json.txJSON, that.connect.secret);
-          return that.event.subscriptTx(signedRet.id, cb);
+          that.event.subscriptTx(signedRet.id, function (error, data) {
+            if (error) {
+              cb.cb(error, null);
+            } else {
+              if (cb.expect == data.status && data.type === 'singleTransaction') {
+                
+                that.transaction = false;
+                cb.cb(null, {
+                  status: cb.expect,
+                  tx_hash: signedRet.id
+                });
+              }
+              
+              if (data.status == 'db_error' || data.status == 'db_timeout' || data.status == 'validate_timeout') {
+                
+                that.transaction = false;
+                cb.cb({
+                  error: data.status,
+                  tx_hash: signedRet.id
+                }, null);
+              }
+            }
+          });
+          
           that.api.submit(signedRet.signedTransaction).then(function(result) {
             if (result.resultCode != 'tesSUCCESS') {
-              that.event.unsubscriptTx(signedRet.id, cb);
+              that.transaction = false;
+              that.event.unsubscriptTx(signedRet.id);
               throw new Error(result.resultMessage);
             }
           });
-        })
+        });
       })
-    })
+    });
   } else {
+    if (!cb) {
+      cb = callback;
+    }
     Promise.all(ary).then(function(data) {
       for (var i = 0; i < data.length; i++) {
         for (var key in data[i]) {
@@ -409,6 +440,7 @@ ChainsqlAPI.prototype.commit = function(cb) {
       };
       getTxJson(that, payment).then(function(data) {
         if (data.status == 'error') {
+          that.transaction = false;
           throw new Error('getTxJson error');
         }
         var payment = data.tx_json;
@@ -418,7 +450,8 @@ ChainsqlAPI.prototype.commit = function(cb) {
           that.event.subscriptTx(signedRet.id, cb);
           that.api.submit(signedRet.signedTransaction).then(function(result) {
             if (result.resultCode != 'tesSUCCESS') {
-              that.event.unsubscriptTx(signedRet.id, cb);
+              that.transaction = false;
+              that.event.unsubscriptTx(signedRet.id);
               throw new Error(result.resultMessage);
             }
           });
@@ -464,7 +497,7 @@ ChainsqlAPI.prototype.submit = function(cb) {
           var name = payment.name;
           var publicKey = payment.publicKey;
           getUserToken(that, name).then(function(data) {
-		  	console.log(data);
+		  	//console.log(data);
             var token = data[name];
             if (token != '') {
               var secret = decodeToken(that, token);
@@ -567,7 +600,9 @@ ChainsqlAPI.prototype.submit = function(cb) {
                   reject(error);
               });
             })
-          })
+          }).catch(function(error) {
+            reject(error);
+          });
         }
       })
     } else {
