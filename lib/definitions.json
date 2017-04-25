@@ -30,10 +30,11 @@
     "AccountRoot": 97,
     "RippleState": 114,
     "FeeSettings": 115,
-    "SuspendedPayment": 117,
+    "Escrow": 117,
     "DirectoryNode": 100,
     "GeneratorMap": 103,
     "Contract": 99,
+	"PayChannel": 120,
     "Invalid": -1
   },
   "FIELDS": [
@@ -86,8 +87,8 @@
         "isSigningField": true,
         "type": "UInt16"
       }
-      ],
-      [
+    ],
+    [
       "OpType",
       {
         "nth": 4,
@@ -923,7 +924,7 @@
         "nth": 6,
         "isVLEncoded": true,
         "isSerialized": true,
-        "isSigningField": true,
+        "isSigningField": false,
         "type": "Blob"
       }
     ],
@@ -1008,17 +1009,17 @@
       }
     ],
     [
-      "Token",
+      "Fulfillment",
       {
-        "nth": 15,
+        "nth": 16,
         "isVLEncoded": true,
         "isSerialized": true,
         "isSigningField": true,
         "type": "Blob"
       }
-       ],
+    ],
     [
-      "Proof",
+      "Condition",
       {
         "nth": 17,
         "isVLEncoded": true,
@@ -1026,57 +1027,107 @@
         "isSigningField": true,
         "type": "Blob"
       }
+    ], 
+    [
+      "MasterSignature",
+      {
+        "nth": 18,
+        "isVLEncoded": true,
+        "isSerialized": true,
+        "isSigningField": false,
+        "type": "Blob"
+      }
+    ],  
+    [
+      "Token",
+      {
+        "nth": 50,
+        "isVLEncoded": true,
+        "isSerialized": true,
+        "isSigningField": true,
+        "type": "Blob"
+      }
     ],
-     [ 
+ 	[ 
       "TableName",
       {
-        "nth": 19,
-        "isVLEncoded": true,
-        "isSerialized": true,
-        "isSigningField": true,
-        "type": "Blob"
-      }
-      ],
-      [
-      "Raw",
-      {
-        "nth": 20,
-        "isVLEncoded": true,
-        "isSerialized": true,
-        "isSigningField": true,
-        "type": "Blob"
-      }
-       ],
-       [
-      "TableNewName",
-      {
-        "nth": 21,
+        "nth": 51,
         "isVLEncoded": true,
         "isSerialized": true,
         "isSigningField": true,
         "type": "Blob"
       }
     ],
-      [
+    [
+      "Raw",
+      {
+        "nth": 52,
+        "isVLEncoded": true,
+        "isSerialized": true,
+        "isSigningField": true,
+        "type": "Blob"
+      }
+    ],
+    [
+      "TableNewName",
+      {
+        "nth": 53,
+        "isVLEncoded": true,
+        "isSerialized": true,
+        "isSigningField": true,
+        "type": "Blob"
+      }
+    ],
+    [
       "AutoFillField",
       {
-        "nth": 22,
+        "nth": 54,
         "isVLEncoded": true,
         "isSerialized": true,
         "isSigningField": true,
         "type": "Blob"
       }
-       ],
-        [
+    ],
+    [
       "Statements",
       {
-        "nth": 23,
+        "nth": 55,
         "isVLEncoded": true,
         "isSerialized": true,
         "isSigningField": true,
         "type": "Blob"
       }
-       ],
+    ],
+    [
+        "Fulfillment",
+        {
+            "nth": 16,
+            "isVLEncoded": true,
+            "isSerialized": true,
+            "isSigningField": true,
+            "type": "Blob"
+        }
+    ],
+    [
+        "Condition",
+        {
+            "nth": 17,
+            "isVLEncoded": true,
+            "isSerialized": true,
+            "isSigningField": true,
+            "type": "Blob"
+        }
+    ],
+    [
+        "MasterSignature",
+        {
+            "nth": 18,
+            "isVLEncoded": true,
+            "isSerialized": true,
+            "isSigningField": false,
+            "type": "Blob"
+        }
+    ],
     [
       "Account",
       {
@@ -1266,7 +1317,8 @@
         "isSigningField": true,
         "type": "STObject"
       }
-    ],[
+    ],
+	[
       "Table",
       {
         "nth": 12,
@@ -1375,7 +1427,8 @@
         "isSigningField": true,
         "type": "STArray"
       }
-    ],[
+    ],
+	[
       "Tables",
       {
         "nth": 11,
@@ -1554,6 +1607,36 @@
         "isSigningField": true,
         "type": "UInt32"
       }
+    ],
+    [
+      "SettleDelay",
+      {
+        "nth": 39,
+        "isVLEncoded": false,
+        "isSerialized": true,
+        "isSigningField": true,
+        "type": "UInt32"
+      }
+    ],
+    [
+      "Channel",
+      {
+        "nth": 22,
+        "isVLEncoded": false,
+        "isSerialized": true,
+        "isSigningField": true,
+        "type": "Hash256"
+      }
+    ],
+    [
+      "TickSize",
+      {
+        "nth": 16,
+        "isVLEncoded": false,
+        "isSerialized": true,
+        "isSigningField": true,
+        "type": "UInt8"
+      }
     ]
   ],
   "TRANSACTION_RESULTS": {
@@ -1591,6 +1674,7 @@
     "temBAD_FEE": -294,
     "terPRE_SEQ": -92,
     "tecOVERSIZE": 145,
+    "tecCRYPTOCONDITION_ERROR": 146,
     "tefMASTER_DISABLED": -187,
     "temBAD_CURRENCY": -296,
     "tefDST_TAG_NEEDED": -193,
@@ -1648,7 +1732,8 @@
     "temINVALID": -277,
     "tecINSUF_RESERVE_OFFER": 123,
     "tecNO_LINE_INSUF_RESERVE": 126,
-    "terNO_AUTH": -95
+    "terNO_AUTH": -95,
+    "temBAD_TICK_SIZE": -270
   },
   "TRANSACTION_TYPES": {
     "OfferCancel": 8,
@@ -1664,9 +1749,12 @@
     "OfferCreate": 7,
     "SignerListSet": 12,
     "Contract": 9,
-    "SuspendedPaymentCreate": 1,
-    "SuspendedPaymentFinish": 2,
-    "SuspendedPaymentCancel": 4,
+    "EscrowCreate": 1,
+    "EscrowFinish": 2,
+    "EscrowCancel": 4,
+    "PaymentChannelCreate": 13,
+    "PaymentChannelFund": 14,
+    "PaymentChannelClaim": 15,
     "TableListSet":21,
     "SQLStatement":22,
     "SQLTransaction":23,

@@ -7,10 +7,12 @@ var user = {
 };
 
 r.connect('ws://127.0.0.1:6006', function(err, data) {
-	if (!err) {
-		console.log('连接成功');
+	if (err) {
+		console.log('连接失败. ', JSON.stringify(e));
+        return
 	}
-	var tb = 'gege'
+    console.log('连接成功');
+	var tb = 'aabbcc';
 	r.as({
 		"secret": "snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
 		"address": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
@@ -19,21 +21,20 @@ r.connect('ws://127.0.0.1:6006', function(err, data) {
 	// 	"secret": "ssnqAfDUjc6Bkevd1Xmz5dJS5yHdz",
 	// 	"address": "rBuLBiHmssAMHWQMnEN7nXQXaVj7vhAv6Q"
 	// });
-	// createTable(tb, true); //创建表
+	 createTable(tb, false); //创建表
 	// 
 	// insertData(tb); //插入数据
 	// del(tb)//删除数据
 	// updateData(tb)//更新数据
-	//getData(tb);//获取数据
-    //getData_with_groupby(tb)
-	 assign(tb, user); //授权表
+	// getData(tb);//获取数据
+	// assign(tb, user); //授权表
 	// transaction();//事务
 	// subTable(tb,'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh');
 	 // getLedger();
 });
 
 function createTable(table, confidential) {
-	r.setRestrict(true);
+	r.setRestrict(false);
 	// 创建表
 	// r.createTable(table, [{
 	// 	"field": "id",

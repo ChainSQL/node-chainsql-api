@@ -464,6 +464,7 @@ ChainsqlAPI.prototype.submit = function(cb) {
           var name = payment.name;
           var publicKey = payment.publicKey;
           getUserToken(that, name).then(function(data) {
+		  	console.log(data);
             var token = data[name];
             if (token != '') {
               var secret = decodeToken(that, token);
@@ -479,53 +480,9 @@ ChainsqlAPI.prototype.submit = function(cb) {
             delete that.payment.name;
             delete that.payment.publicKey;
             that.api.prepareTable(that.payment).then(function(tx_json) {
-                getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
-                  if (data.status == 'error') {
-                    reject(new Error('getTxJson error'));
-                  }
-                  var payment = data.tx_json;
-                  let signedRet = that.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
-                  that.event.subscriptTx(signedRet.id, function(err, data) {
-                    if (err) {
-                      reject(err);
-                    } else {
-                      console.log(data.status)
-                      if (cb.expect == data.status && data.type === 'singleTransaction') {
-                        resolve({
-                          status: cb.expect,
-                          tx_hash: signedRet.id
-                        })
-                      }
-                      if (data.status != 'validate_success' || data.status != 'db_success') {
-                        reject({
-                          error: data.status,
-                          tx_hash: signedRet.id
-                        })
-                      }
-                    }
-                  });
-                  that.api.submit(signedRet.signedTransaction).then(function(result) {
-                    if (result.resultCode != 'tesSUCCESS') {
-                      that.event.unsubscriptTx(signedRet.id);
-                      reject(result);
-                    } else {
-                      if (cb.expect == 'send_success') {
-                        resolve({
-                          status: 'send_success',
-                          tx_hash: signedRet.id
-                        })
-                      }
-                    }
-                  });
-                })
-            });
-            
-          });
-        } else {
-          that.api.prepareTable(that.payment).then(function(tx_json) {
             getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
               if (data.status == 'error') {
-                throw new Error('getTxJson error');
+                reject(new Error('getTxJson error'));
               }
               var payment = data.tx_json;
               let signedRet = that.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
@@ -539,7 +496,8 @@ ChainsqlAPI.prototype.submit = function(cb) {
                       tx_hash: signedRet.id
                     })
                   }
-                  if (data.status != 'validate_success' || data.status != 'db_success') {
+                  
+                  if (data.status == 'db_error' || data.status == 'db_timeout' || data.status == 'validate_timeout') {
                     reject({
                       error: data.status,
                       tx_hash: signedRet.id
@@ -559,6 +517,54 @@ ChainsqlAPI.prototype.submit = function(cb) {
                     })
                   }
                 }
+              }).catch(function(error) {
+                  reject(error);
+              });
+            })
+            })
+          });
+        } else {
+          that.api.prepareTable(that.payment).then(function(tx_json) {
+            getTxJson(that, JSON.parse(tx_json.txJSON)).then(function(data) {
+              if (data.status == 'error') {
+                throw new Error('getTxJson error');
+              }
+              var payment = data.tx_json;
+              let signedRet = that.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
+              that.event.subscriptTx(signedRet.id, function(err, data) {  
+                //console.log('status: ',data.status);
+                if (err) {
+                  reject(err);
+                } else {
+                  if (cb.expect == data.status && data.type === 'singleTransaction') {
+                    resolve({
+                      status: cb.expect,
+                      tx_hash: signedRet.id
+                    })
+                  }
+                  if (data.status == 'db_error' || data.status == 'db_timeout' || data.status == 'validate_timeout') {
+                    reject({
+                      error: data.status,
+                      tx_hash: signedRet.id
+                    })
+                  }
+                }
+              });
+              
+              that.api.submit(signedRet.signedTransaction).then(function(result) {
+                if (result.resultCode != 'tesSUCCESS') {
+                  that.event.unsubscriptTx(signedRet.id);
+                  reject(result);
+                } else {
+                  if (cb.expect == 'send_success') {
+                    resolve({
+                      status: 'send_success',
+                      tx_hash: signedRet.id
+                    })
+                  }
+                }
+              }).catch(function(error) {
+                  reject(error);
               });
             })
           })

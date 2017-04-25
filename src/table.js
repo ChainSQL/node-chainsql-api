@@ -329,6 +329,7 @@ Table.prototype.having = function(value) {
 }
 
 Table.prototype.submit = function(cb) {
+	debugger;
   var connect = this.connect;
   var that = this;
   if (that.exec == 'r_get') {
@@ -414,7 +415,7 @@ Table.prototype.submit = function(cb) {
               var payment = data.tx_json;
               let signedRet = connect.api.sign(JSON.stringify(data.tx_json), that.connect.secret);
               that.event.subscriptTx(signedRet.id, function(err, data) {
-                console.log(err, data)
+                //console.log(err, data)
                 if (err) {
                   reject(err);
                 } else {
@@ -424,8 +425,12 @@ Table.prototype.submit = function(cb) {
                       tx_hash: signedRet.id
                     })
                   }
-                  if (data.status == '') {
-
+                  
+                  if (data.status == 'db_error' || data.status == 'db_timeout' || data.status == 'validate_timeout') {
+                    reject({
+                      error: data.status,
+                      tx_hash: signedRet.id
+                    })
                   }
                 }
               });
@@ -441,6 +446,8 @@ Table.prototype.submit = function(cb) {
                     })
                   }
                 }
+              }).catch(function(error) {
+                  reject(error);
               });
             })
           });
