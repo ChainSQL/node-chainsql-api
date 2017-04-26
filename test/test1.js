@@ -274,18 +274,14 @@ function transaction() {
 		// });
     try {
         api.commit({
-            expect: 'db_success',
-            cb: function(error, data) {
-                if (error) {
-                    console.log('failure: transaction. ' + error);
-                } else {
-                    //console.log('ok     : transaction.');
-                    invoke_expect();
-                }
-            }
-        })        
+            expect: 'db_success'
+		}).then(function(data) {
+            console.log(data);
+		}).catch(function(error) {
+            console.log(error);
+		});        
     } catch (e) {
-        console.log('ok     : transaction. exception: ', e);
+        console.log('transaction. exception: ', e);
     };
 }
 
