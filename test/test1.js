@@ -1,9 +1,10 @@
 const ChainsqlAPI = require('../src/index').ChainsqlAPI;
 const r = new ChainsqlAPI();
+
 var user = {
 	secret: "ssnqAfDUjc6Bkevd1Xmz5dJS5yHdz",
 	address: "rBuLBiHmssAMHWQMnEN7nXQXaVj7vhAv6Q",
-	publickKey: "02F039E54B3A0D209D348F1B2C93BE3689F2A7595DDBFB1530499D03264B87A61F"
+	publickKey: "aBP8JEiNXr3a9nnBFDNKKzAoGNezoXzsa1N8kQAoLU5F5HrQbFvs"
 };
 
 r.connect('ws://192.168.0.151:6006', function(err, data) {
@@ -17,11 +18,12 @@ r.connect('ws://192.168.0.151:6006', function(err, data) {
 		"secret": "snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
 		"address": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
 	});
+
 	// r.as({
 	// 	"secret": "ssnqAfDUjc6Bkevd1Xmz5dJS5yHdz",
 	// 	"address": "rBuLBiHmssAMHWQMnEN7nXQXaVj7vhAv6Q"
 	// });
-	 createTable(tb, false); //创建表
+	createTable(tb, false); //创建表
 	// 
 	// insertData(tb); //插入数据
 	// del(tb)//删除数据
