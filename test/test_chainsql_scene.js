@@ -67,18 +67,19 @@ function setup_invoke(tableName) {
     
     funcChain.push(new functionEntry(deleteRecord,{tableName:tableName}));
     funcChain.push(new functionEntry(expectValue,{tableName:tableName,expect:[{id:2,age:10,name:'guichuideng'}],message:'delete.'}));
-    
+     
     funcChain.push(new functionEntry(transaction,{tableName:tableName}));
     funcChain.push(new functionEntry(expectValue,
                     {tableName:tableName,
                     expect:[{id:2,age:10,name:'guichuideng'},
                     {id:4,age:33,name:'zhouxingchi'}],
                     message:'transaction.'}));
-                    
+                   
     newTableName = 'new_' + tableName;
     funcChain.push(new functionEntry(renameTable,{tableName:tableName,newTableName:newTableName}));
     
     funcChain.push(new functionEntry(dropTable,{tableName:newTableName}));
+   
 }
 
 Function.prototype.getName = function(){
@@ -118,7 +119,7 @@ api.connect('ws://127.0.0.1:6006',function(error, data) {
 		"address": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
 	});
     
-    var tableName = 'aabbccdd';
+    var tableName = 'abcefg';
     setup_invoke(tableName);
     invoke();
 });
@@ -150,9 +151,9 @@ function createTable(tableName) {
 	}], {
 		confidential: false
 	}).submit({
-		expect: 'db_success'
+		expect: 'validate_success'
 	}).then(function(data) {
-        if (data.status === 'db_success') {
+        if (data.status === 'validate_success') {
             console.log('ok     : create table.');
             // insert record
             invoke();
@@ -166,9 +167,9 @@ function createTable(tableName) {
 function dropTable(tableName) {
     api.dropTable(tableName)
     .submit({
-        expect: 'db_success'
+        expect: 'validate_success'
     }).then(function(data) {
-        if (data.status === 'db_success') {
+        if (data.status === 'validate_success') {
             console.log('ok     : drop table.');
             exit();
         }
@@ -181,9 +182,9 @@ function dropTable(tableName) {
 function renameTable(oldTableName, newTableName) {
     api.renameTable(oldTableName,newTableName)
     .submit({
-        expect: 'db_success'
+        expect: 'validate_success'
     }).then(function(data) {
-        if (data.status === 'db_success') {
+        if (data.status === 'validate_success') {
             console.log('ok     : rename table.');
             invoke();
         }
@@ -329,14 +330,12 @@ function transaction(tableName) {
     try {
         api.commit({
             expect: 'db_success',
-            cb: function(error, data) {
-                if (error) {
-                    console.log('failure: transaction. ' + error);
-                } else {
-                    //console.log('ok     : transaction.');
-                    invoke_expect();
-                }
+        }).then(function(data) {
+            if (data.status === 'db_success') {
+                invoke_expect();
             }
+        }).catch(function(error){
+            console.log('failure: transaction. ' + error);
         })        
     } catch (e) {
         console.log('ok     : transaction. exception: ', e);

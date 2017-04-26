@@ -302,11 +302,8 @@ ChainsqlAPI.prototype.commit = function(cb) {
   };
   
   if ((typeof cb) != 'function') {
-    if (!cb.cb) {
-      cb.cb = callback;
-    }
-    
-    return Promise.all(ary).then(function(data) {
+    return new Promise(function(resolve, reject) {
+      return Promise.all(ary).then(function(data) {
       for (var i = 0; i < data.length; i++) {
         for (var key in data[i]) {
           secretMap[key] = data[i][key];
@@ -361,12 +358,12 @@ ChainsqlAPI.prototype.commit = function(cb) {
           let signedRet = that.api.sign(tx_json.txJSON, that.connect.secret);
           that.event.subscriptTx(signedRet.id, function (error, data) {
             if (error) {
-              cb.cb(error, null);
+              reject(error);
             } else {
               if (cb.expect == data.status && data.type === 'singleTransaction') {
                 
                 that.transaction = false;
-                cb.cb(null, {
+                resolve({
                   status: cb.expect,
                   tx_hash: signedRet.id
                 });
@@ -375,10 +372,10 @@ ChainsqlAPI.prototype.commit = function(cb) {
               if (data.status == 'db_error' || data.status == 'db_timeout' || data.status == 'validate_timeout') {
                 
                 that.transaction = false;
-                cb.cb({
+                reject({
                   error: data.status,
                   tx_hash: signedRet.id
-                }, null);
+                });
               }
             }
           });
@@ -393,6 +390,8 @@ ChainsqlAPI.prototype.commit = function(cb) {
         });
       })
     });
+    });
+    
   } else {
     if (!cb) {
       cb = callback;

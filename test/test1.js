@@ -12,7 +12,7 @@ r.connect('ws://192.168.0.151:6006', function(err, data) {
         return
 	}
     console.log('连接成功');
-	var tb = 'aabbcc';
+	var tb = 'aabbgg';
 	r.as({
 		"secret": "snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
 		"address": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
