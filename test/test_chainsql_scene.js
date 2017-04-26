@@ -46,7 +46,7 @@ var user = {
 };
 
 function setup_invoke(tableName) {       
-        
+      
     funcChain.push(new functionEntry(createTable,{tableName:tableName}));
     
     funcChain.push(new functionEntry(assign,{tableName:tableName,user:user}));
@@ -67,19 +67,19 @@ function setup_invoke(tableName) {
     
     funcChain.push(new functionEntry(deleteRecord,{tableName:tableName}));
     funcChain.push(new functionEntry(expectValue,{tableName:tableName,expect:[{id:2,age:10,name:'guichuideng'}],message:'delete.'}));
-     
+    
     funcChain.push(new functionEntry(transaction,{tableName:tableName}));
     funcChain.push(new functionEntry(expectValue,
                     {tableName:tableName,
                     expect:[{id:2,age:10,name:'guichuideng'},
                     {id:4,age:33,name:'zhouxingchi'}],
                     message:'transaction.'}));
-                   
+                  
     newTableName = 'new_' + tableName;
     funcChain.push(new functionEntry(renameTable,{tableName:tableName,newTableName:newTableName}));
     
     funcChain.push(new functionEntry(dropTable,{tableName:newTableName}));
-   
+
 }
 
 Function.prototype.getName = function(){
@@ -122,6 +122,9 @@ api.connect('ws://127.0.0.1:6006',function(error, data) {
     var tableName = 'abcefg';
     setup_invoke(tableName);
     invoke();
+	
+	//createTable_using_callback(tableName);
+	//dropTable_using_callback(tableName);
 });
 
 function exit() {
@@ -164,6 +167,37 @@ function createTable(tableName) {
 	});
 }
 
+function createTable_using_callback(tableName) {
+    api.setRestrict(false);
+    api.createTable(tableName, [{
+		"field": "id",
+		"type": "int",
+		"length": 11,
+		"PK": 1,
+		"NN": 1,
+		"UQ": 1,
+		"AI": 1
+	}, {
+		"field": "age",
+		"type": "int",
+		"length": 11,
+		"default": 0
+	}, {
+		"field": "name",
+		"type": "varchar",
+		"length": 46,
+		"default": "null"
+	}], {
+		confidential: false
+	}).submit(function(error, data) {
+		if(error) {
+			console.log('createTable_using_callback ', error);
+		} else {
+			console.log('createTable_using_callback ', data);
+		}
+	});
+}
+
 function dropTable(tableName) {
     api.dropTable(tableName)
     .submit({
@@ -177,6 +211,17 @@ function dropTable(tableName) {
         console.log('failure: drop table. ' + JSON.stringify(e));
         exit();
     });
+}
+
+function dropTable_using_callback(tableName) {
+    api.dropTable(tableName)
+    .submit(function(error, data) {
+		if(error) {
+			console.log('dropTable_using_callback ', error);
+		} else {
+			console.log('dropTable_using_callback ', data);
+		}
+	});
 }
 
 function renameTable(oldTableName, newTableName) {
@@ -257,11 +302,13 @@ function expectValue(tableName, expect, message) {
     }
     
     api.table(tableName).get([])
-    .submit(function(err, data) {
+    .submit(function(err, result) {
+		var data = result.lines;
         if (err) {
             console.log(err)   
         } else {
             if (expect.length != data.length) {
+				console.log('failure: ' + message);
                 console.log('Expect count of record is ' + expect.length + ',but it is ' + data.length);
                 console.log(data);
                 exit(0);
@@ -340,4 +387,20 @@ function transaction(tableName) {
     } catch (e) {
         console.log('ok     : transaction. exception: ', e);
     };
+	
+	/*
+	try {
+        api.commit(function(error, data) {
+			if (error) {
+				console.log('ok     : transaction. exception: ', e);
+			} else {
+				if (data.status === 'db_success') {
+					invoke_expect();
+				}
+			}
+		});        
+    } catch (e) {
+        console.log('ok     : transaction. exception: ', e);
+    };
+	*/
 }
