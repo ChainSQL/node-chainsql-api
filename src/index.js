@@ -403,12 +403,23 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 							}, null);
 						}
 					}		
+				}).then(function(data) {
+					// subscriptTx success
+				}).catch(function(error) {
+					// subscriptTx failure
+					reject('subscriptTx failure.' + error);
 				});
 				
 				ChainSQL.api.submit(signedRet.signedTransaction).then(function(result) {
 					if (result.resultCode != 'tesSUCCESS') {
 						ChainSQL.transaction = false;
-						ChainSQL.event.unsubscriptTx(signedRet.id);
+						ChainSQL.event.unsubscriptTx(signedRet.id)
+						.then(function(data) {
+							// unsubscriptTx success
+						}).catch(function(error) {
+							// unsubscriptTx failure
+							reject('unsubscriptTx failure.' + error);
+						});
 						throw new Error(result.resultMessage);
 					}
 				}).catch(function(error) {
@@ -502,13 +513,24 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 						});
 					}
 				}
+			}).then(function(data) {
+				// subscriptTx success
+			}).catch(function(error) {
+				// subscriptTx failure
+				reject('subscriptTx failure.' + error);
 			});
 			
 			// submit transaction
 			ChainSQL.api.submit(signedRet.signedTransaction).then(function(result) {
 				//console.log('submit ', JSON.stringify(result));
 				if (result.resultCode != 'tesSUCCESS') {
-					ChainSQL.event.unsubscriptTx(signedRet.id);
+					ChainSQL.event.unsubscriptTx(signedRet.id)
+					.then(function(data) {
+					// unsubscriptTx success
+					}).catch(function(error) {
+						// unsubscriptTx failure
+						reject('unsubscriptTx failure.' + error);
+					});
 					reject(result);
 				} else {
 					// submit successfully

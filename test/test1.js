@@ -7,13 +7,13 @@ var user = {
 	publickKey: "aBP8JEiNXr3a9nnBFDNKKzAoGNezoXzsa1N8kQAoLU5F5HrQbFvs"
 };
 
-r.connect('ws://192.168.0.151:6006', function(err, data) {
+r.connect('ws://127.0.0.1:6006', function(err, data) {
 	if (err) {
 		console.log('连接失败. ', JSON.stringify(e));
         return
 	}
     console.log('连接成功');
-	var tb = 'aabbgg';
+	var tb = 'peersafe';
 	r.as({
 		"secret": "snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
 		"address": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
@@ -23,7 +23,7 @@ r.connect('ws://192.168.0.151:6006', function(err, data) {
 	// 	"secret": "ssnqAfDUjc6Bkevd1Xmz5dJS5yHdz",
 	// 	"address": "rBuLBiHmssAMHWQMnEN7nXQXaVj7vhAv6Q"
 	// });
-	createTable(tb, false); //创建表
+	//createTable(tb, false); //创建表
 	// 
 	// insertData(tb); //插入数据
 	// del(tb)//删除数据
@@ -31,7 +31,8 @@ r.connect('ws://192.168.0.151:6006', function(err, data) {
 	// getData(tb);//获取数据
 	// assign(tb, user); //授权表
 	// transaction();//事务
-	// subTable(tb,'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh');
+	 subTable(tb,'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh');
+	// unsubTable('rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', tb);
 	 // getLedger();
 });
 
@@ -289,7 +290,31 @@ function subTable(tb, owner) {
 	var event = r.event;
 	event.subscriptTable(tb, owner, function(err, data) {
 		console.log(err, data)
-	})
+	}).then(function(data) {
+		console.log('subTable success.');
+	}).catch(function(error) {
+		console.log('subTable failure.');
+	});
+	
+	setTimeout(function() {
+		unsubTable(owner, tb);
+	},2000);
+}
+
+function unsubTable(tb, owner) {
+	try {
+		var event = r.event;
+		event.unsubscriptTable(tb, owner)
+		.then(function(data) {
+			console.log('unsubTable success.');
+		})
+		.catch(function(error) {
+			console.log('unsubTable failure. ', error);
+		});		
+	} catch (error) {
+		console.log('unsubTable: ', error);
+	}
+
 }
 
 function getLedger() {

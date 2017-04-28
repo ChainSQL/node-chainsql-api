@@ -388,13 +388,24 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 							}, null);
 						}
 					}
+				}).then(function(data) {
+					// subscriptTx success
+				}).catch(function(error) {
+					// subscriptTx failure
+					reject('subscriptTx failure.' + error);
 				});
 				
 				// submit transaction
 				connect.api.submit(signedRet.signedTransaction).then(function(result) {
 					//console.log('submit ', JSON.stringify(result));
 					if (result.resultCode != 'tesSUCCESS') {
-						ChainSQL.event.unsubscriptTx(signedRet.id);
+						ChainSQL.event.unsubscriptTx(signedRet.id)
+						.then(function(data) {
+							// unsubscriptTx success
+						}).catch(function(error) {
+							// unsubscriptTx failure
+							reject('unsubscriptTx failure.' + error);
+						});
 						cb(result, null);
 					} else {
 						// submit successfully

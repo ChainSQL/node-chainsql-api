@@ -17,8 +17,9 @@ EventManager.prototype.subscriptTable = function(name, owner, cb) {
     _onMessage(that);
     that.onMessage = true;
   };
-  that.connect.request(messageTx);
+  var promise = that.connect.request(messageTx);
   that.cache[name + owner] = cb;
+  return promise;
 };
 EventManager.prototype.subscriptTx = function(id, cb) {
   var that = this;
@@ -30,9 +31,9 @@ EventManager.prototype.subscriptTx = function(id, cb) {
     _onMessage(that);
     that.onMessage = true;
   };
-  that.connect.request(messageTx);
-  var event = new EventEmitter();
+  var promise = that.connect.request(messageTx);
   that.cache[id] = cb;
+  return promise;
 };
 EventManager.prototype.unsubscriptTable = function(owner, name) {
   var messageTx = {
@@ -44,8 +45,10 @@ EventManager.prototype.unsubscriptTable = function(owner, name) {
     _onMessage(this);
     this.onMessage = true;
   };
-  this.connect.request(JSON.stringify(messageTx));
-  delete this.cache[name + owner];
+
+  var promise = this.connect.request(messageTx);
+  delete this.cache[name + owner]; 
+  return promise;  
 };
 EventManager.prototype.unsubscriptTx = function(id) {
   var that = this;
@@ -54,11 +57,12 @@ EventManager.prototype.unsubscriptTx = function(id) {
     "transaction": id
   };
   if (!this.onMessage) {
-    _onMessage(that, resolve);
+    _onMessage(that);
     that.onMessage = true;
   };
-  that.connect.request(messageTx);
+  var promise = that.connect.request(messageTx);
   delete that.cache[id];
+  return promise;
 };
 
 function _onMessage(that) {
