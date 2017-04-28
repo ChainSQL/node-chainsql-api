@@ -293,7 +293,7 @@ function subTable(tb, owner) {
 	}).then(function(data) {
 		console.log('subTable success.');
 	}).catch(function(error) {
-		console.log('subTable failure.');
+		console.log('subTable success.');
 	});
 	
 	setTimeout(function() {
@@ -301,7 +301,7 @@ function subTable(tb, owner) {
 	},2000);
 }
 
-function unsubTable(tb, owner) {
+function unsubTable(owner, tb) {
 	try {
 		var event = r.event;
 		event.unsubscriptTable(tb, owner)
