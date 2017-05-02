@@ -91,7 +91,7 @@
     [
       "OpType",
       {
-        "nth": 4,
+        "nth": 50,
         "isVLEncoded": false,
         "isSerialized": true,
         "isSigningField": true,
@@ -231,7 +231,7 @@
     [
       "NeedVerify",
       {
-        "nth": 15,
+        "nth": 52,
         "isVLEncoded": false,
         "isSerialized": true,
         "isSigningField": true,
@@ -1191,17 +1191,7 @@
     [
       "User",
       {
-        "nth": 9,
-        "isVLEncoded": true,
-        "isSerialized": true,
-        "isSigningField": true,
-        "type": "AccountID"
-      }
-    ],
-    [
-      "TableOwner",
-      {
-        "nth": 10,
+        "nth": 50,
         "isVLEncoded": true,
         "isSerialized": true,
         "isSigningField": true,
@@ -1321,7 +1311,7 @@
 	[
       "Table",
       {
-        "nth": 12,
+        "nth": 50,
         "isVLEncoded": false,
         "isSerialized": true,
         "isSigningField": true,
@@ -1431,7 +1421,7 @@
 	[
       "Tables",
       {
-        "nth": 11,
+        "nth": 51,
         "isVLEncoded": false,
         "isSerialized": true,
         "isSigningField": true,
@@ -1521,7 +1511,7 @@
     [
       "NameInDB",
       {
-        "nth": 5,
+        "nth": 50,
         "isVLEncoded": false,
         "isSerialized": true,
         "isSigningField": true,

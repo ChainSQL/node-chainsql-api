@@ -148,6 +148,32 @@ ChainsqlAPI.prototype.createTable = function(name, raw, opt) {
   }
 }
 
+ChainsqlAPI.prototype.recreateTable = function(name) {
+  let that = this;
+  if (that.transaction) {
+    var json = {
+      OpType: opType['t_create'],
+      TableName: name,
+      confidential: confidential
+    };
+    this.cache.push(json);
+    return;
+  } else {
+    let payment = {
+      address: that.connect.address,
+      opType: opType['t_recreate'],
+      tables: [{
+        Table: {
+          TableName: convertStringToHex(name)
+        }
+      }],
+      tsType: 'TableListSet'
+    };
+    this.payment = payment;
+    return this;
+  }
+}
+
 ChainsqlAPI.prototype.dropTable = function(name) {
   let that = this;
   if (that.transaction) {
