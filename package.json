@@ -14,6 +14,7 @@
     "lodash": "^4.14.1",
     "ripple-binary-codec": "^0.1.10",
     "ripple-keypairs": "^0.10.0",
+    "ripple-address-codec": "^2.0.1",
     "ripple-lib": "0.17.6",
     "sjcl": "~1.0.3",
     "ws": "^2.2.2"
