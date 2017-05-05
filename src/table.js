@@ -370,7 +370,20 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 						cb(err, null);
 					} else {
 						// success
-						if (object.expect == data.status && data.type === 'singleTransaction') {
+                        if (object === undefined ) {
+								// compatible with old version
+                                //console.log('subscribe \n\t', JSON.stringify(data));
+                                if ((data.status == 'validate_success' || data.status == 'db_success') 
+                                && data.type === 'singleTransaction') {
+                                    cb(null, {
+                                        resultCode: 'tesSUCCESS',
+                                        resultMessage: 'SUCCESS',
+                                        status: data.status,
+                                        txId: signedRet.id
+                                    });
+                                }
+                            
+                        } else if (object.expect == data.status && data.type === 'singleTransaction') {
 							cb(null, {
 								status: object.expect,
 								tx_hash: signedRet.id
@@ -408,8 +421,9 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 						});
 						cb(result, null);
 					} else {
+                        //console.log('submit result:\n\t', JSON.stringify(result));
 						// submit successfully
-						if (isFunction == false && object.expect == 'send_success') {
+						if (isFunction == false && object != undefined && object.expect == 'send_success') {
 							resolve(null, {
 								status: 'send_success',
 								tx_hash: signedRet.id
@@ -446,7 +460,7 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
 	}
 	
 	var connect = ChainSQL.connect;
-	
+	//console.log('select \n\t', JSON.stringify(ChainSQL.query));
 	connect.api.connection.request({
 		command: 'r_get',
 		tx_json: {
@@ -472,10 +486,15 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
 Table.prototype.submit = function(cb) {
   var connect = this.connect;
   var that = this;
+  //if (cb === undefined || cb === null) {
+  //  cb = {expect:'send_success'};
+  //}
+  
   if (that.exec == 'r_get') {
     if (Object.prototype.toString.call(this.query[0]) !== '[object Array]') {
       this.query.unshift([]);
     };
+    
     if ((typeof cb) != 'function') {
       return new Promise(function(resolve, reject) {
 		  handleGetRecord(that, cb, resolve, reject);

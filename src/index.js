@@ -521,7 +521,21 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 					reject(err);
 				} else {
 					// success
-					if (object.expect == data.status && data.type === 'singleTransaction') {
+					if (object === undefined) {
+						// compatible with old version
+                        if((data.status == 'validate_success' || data.status == 'db_success') 
+                        && data.type === 'singleTransaction') {
+                            resolve({
+                                resultCode:'tesSUCCESS',
+                                resultMessage:'SUCCESS',
+                                status:data.status,
+                                txId:signedRet.id
+                            });
+                        }
+                            
+                    } else if (object != undefined 
+                        && object.expect == data.status 
+                        && data.type === 'singleTransaction') {
 						resolve({
 							status: object.expect,
 							tx_hash: signedRet.id
@@ -560,7 +574,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 					reject(result);
 				} else {
 					// submit successfully
-					if (isFunction == false && object.expect == 'send_success') {
+					if (isFunction == false && object != undefined && object.expect == 'send_success') {
 						resolve({
 							status: 'send_success',
 							tx_hash: signedRet.id
@@ -608,6 +622,11 @@ ChainsqlAPI.prototype.submit = function(cb) {
   if (that.transaction) {
     throw new Error('you are now in transaction,can not be submit')
   } else {
+      
+    //if (cb === undefined || cb === null) {
+    //    cb = {expect:'send_success'};
+    //}
+    
     if ((typeof cb) != 'function') {
       return new Promise(function(resolve, reject) {
         if (that.payment.opType == opType['t_grant']) {
