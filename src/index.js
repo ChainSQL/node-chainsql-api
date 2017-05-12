@@ -104,6 +104,114 @@ ChainsqlAPI.prototype.table = function(name) {
   this.tab.event = this.event;
   return this.tab;
 }
+
+ChainsqlAPI.prototype.generateAddress = function() {
+  return this.api.generateAddress();
+}
+
+// active account
+function paymentSetting(ChainSQL, account, resolve, reject) {
+	try {
+		let userInfo = {
+			"domain": "www.peersafe.com",
+			"memos": [{
+				"type": "USERINFO",
+				"format": "plain/text",
+				"data": ""
+			}]
+		};	
+		//设置用户信息
+		userInfo.memos[0].data = JSON.stringify(_.omit(data, ['pwd']));
+		ChainSQL.api.prepareSettings(account.address, userInfo)
+		.then(function(data) {
+			//console.log('prepareSettings: ', JSON.stringify(data));
+			try {
+				let signedRet = ChainSQL.api.sign(data.txJSON, account.secret);
+				return ChainSQL.api.submit(signedRet.signedTransaction);
+			} 
+			catch (error) {
+				//console.log('sign prepareSettings failure.', JSON.stringify(error));
+				reject(error);				
+			}
+		})
+		.then(function(data) {
+			//console.log('sign prepareSetting: ', JSON.stringify(data));
+			if (data.resultCode === 'tesSUCCESS') {
+				resolve({
+					status: 0,
+					message: ''
+				});
+			} else {
+				reject({
+					status: -1,
+					message: data.resultMessage
+				});				
+			}
+		})
+		.catch(function(error) {
+			reject(error);
+		});
+		}
+	catch(error) {
+		reject(error);
+	}
+
+}
+
+function preparePayment(ChainSQL, account, resolve, reject) {
+	let payment = {
+		source: {
+			address: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', // root account
+			maxAmount: {
+				value: '10000',
+				currency: 'XRP'
+			}
+		},
+		destination: {
+			address: account.address,
+			amount: {
+				value: '1000',
+				currency: 'XRP'
+			}
+		}
+	};
+	
+	try {
+		ChainSQL.api.preparePayment(payment.source.address, payment)
+		.then(function (data) {
+			//console.log('preparePayment: ', JSON.stringify(data));
+			try {
+				let signedRet = ChainSQL.api.sign(data.txJSON, 'snoPBrXtMeMyMHUVTgbuqAfg1SUTb');
+				return ChainSQL.api.submit(signedRet.signedTransaction);
+			} catch (error) {
+				//console.log('sign preparePayment failure.', JSON.stringify(error));
+				reject(error);
+			}
+		})
+		.then(function(data) {
+			if (data.resultCode === 'tesSUCCESS') {
+				paymentSetting(ChainSQL, account, resolve, reject);
+			} else {
+				console.log('sign preparePayment: ', JSON.stringify(data));
+				reject(data);
+			}
+		})
+		.catch(function(error) {
+			reject(error);
+		});		
+	}
+	catch (error) {
+		reject(error);
+	}
+}
+
+ChainsqlAPI.prototype.activeAccount = function(account) {
+	var self = this;
+	return new Promise(function(resolve, reject) {
+		preparePayment(self, account, resolve, reject);
+	});
+}
+
 ChainsqlAPI.prototype.createTable = function(name, raw, opt) {
   validate.create(raw);
   var opt = opt;

@@ -49,6 +49,8 @@ function setup_invoke(tableName) {
       
     funcChain.push(new functionEntry(createTable,{tableName:tableName}));
     
+	funcChain.push(new functionEntry(createAccountAndActive,{tableName:''}));
+	
     funcChain.push(new functionEntry(assign,{tableName:tableName,user:user}));
     
     funcChain.push(new functionEntry(insertRecord,{tableName:tableName}));
@@ -79,7 +81,8 @@ function setup_invoke(tableName) {
     funcChain.push(new functionEntry(renameTable,{tableName:tableName,newTableName:newTableName}));
     
     funcChain.push(new functionEntry(dropTable,{tableName:newTableName}));
-
+	
+	
 }
 
 Function.prototype.getName = function(){
@@ -122,7 +125,7 @@ api.connect('ws://127.0.0.1:6006',function(error, data) {
     var tableName = 'abcefg';
     setup_invoke(tableName);
     invoke();
-	
+
 	//createTable_using_callback(tableName);
 	//dropTable_using_callback(tableName);
 });
@@ -403,4 +406,24 @@ function transaction(tableName) {
         console.log('ok     : transaction. exception: ', e);
     };
 	*/
+}
+
+function createAccountAndActive() {
+	var account = api.generateAddress();
+	//console.log(account);
+	api.activeAccount(account)
+	.then(function(data) {
+		if (data.status == 0) {
+			console.log(JSON.stringify(account));
+			console.log('ok		: activeAccount.', JSON.stringify(data));
+			invoke();
+		} else {
+			console.log('failure	: activeAccount.', JSON.stringify(data));
+			exit();
+		}
+	})
+	.catch(function(error) {
+		console.log('failure	: activeAccount.', JSON.stringify(error));
+		exit();
+	});
 }
