@@ -2,6 +2,7 @@
 const path = require('path');
 const fs = require('fs');
 const crypto = require('../lib/crypto');
+const keypairs = require('ripple-keypairs');
 const EventManager = require('./eventManager')
 
 var basePath = path.join(require.resolve('ripple-binary-codec'), '../enums/definitions.json');
@@ -106,7 +107,11 @@ ChainsqlAPI.prototype.table = function(name) {
 }
 
 ChainsqlAPI.prototype.generateAddress = function() {
-  return this.api.generateAddress();
+  let ripple = new RippleAPI();
+  var account = ripple.generateAddress();
+  var keypair = keypairs.deriveKeypair(account.secret);
+  account.publickKey = keypair.publicKey
+  return account;
 }
 
 // active account
