@@ -345,7 +345,8 @@ ChainsqlAPI.prototype.grant = function(name, user, flags, publicKey) {
       OpType: opType['t_grant'],
       TableName: name,
       Raw: flags,
-      publicKey: publicKey
+      publicKey: publicKey,
+      User: user
     });
     return;
   } else {
@@ -381,7 +382,7 @@ ChainsqlAPI.prototype.assignCancelTable = function(name, user, flags) {
   } else {
     let payment = {
       address: that.connect.address,
-      opType: opType['t_assignCancle'],
+      opType: opType['t_assignCancel'],
       tables: [{
         Table: {
           TableName: convertStringToHex(name),
@@ -486,15 +487,18 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 					cache[i].Raw = crypto.aesEncrypt(secret, JSON.stringify(cache[i].Raw)).toUpperCase();
 				};
 				
-				if (cache[i].OpType == 4) {
+				if (cache[i].OpType == opType['t_assign'] || cache[i].OpType == opType['t_grant']) {
 					token = crypto.eciesEncrypt(secret, cache[i].publicKey);
 				};
 				
-				if (cache[i].OpType == 4 || cache[i].OpType == 1) {
+				if (cache[i].OpType == opType['t_assign'] || cache[i].OpType == opType['t_grant'] || cache[i].OpType == opType['t_create']) {
 					cache[i].Token = token;
+                    //remove publicKey field
+                    delete cache[i].publicKey;
 				}
 			} else {
 				cache[i].Raw = convertStringToHex(JSON.stringify(cache[i].Raw));
+                delete cache[i].publicKey;
 			}
 			
 			var tableName = cache[i].TableName;

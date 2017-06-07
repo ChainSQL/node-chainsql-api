@@ -12,13 +12,14 @@ const opType = {
 	t_create: 1,
 	t_drop: 2,
 	t_rename: 3,
-	t_grant: 11,
-	t_assignCancle: 5,
+	t_assign:4,
+	t_assignCancel: 5,
 	r_insert: 6,
 	r_get: 7,
 	r_update: 8,
 	r_delete: 9,
 	t_assert:10,
+	t_grant: 11,
 	t_recreate:12
 }
 exports.permission = permission;
