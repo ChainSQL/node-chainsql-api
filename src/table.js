@@ -464,6 +464,7 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
 	connect.api.connection.request({
 		command: 'r_get',
 		tx_json: {
+            Account:connect.address,
 			Owner: connect.scope,
 			Tables: [{
 				Table: {
