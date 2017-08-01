@@ -164,29 +164,31 @@ function paymentSetting(ChainSQL, account, resolve, reject) {
 }
 
 function preparePayment(ChainSQL, account, resolve, reject) {
-	let payment = {
-		source: {
-			address: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', // root account
-			maxAmount: {
-				value: '10000',
-				currency: 'XRP'
-			}
-		},
-		destination: {
-			address: account.address,
-			amount: {
-				value: '1000',
-				currency: 'XRP'
-			}
-		}
-	};
+    let address = ChainSQL.connect.address;
+    let secret = ChainSQL.connect.secret;
+    let payment = {
+        source: {
+            address: address, // root account
+            maxAmount: {
+                value: '10000',
+                currency: 'XRP'
+            }
+        },
+        destination: {
+            address: account.address,
+            amount: {
+                value: '1000',
+                currency: 'XRP'
+            }
+        }
+    };
 	
 	try {
 		ChainSQL.api.preparePayment(payment.source.address, payment)
 		.then(function (data) {
 			//console.log('preparePayment: ', JSON.stringify(data));
 			try {
-				let signedRet = ChainSQL.api.sign(data.txJSON, 'snoPBrXtMeMyMHUVTgbuqAfg1SUTb');
+				let signedRet = ChainSQL.api.sign(data.txJSON, secret);
 				return ChainSQL.api.submit(signedRet.signedTransaction);
 			} catch (error) {
 				//console.log('sign preparePayment failure.', JSON.stringify(error));
@@ -210,7 +212,7 @@ function preparePayment(ChainSQL, account, resolve, reject) {
 	}
 }
 
-ChainsqlAPI.prototype.activeAccount = function(account) {
+ChainsqlAPI.prototype.pay = function(account) {
 	var self = this;
 	return new Promise(function(resolve, reject) {
 		preparePayment(self, account, resolve, reject);
