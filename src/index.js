@@ -267,7 +267,7 @@ ChainsqlAPI.prototype.recreateTable = function(name) {
   let that = this;
   if (that.transaction) {
     var json = {
-      OpType: opType['t_create'],
+      OpType: opType['t_recreate'],
       TableName: name,
       confidential: confidential
     };
@@ -370,35 +370,7 @@ ChainsqlAPI.prototype.grant = function(name, user, flags, publicKey) {
     return this;
   }
 }
-ChainsqlAPI.prototype.assignCancelTable = function(name, user, flags) {
-  if (!(name && user && flags)) throw new Error('args is not enough')
-  flags = validate.assign(flags)
-  let that = this;
-  if (that.transaction) {
-    this.cache.push({
-      OpType: opType['t_create'],
-      TableName: name,
-      Raw: raw
-    });
-    return;
-  } else {
-    let payment = {
-      address: that.connect.address,
-      opType: opType['t_assignCancel'],
-      tables: [{
-        Table: {
-          TableName: convertStringToHex(name),
-          NameInDB: nameInDB
-        }
-      }],
-      flags: flags,
-      user: user,
-      tsType: 'TableListSet'
-    }
-    this.payment = payment;
-    return this;
-  }
-}
+
 ChainsqlAPI.prototype.getTransactions = function(opts, cb) {
   if (this.connect && this.connect.address) {
     if (!opts) {
