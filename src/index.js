@@ -233,7 +233,8 @@ ChainsqlAPI.prototype.createTable = function(name, raw, opt) {
       OpType: opType['t_create'],
       TableName: name,
       Raw: raw,
-      confidential: confidential
+			confidential: confidential,
+			operationRule: opt.operationRule
     };
 
     this.cache.push(json);
@@ -248,8 +249,10 @@ ChainsqlAPI.prototype.createTable = function(name, raw, opt) {
         }
       }],
       raw: JSON.stringify(raw),
-      tsType: 'TableListSet'
-    };
+			tsType: 'TableListSet',
+			operationRule: opt.operationRule
+		};
+		
     if (confidential) {
       var token = generateToken(that.connect.secret);
       var secret = decodeToken(that, token);
@@ -706,6 +709,27 @@ function handleGrantPayment(ChainSQL, object, resolve, reject) {
 		prepareTable(ChainSQL, ChainSQL.payment, object, resolve, reject);	
 				
 	});
+}
+
+ChainsqlAPI.prototype.sign = function(json,secret){
+	if(!json.Fee){
+		json.Fee = "50";
+	}
+	let ripple = new RippleAPI();
+	return ripple.sign(JSON.stringify(json), secret);
+}
+
+ChainsqlAPI.prototype.signFor = function(json,secret,option){
+	if(!json.Fee){
+		json.Fee = "50";
+	}
+	let ripple = new RippleAPI();
+	var signed = ripple.sign(JSON.stringify(json), secret,option);
+	return signed;
+}
+
+ChainsqlAPI.prototype.encryptText = function(plainText,listPublic){
+
 }
 
 ChainsqlAPI.prototype.submit = function(cb) {

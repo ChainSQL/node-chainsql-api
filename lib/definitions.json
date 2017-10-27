@@ -1099,6 +1099,16 @@
       }
     ],
     [
+      "OperationRule",
+      {
+        "nth": 56,
+        "isVLEncoded": true,
+        "isSerialized": true,
+        "isSigningField": true,
+        "type": "Blob"
+      }
+    ],
+    [
         "Fulfillment",
         {
             "nth": 16,
