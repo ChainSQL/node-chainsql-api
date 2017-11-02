@@ -17,7 +17,12 @@ var owner = {
 	"address": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"	
 }
 
-var sTableName = "sss";
+// var owner = {
+// 	"address":"r93pPN539JdTNqFsmeSJBYafd7ZzzpVCC"
+// }
+
+
+var sTableName = "Jerry";
 var sTableName2 = "boy22";
 var sReName = "boy11";
 var sTableName3 = "hijack1";
@@ -26,8 +31,9 @@ main();
 
 async function main(){
 	try {
-
 		await c.connect('ws://192.168.0.110:6007');
+		//await c.connect('ws://192.168.0.14:6006');
+
 		console.log('连接成功')
 
 		c.as(owner);
@@ -69,7 +75,7 @@ async function testAccount(){
 }
 
 async function testChainsql(){
-	await testCreateTable();
+	// await testCreateTable();
 
 	// //创建另一张表，用来测试rename,drop
 	// await testCreateTable1();
@@ -77,7 +83,7 @@ async function testChainsql(){
 	// await testUpdate();
 	// await testDelete();
 	// await testRename();
-	//  await testGet();
+	await testGet();
 	// await testDrop();
 	// await testGrant();
 	// await testTxs();
@@ -158,10 +164,15 @@ var testRename= async function(){
 	console.log("testRename",rs);
 }
 var testGet = async function(){
-	var raw = []//{id:1}// [{"sum('MONEY') as"}]"SUM('ACCOUNT_TYPE_OPPONENT')"
+
+	var raw = []
 	//求和
-	var rs = await c.table(sTableName).get(raw).withFields(["SUM(LQD_UUID)"]).submit();
-	var rs = await c.table(sTableName).get(raw).withFields([]).submit();
+	// var rs = await c.table(sTableName).get(raw).withFields(["SUM(id)"]).submit();
+	// var rs = await c.table(sTableName).get(raw).withFields([]).submit();
+
+	// var raw = {id:1}
+	var rs = await c.table(sTableName).get().withFields(["COUNT(*)"]).submit();
+
 	console.log("testGet",rs.lines);
 }
 var testDrop = async function(){
