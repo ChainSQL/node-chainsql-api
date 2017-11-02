@@ -5,22 +5,23 @@ const crypto = require('../lib/crypto');
 const keypairs = require('ripple-keypairs');
 const EventManager = require('./eventManager')
 
-var basePath = path.join(require.resolve('ripple-binary-codec'), '../enums/definitions.json');
+var basePath = path.join(require.resolve('chainsql-binary-codec'), '../enums/definitions.json');
 var data = fs.readFileSync(path.join(__dirname, '../lib/definitions.json'))
 fs.writeFileSync(basePath, data);
 data = fs.readFileSync(path.join(__dirname, '../lib/parse-transaction.js'));
-basePath = path.join(require.resolve('ripple-lib'), '../ledger/parse/transaction.js');
+basePath = path.join(require.resolve('chainsql-lib'), '../ledger/parse/transaction.js');
 fs.writeFileSync(basePath, data)
 data = fs.readFileSync(path.join(__dirname, '../lib/tx-type.json'));
-basePath = path.join(require.resolve('ripple-lib'), '../common/schemas/objects/tx-type.json');
+basePath = path.join(require.resolve('chainsql-lib'), '../common/schemas/objects/tx-type.json');
 fs.writeFileSync(basePath, data);
-basePath = path.join(require.resolve('ripple-lib'), '../common/connection.js');
+basePath = path.join(require.resolve('chainsql-lib'), '../common/connection.js');
 data = fs.readFileSync(path.join(__dirname, '../lib/connection.js'));
 fs.writeFileSync(basePath, data)
-const RippleAPI = new require('ripple-lib').RippleAPI;
+const RippleAPI = new require('chainsql-lib').RippleAPI;
 
 RippleAPI.prototype.prepareTable = require('./tablePayment');
 RippleAPI.prototype.prepareTx = require('./txPayment');
+const addressCodec = require('ripple-address-codec');
 const _ = require('lodash');
 const validate = require('./validate')
 const Connection = require('./connect');
@@ -107,10 +108,22 @@ ChainsqlAPI.prototype.table = function(name) {
 }
 
 ChainsqlAPI.prototype.generateAddress = function() {
-  let ripple = new RippleAPI();
-  var account = ripple.generateAddress();
-  var keypair = keypairs.deriveKeypair(account.secret);
-  account.publickKey = keypair.publicKey
+	var account;
+	var keypair;
+	let ripple = new RippleAPI();
+	if(arguments.length == 0){
+		account = ripple.generateAddress();
+		keypair = keypairs.deriveKeypair(account.secret);
+	}else{
+		keypair = keypairs.deriveKeypair(arguments[0]);
+		account = {
+			secret : arguments[0],
+			address : keypairs.deriveAddress(keypair.publicKey)
+		}
+	}
+
+	account.publickKey = keypair.publicKey
+
   return account;
 }
 
@@ -171,14 +184,14 @@ function preparePayment(ChainSQL, account, resolve, reject) {
             address: address, // root account
             maxAmount: {
                 value: '10000',
-                currency: 'XRP'
+                currency: 'ZXC'
             }
         },
         destination: {
             address: account,
             amount: {
                 value: '1000',
-                currency: 'XRP'
+                currency: 'ZXC'
             }
         }
     };

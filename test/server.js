@@ -5,7 +5,7 @@ const co = require('co')
 const ChainsqlAPI = require('../src/index').ChainsqlAPI;
 const r = new ChainsqlAPI();
 var path = require('path');
-var basePath = path.join(require.resolve('ripple-lib'), '../common');
+var basePath = path.join(require.resolve('chainsql-lib'), '../common');
 var common = require(basePath);
 var crypto = require('../lib/crypto');
 const keypairs = require('ripple-keypairs');
@@ -33,25 +33,27 @@ co(function*() {
 		// });
 		
 
-		// var cipher = crypto.eciesEncrypt("hello","02F039E54B3A0D209D348F1B2C93BE3689F2A7595DDBFB1530499D03264B87A61F");
-		// var keypair = keypairs.deriveKeypair("ssnqAfDUjc6Bkevd1Xmz5dJS5yHdz");
-		// var plain = crypto.eciesDecrypt(cipher,keypair.privateKey);
-		// console.log(plain);
+		var cipher = crypto.eciesEncrypt("hello","02F039E54B3A0D209D348F1B2C93BE3689F2A7595DDBFB1530499D03264B87A61F");
+		var keypair = keypairs.deriveKeypair("ssnqAfDUjc6Bkevd1Xmz5dJS5yHdz");
+		var plain = crypto.eciesDecrypt(cipher,keypair.privateKey);
+		console.log(plain);
 		
-		// console.log("multi encrypt test:");
-		// var listPublic = ["aBP8JEiNXr3a9nnBFDNKKzAoGNezoXzsa1N8kQAoLU5F5HrQbFvs", "aBP8EvA6tSMzCRbfsLwiFj51vDjE4jPv9Wfkta6oNXEn8TovcxaT"];
-		// var cip = yield crypto.encryptText("test",listPublic);
-		// console.log("cipher:" + cip);
-		// var text = yield crypto.decryptText(cip,"snEqBjWd2NWZK3VgiosJbfwCiLPPZ");
-		// console.log("plain text:" + text);
-		// var text2 = yield crypto.decryptText(cip,"ssnqAfDUjc6Bkevd1Xmz5dJS5yHdz");
-		// console.log("plain text2:" + text2);
+		//字段级加密
+		console.log("multi encrypt test:");
+		var listPublic = ["aBP8JEiNXr3a9nnBFDNKKzAoGNezoXzsa1N8kQAoLU5F5HrQbFvs", "aBP8EvA6tSMzCRbfsLwiFj51vDjE4jPv9Wfkta6oNXEn8TovcxaT"];
+		var cip = yield crypto.encryptText("test",listPublic);
+		console.log("cipher:" + cip);
+		var text = yield crypto.decryptText(cip,"snEqBjWd2NWZK3VgiosJbfwCiLPPZ");
+		console.log("plain text:" + text);
+		var text2 = yield crypto.decryptText(cip,"ssnqAfDUjc6Bkevd1Xmz5dJS5yHdz");
+		console.log("plain text2:" + text2);
+		
 
-		// console.log("AesPadding Test");
-		// var aesCipher = crypto.aesEncrypt("123","test");
-		// console.log(aesCipher);
-		// var aesDecrypted = crypto.aesDecrypt("123","EFBFBD01EFBFBDEFBFBD027CEFBFBD636C1C6522EFBFBD2FEFBFBDEFBFBD");
-		// console.log(aesDecrypted);
+		console.log("AesPadding Test");
+		var aesCipher = crypto.aesEncrypt("123","test");
+		console.log(aesCipher);
+		var aesDecrypted = crypto.aesDecrypt("123","EFBFBD01EFBFBDEFBFBD027CEFBFBD636C1C6522EFBFBD2FEFBFBDEFBFBD");
+		console.log(aesDecrypted);
 		
 
 		// 创建表

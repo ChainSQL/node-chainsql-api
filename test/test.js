@@ -3,6 +3,9 @@ const co = require('co')
 const ChainsqlAPI = require('../src/index').ChainsqlAPI;
 // ChainsqlAPI.prototype.callback2Promise = require('./callback2Promise');
 const c = new ChainsqlAPI();
+
+const RippleAPI = new require('chainsql-lib').RippleAPI;
+
 var user = {
 	secret: "ssnqAfDUjc6Bkevd1Xmz5dJS5yHdz",
 	address: "rBuLBiHmssAMHWQMnEN7nXQXaVj7vhAv6Q",
@@ -14,7 +17,7 @@ var owner = {
 	"address": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"	
 }
 
-var sTableName = "hello3World";
+var sTableName = "sss";
 var sTableName2 = "boy22";
 var sReName = "boy11";
 var sTableName3 = "hijack1";
@@ -23,6 +26,7 @@ main();
 
 async function main(){
 	try {
+
 		await c.connect('ws://192.168.0.110:6007');
 		console.log('连接成功')
 
@@ -57,13 +61,15 @@ async function testRippleAPI(){
 }
 
 async function testAccount(){
+	var acc = c.generateAddress("snoPBrXtMeMyMHUVTgbuqAfg1SUTb");
+	console.log(acc);
 	var account = generateAccount();
 	console.log("new account:",account);
 	await activateAccount(account.address);
 }
 
 async function testChainsql(){
-	//await testCreateTable();
+	await testCreateTable();
 
 	// //创建另一张表，用来测试rename,drop
 	// await testCreateTable1();
@@ -71,12 +77,12 @@ async function testChainsql(){
 	// await testUpdate();
 	// await testDelete();
 	// await testRename();
-	// await testGet();
+	//  await testGet();
 	// await testDrop();
 	// await testGrant();
 	// await testTxs();
 	// await insertAfterGrant();
-	await testOperationRule();	
+	// await testOperationRule();	
 
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
@@ -152,8 +158,10 @@ var testRename= async function(){
 	console.log("testRename",rs);
 }
 var testGet = async function(){
-	var raw = {id:1}
-	var rs = await c.table(sTableName).get(raw).submit();
+	var raw = []//{id:1}// [{"sum('MONEY') as"}]"SUM('ACCOUNT_TYPE_OPPONENT')"
+	//求和
+	var rs = await c.table(sTableName).get(raw).withFields(["SUM(LQD_UUID)"]).submit();
+	var rs = await c.table(sTableName).get(raw).withFields([]).submit();
 	console.log("testGet",rs.lines);
 }
 var testDrop = async function(){
@@ -222,7 +230,7 @@ var testOperationRule = async function(){
 	console.log("testOperationRule",rs)
 }
 
-var generateAccount = function(){
+var generateAccount = async function(){
 	return c.generateAddress();
 }
 var activateAccount = async function(account){
