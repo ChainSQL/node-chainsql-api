@@ -1,6 +1,6 @@
 'use strict'
 const path = require('path');
-const basePath = path.join(require.resolve('ripple-lib'), '../common');
+const basePath = path.join(require.resolve('chainsql-lib'), '../common');
 const common = require(basePath);
 const keypairs = require('ripple-keypairs');
 const cryptoo = require('crypto');

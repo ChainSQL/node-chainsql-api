@@ -36,23 +36,23 @@ co(function*(){
             console.log(data);
         });
 
-        var opt = {
-            maxLedgerVersion:data + 1,
-            minLedgerVersion:data
-        }
-        c.api.getTransaction(signedRet.id,opt).then(function(data){
-            console.log(data);
-        }).catch(function(err){
-            console.log(err);
-        })
+        // var opt = {
+        //     maxLedgerVersion:data + 1,
+        //     minLedgerVersion:data
+        // }
+        // c.api.getTransaction(signedRet.id,opt).then(function(data){
+        //     console.log(data);
+        // }).catch(function(err){
+        //     console.log(err);
+        // })
         
-        setTimeout(function(){
-            c.api.getTransaction(signedRet.id).then(function(data){
-                console.log(data);
-            }).catch(function(err){
-                console.log(err);
-            })
-        },5000);
+        // setTimeout(function(){
+        //     c.api.getTransaction(signedRet.id).then(function(data){
+        //         console.log(data);
+        //     }).catch(function(err){
+        //         console.log(err);
+        //     })
+        // },5000);
     });
     
 
