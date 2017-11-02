@@ -370,35 +370,33 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 						cb(err, null);
 					} else {
 						// success
-                        if (object === undefined ) {
-								// compatible with old version
-                                //console.log('subscribe \n\t', JSON.stringify(data));
-                                if ((data.status == 'validate_success' || data.status == 'db_success') 
-                                && data.type === 'singleTransaction') {
-                                    cb(null, {
-                                        resultCode: 'tesSUCCESS',
-                                        resultMessage: 'SUCCESS',
-                                        status: data.status,
-                                        txId: signedRet.id
-                                    });
-                                }
-                            
-                        } else if (object.expect == data.status && data.type === 'singleTransaction') {
-							cb(null, {
-								status: object.expect,
-								tx_hash: signedRet.id
-							});
-						}
+                if (object === undefined ) {
+								    // compatible with old version
+                    //console.log('subscribe \n\t', JSON.stringify(data));
+                    if ((data.status == 'validate_success' || data.status == 'db_success') 
+                    && data.type === 'singleTransaction') {
+                        cb(null, {
+                            status: data.status,
+                            tx_hash: signedRet.id
+                        });
+                    }
+                
+                } else if (object.expect == data.status && data.type === 'singleTransaction') {
+                    cb(null, {
+                      status: object.expect,
+                      tx_hash: signedRet.id
+                  });
+                }
 
 						// failure
 						if (data.status == 'db_error' 
 							|| data.status == 'db_timeout' 
 							|| data.status == 'validate_timeout') {
-							
-							cb({
-								error: data.status,
-								tx_hash: signedRet.id
-							}, null);
+                cb(null,{
+                  status: data.status,
+                  tx_hash: signedRet.id,
+                  message:data.error_message
+                });
 						}
 					}
 				}).then(function(data) {
@@ -408,7 +406,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 					reject('subscriptTx failure.' + error);
 				});
 				
-				// submit transaction
+        // submit transaction
 				connect.api.submit(signedRet.signedTransaction).then(function(result) {
 					//console.log('submit ', JSON.stringify(result));
 					if (result.resultCode != 'tesSUCCESS') {
@@ -418,8 +416,9 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 						}).catch(function(error) {
 							// unsubscriptTx failure
 							reject('unsubscriptTx failure.' + error);
-						});
-						cb(result, null);
+            });
+    
+						cb(null, result);
 					} else {
                         //console.log('submit result:\n\t', JSON.stringify(result));
 						// submit successfully

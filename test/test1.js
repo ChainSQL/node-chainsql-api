@@ -23,7 +23,7 @@ r.connect('ws://127.0.0.1:6006', function(err, data) {
 	// 	"secret": "ssnqAfDUjc6Bkevd1Xmz5dJS5yHdz",
 	// 	"address": "rBuLBiHmssAMHWQMnEN7nXQXaVj7vhAv6Q"
 	// });
-	//createTable(tb, false); //创建表
+	createTable(tb, false); //创建表
 	// 
 	// insertData(tb); //插入数据
 	// del(tb)//删除数据

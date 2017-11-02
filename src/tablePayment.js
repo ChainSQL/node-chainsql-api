@@ -59,7 +59,8 @@ function createPaymentTransaction(paymentArgument) {
     User:payment.user,
     AutoFillField:payment.autoFillField,
     Token:payment.token,
-    StrictMode: payment.strictMode
+    StrictMode: payment.strictMode,
+    OperationRule: payment.operationRule
   }
   return txJSON;
 }

@@ -175,7 +175,7 @@ function preparePayment(ChainSQL, account, resolve, reject) {
             }
         },
         destination: {
-            address: account.address,
+            address: account,
             amount: {
                 value: '1000',
                 currency: 'XRP'
@@ -184,11 +184,13 @@ function preparePayment(ChainSQL, account, resolve, reject) {
     };
 	
 	try {
+		var hash;
 		ChainSQL.api.preparePayment(payment.source.address, payment)
 		.then(function (data) {
 			//console.log('preparePayment: ', JSON.stringify(data));
 			try {
 				let signedRet = ChainSQL.api.sign(data.txJSON, secret);
+				hash = signedRet.id;
 				return ChainSQL.api.submit(signedRet.signedTransaction);
 			} catch (error) {
 				//console.log('sign preparePayment failure.', JSON.stringify(error));
@@ -197,10 +199,12 @@ function preparePayment(ChainSQL, account, resolve, reject) {
 		})
 		.then(function(data) {
 			if (data.resultCode === 'tesSUCCESS') {
-				paymentSetting(ChainSQL, account, resolve, reject);
+				//paymentSetting(ChainSQL, account, resolve, reject);
+				data.tx_hash = hash;
+				resolve(data);
 			} else {
-				console.log('sign preparePayment: ', JSON.stringify(data));
-				reject(data);
+				//console.log('sign preparePayment: ', JSON.stringify(data));
+				resolve(data);
 			}
 		})
 		.catch(function(error) {
@@ -233,7 +237,8 @@ ChainsqlAPI.prototype.createTable = function(name, raw, opt) {
       OpType: opType['t_create'],
       TableName: name,
       Raw: raw,
-      confidential: confidential
+			confidential: confidential,
+			operationRule: JSON.stringify(opt.operationRule)
     };
 
     this.cache.push(json);
@@ -248,8 +253,10 @@ ChainsqlAPI.prototype.createTable = function(name, raw, opt) {
         }
       }],
       raw: JSON.stringify(raw),
-      tsType: 'TableListSet'
-    };
+			tsType: 'TableListSet',
+			operationRule: JSON.stringify(opt.operationRule)
+		};
+		
     if (confidential) {
       var token = generateToken(that.connect.secret);
       var secret = decodeToken(that, token);
@@ -257,7 +264,10 @@ ChainsqlAPI.prototype.createTable = function(name, raw, opt) {
       payment.token = token.toUpperCase();
     } else {
       payment.raw = convertStringToHex(payment.raw)
-    };
+		};
+		if(payment.operationRule){
+			payment.operationRule = convertStringToHex(payment.operationRule);
+		}
     this.payment = payment;
     return this;
   }
@@ -393,6 +403,10 @@ ChainsqlAPI.prototype.beginTran = function() {
     this.transaction = true;
     return;
   }
+}
+
+ChainsqlAPI.prototype.endTran = function(){
+	this.transaction = false;
 }
 
 function handleCommit(ChainSQL, object, resolve, reject) {
@@ -614,22 +628,22 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 					// success
 					if (object === undefined) {
 						// compatible with old version
-                        if((data.status == 'validate_success' || data.status == 'db_success') 
-                        && data.type === 'singleTransaction') {
-                            resolve({
-                                resultCode:'tesSUCCESS',
-                                resultMessage:'SUCCESS',
-                                status:data.status,
-                                txId:signedRet.id
-                            });
-                        }
-                            
-                    } else if (object != undefined 
-                        && object.expect == data.status 
-                        && data.type === 'singleTransaction') {
-						resolve({
-							status: object.expect,
-							tx_hash: signedRet.id
+						if((data.status == 'validate_success' || data.status == 'db_success') 
+								&& data.type === 'singleTransaction') {
+										resolve({
+												resultCode:'tesSUCCESS',
+												resultMessage:'SUCCESS',
+												status:data.status,
+												txId:signedRet.id
+										});
+								}
+										
+						} else if (object != undefined 
+								&& object.expect == data.status 
+								&& data.type === 'singleTransaction') {
+										resolve({
+											status: object.expect,
+											tx_hash: signedRet.id
 						});
 					}
 
@@ -648,7 +662,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 				// subscriptTx success
 			}).catch(function(error) {
 				// subscriptTx failure
-				reject('subscriptTx failure.' + error);
+				reject('subscriptTx exception.' + error);
 			});
 			
 			// submit transaction
@@ -662,7 +676,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 						// unsubscriptTx failure
 						reject('unsubscriptTx failure.' + error);
 					});
-					reject(result);
+					resolve(result);
 				} else {
 					// submit successfully
 					if (isFunction == false && object != undefined && object.expect == 'send_success') {
@@ -706,6 +720,27 @@ function handleGrantPayment(ChainSQL, object, resolve, reject) {
 		prepareTable(ChainSQL, ChainSQL.payment, object, resolve, reject);	
 				
 	});
+}
+
+ChainsqlAPI.prototype.sign = function(json,secret){
+	if(!json.Fee){
+		json.Fee = "50";
+	}
+	let ripple = new RippleAPI();
+	return ripple.sign(JSON.stringify(json), secret);
+}
+
+ChainsqlAPI.prototype.signFor = function(json,secret,option){
+	if(!json.Fee){
+		json.Fee = "50";
+	}
+	let ripple = new RippleAPI();
+	var signed = ripple.sign(JSON.stringify(json), secret,option);
+	return signed;
+}
+
+ChainsqlAPI.prototype.encryptText = function(plainText,listPublic){
+
 }
 
 ChainsqlAPI.prototype.submit = function(cb) {
