@@ -1,6 +1,6 @@
 {
   "name": "chainsql",
-  "version": "0.6.8",
+  "version": "0.6.10",
   "description": "An database driver for chainsql ",
   "main": "src/index.js",
   "scripts": {
@@ -16,7 +16,7 @@
     "ripple-address-codec": "^2.0.1",
     "chainsql-binary-codec": "^0.1.22",
     "ripple-keypairs": "^0.10.0",
-    "chainsql-lib": "0.17.14",
+    "chainsql-lib": "0.17.15",
     "sjcl": "~1.0.3",
     "ws": "^2.2.2",
     "protobufjs": "^6.8.0"
