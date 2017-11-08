@@ -395,7 +395,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
                 cb(null,{
                   status: data.status,
                   tx_hash: signedRet.id,
-                  message:data.error_message
+                  error_message:data.error_message
                 });
 						}
 					}
@@ -430,7 +430,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 						}
 					}
 				}).catch(function(error) {
-					cb(error, null);
+					throw new Error(error);
 				});
 			});
 		}).catch(function(error) {
@@ -451,7 +451,7 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
 			object(error, data)
 		} else {
 			if (error) {
-				reject(error);
+				resolve(error);
 			} else {
 				resolve(data);
 			}
@@ -463,7 +463,7 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
 	connect.api.connection.request({
 		command: 'r_get',
 		tx_json: {
-            Account:connect.address,
+      Account:connect.address,
 			Owner: connect.scope,
 			Tables: [{
 				Table: {
@@ -474,8 +474,9 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
 			opType: opType[ChainSQL.exec]
 		}
 	}).then(function(data) {
-		if (data.status != 'success')
+		if (data.status != 'success'){
 			cb(new Error(data), null);
+    }
 		cb(null, {diff:data.diff,lines:data.lines});
 	}).catch(function(err) {
 		cb(err, null);
@@ -500,7 +501,7 @@ Table.prototype.submit = function(cb) {
 		  handleGetRecord(that, cb, resolve, reject);
 	  });
     } else {
-		handleGetRecord(that, cb, null, null);
+		  handleGetRecord(that, cb, null, null);
     }
   } else {
     var payment = {
@@ -524,7 +525,7 @@ Table.prototype.submit = function(cb) {
 		  prepareTable(that, payment, cb, resolve, reject);
 	  });
     } else {
-		prepareTable(that, payment, cb, null, null);
+		  prepareTable(that, payment, cb, null, null);
     }
   }
 }

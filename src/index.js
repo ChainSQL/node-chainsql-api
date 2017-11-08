@@ -394,22 +394,59 @@ ChainsqlAPI.prototype.grant = function(name, user, flags, publicKey) {
   }
 }
 
-ChainsqlAPI.prototype.getTransactions = function(opts, cb) {
-  if (this.connect && this.connect.address) {
-    if (!opts) {
-      opts = {}
-    };
-    if ((typeof cb) != 'function') {
-      return this.api.getTransactions(this.connect.address, opts)
-    } else {
-      this.api.getTransactions(this.connect.address, opts).then(function(data) {
-        cb(null, data);
-      }).catch(function(err) {
-        cb(err);
-      });
-    }
-  }
+ChainsqlAPI.prototype.getTransactions = function(address,opts, cb) {
+	if (!opts) {
+		opts = {}
+	};
+	if ((typeof cb) != 'function') {
+		return this.api.getTransactions(address, opts)
+	} else {
+		this.api.getTransactions(address, opts).then(function(data) {
+			cb(null, data);
+		}).catch(function(err) {
+			cb(err);
+		});
+	}
 }
+
+ChainsqlAPI.prototype.getTransaction = function(hash, cb) {
+	if ((typeof cb) != 'function') {
+		return this.api.getTransaction(hash)
+	} else {
+		this.api.getTransaction(hash).then(function(data) {
+			cb(null, data);
+		}).catch(function(err) {
+			cb(err);
+		});
+	}
+}
+
+ChainsqlAPI.prototype.getServerInfo = function(cb) {
+	if ((typeof cb) != 'function') {
+		return this.api.getServerInfo();
+	} else {
+		this.api.getServerInfo().then(function(data) {
+			cb(null, data);
+		}).catch(function(err) {
+			cb(err);
+		});
+	}
+}
+
+ChainsqlAPI.prototype.getUnlList = function(cb) {
+  return this.api.connection.request({
+    command: 'unl_list'
+  }).then(function(data) {
+    if((typeof cb) != 'function'){
+			return data;
+		}else{
+			cb(null,data);
+		}
+	}).catch(function(err){
+		cb(err);
+	})
+}
+
 ChainsqlAPI.prototype.beginTran = function() {
   if (this.connect && this.connect.address) {
     this.cache = [];
@@ -524,51 +561,7 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 			ChainSQL.api.prepareTx(payment).then(function(tx_json) {
 				//console.log(JSON.stringify(tx_json))
 				let signedRet = ChainSQL.api.sign(tx_json.txJSON, ChainSQL.connect.secret);
-				ChainSQL.event.subscriptTx(signedRet.id, isFunction ? object : function(error, data) {
-					if (error) {
-						cb(error, null);
-					} else {
-						if (object.expect == data.status && data.type === 'singleTransaction') {
-							ChainSQL.transaction = false;
-							cb(null, {
-								status: object.expect,
-								tx_hash: signedRet.id
-							});
-						}
-
-						if (data.status == 'db_error' 
-							|| data.status == 'db_timeout' 
-							|| data.status == 'validate_timeout') {
-
-							ChainSQL.transaction = false;
-							cb({
-								error: data.status,
-								tx_hash: signedRet.id
-							}, null);
-						}
-					}		
-				}).then(function(data) {
-					// subscriptTx success
-				}).catch(function(error) {
-					// subscriptTx failure
-					reject('subscriptTx failure.' + error);
-				});
-				
-				ChainSQL.api.submit(signedRet.signedTransaction).then(function(result) {
-					if (result.resultCode != 'tesSUCCESS') {
-						ChainSQL.transaction = false;
-						ChainSQL.event.unsubscriptTx(signedRet.id)
-						.then(function(data) {
-							// unsubscriptTx success
-						}).catch(function(error) {
-							// unsubscriptTx failure
-							reject('unsubscriptTx failure.' + error);
-						});
-						throw new Error(result.resultMessage);
-					}
-				}).catch(function(error) {
-					cb(error, null);
-				});
+				handleSignedTx(ChainSQL,signedRet,object,resolve,reject);
 			}).catch(function(error) {
 				cb(error, null);
 			});
@@ -611,8 +604,7 @@ ChainsqlAPI.prototype.getLedgerVersion = function(cb) {
   });
 }
 
-function prepareTable(ChainSQL, payment, object, resolve, reject) {
-	
+function handleSignedTx(ChainSQL,signed,object,resolve,reject){
 	var isFunction = false;
 	if ((typeof object) == 'function')
 		isFunction = true;
@@ -624,7 +616,91 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 			reject(error);
 		}
 	};
+	// var exceptFunc = function(exception){
+	// 	if (isFunction) {
+	// 		object(exception, null);
+	// 	} else {
+	// 		reject(exception);
+	// 	}
+	// }
+	var sucFunc = function(data){
+		if(isFunction){
+			object(null,data);
+		}else{
+			resolve(data);
+		}
+	}
+	// subscribe event
+	ChainSQL.event.subscriptTx(signed.id, isFunction ? object : function(err, data) {
+		if (err) {
+			errFunc(err);
+		} else {
+			// success
+			if (object === undefined) {
+				// if 'submit()' called without param, default is validate_success
+				if((data.status == 'validate_success' || data.status == 'db_success') 
+						&& data.type === 'singleTransaction') {
+							sucFunc({
+										status:data.status,
+										tx_hash:signed.id
+								});
+				}
+			} else if (object != undefined 
+						&& object.expect == data.status 
+						&& data.type === 'singleTransaction') {
+							sucFunc({
+									status: object.expect,
+									tx_hash: signed.id
+				});
+			}
+
+			// failure
+			if (data.status == 'db_error' 
+				|| data.status == 'db_timeout' 
+				|| data.status == 'validate_timeout') {
+				
+				errFunc({
+					status: data.status,
+					tx_hash: signed.id,
+					error_message: data.error_message
+				});
+			}
+		}
+	}).then(function(data) {
+		// subscriptTx success
+	}).catch(function(error) {
+		// subscriptTx failure
+		errFunc('subscriptTx exception.' + error);
+	});
 	
+	// submit transaction
+	ChainSQL.api.submit(signed.signedTransaction).then(function(result) {
+		//console.log('submit ', JSON.stringify(result));
+		if (result.resultCode != 'tesSUCCESS') {
+			ChainSQL.event.unsubscriptTx(signed.id).then(function(data) {
+				// unsubscriptTx success
+			}).catch(function(error) {
+				// unsubscriptTx failure
+				errFunc('unsubscriptTx failure.' + error);
+			});
+
+			//return error message
+			sucFunc(result);
+		} else {
+			// submit successfully
+			if (isFunction == false && object != undefined && object.expect == 'send_success') {
+				sucFunc({
+					status: 'send_success',
+					tx_hash: signed.id
+				});
+			}
+		}
+	}).catch(function(error) {
+		errFunc(error);
+	});``
+}
+
+function prepareTable(ChainSQL, payment, object, resolve, reject) {	
 	ChainSQL.api.prepareTable(payment).then(function(tx_json) {
 		getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function(data) {
 			if (data.status == 'error') {
@@ -632,76 +708,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 			}
 			var payment = data.tx_json;
 			let signedRet = ChainSQL.api.sign(JSON.stringify(data.tx_json), ChainSQL.connect.secret);
-			
-			// subscribe event
-			ChainSQL.event.subscriptTx(signedRet.id, isFunction ? object : function(err, data) {
-				if (err) {
-					reject(err);
-				} else {
-					// success
-					if (object === undefined) {
-						// compatible with old version
-						if((data.status == 'validate_success' || data.status == 'db_success') 
-								&& data.type === 'singleTransaction') {
-										resolve({
-												resultCode:'tesSUCCESS',
-												resultMessage:'SUCCESS',
-												status:data.status,
-												txId:signedRet.id
-										});
-								}
-										
-						} else if (object != undefined 
-								&& object.expect == data.status 
-								&& data.type === 'singleTransaction') {
-										resolve({
-											status: object.expect,
-											tx_hash: signedRet.id
-						});
-					}
-
-					// failure
-					if (data.status == 'db_error' 
-						|| data.status == 'db_timeout' 
-						|| data.status == 'validate_timeout') {
-						
-						reject({
-							error: data.status,
-							tx_hash: signedRet.id
-						});
-					}
-				}
-			}).then(function(data) {
-				// subscriptTx success
-			}).catch(function(error) {
-				// subscriptTx failure
-				reject('subscriptTx exception.' + error);
-			});
-			
-			// submit transaction
-			ChainSQL.api.submit(signedRet.signedTransaction).then(function(result) {
-				//console.log('submit ', JSON.stringify(result));
-				if (result.resultCode != 'tesSUCCESS') {
-					ChainSQL.event.unsubscriptTx(signedRet.id)
-					.then(function(data) {
-					// unsubscriptTx success
-					}).catch(function(error) {
-						// unsubscriptTx failure
-						reject('unsubscriptTx failure.' + error);
-					});
-					resolve(result);
-				} else {
-					// submit successfully
-					if (isFunction == false && object != undefined && object.expect == 'send_success') {
-						resolve({
-							status: 'send_success',
-							tx_hash: signedRet.id
-						});
-					}
-				}
-			}).catch(function(error) {
-				errFunc(error);
-			});
+			handleSignedTx(ChainSQL,signedRet,object,resolve,reject);
 		});
 	}).catch(function(error) {
 		errFunc(error);
@@ -752,7 +759,11 @@ ChainsqlAPI.prototype.signFor = function(json,secret,option){
 	return signed;
 }
 
-ChainsqlAPI.prototype.encryptText = function(plainText,listPublic){
+ChainsqlAPI.prototype.encrypt = function(plainText,listPublic){
+
+}
+
+ChainsqlAPI.prototype.decrypt = function(cipher,secret){
 
 }
 
@@ -769,17 +780,17 @@ ChainsqlAPI.prototype.submit = function(cb) {
     if ((typeof cb) != 'function') {
       return new Promise(function(resolve, reject) {
         if (that.payment.opType == opType['t_grant']) {
-			handleGrantPayment(that, cb, resolve, reject);
+					handleGrantPayment(that, cb, resolve, reject);
         } else {
-			prepareTable(that, that.payment, cb, resolve, reject);
+					prepareTable(that, that.payment, cb, resolve, reject);
         }
       });
     } else {
-		if (that.payment.opType == opType['t_grant']) {
-			handleGrantPayment(that, cb, null, null);
-        } else {
-			prepareTable(that, that.payment, cb, null, null);
-        }
+			if (that.payment.opType == opType['t_grant']) {
+				handleGrantPayment(that, cb, null, null);
+			} else {
+				prepareTable(that, that.payment, cb, null, null);
+			}
     }
   }
 }

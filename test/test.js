@@ -22,7 +22,7 @@ var owner = {
 // }
 
 
-var sTableName = "Jerry";
+var sTableName = "sss";
 var sTableName2 = "boy22";
 var sReName = "boy11";
 var sTableName3 = "hijack1";
@@ -32,7 +32,7 @@ main();
 async function main(){
 	try {
 		await c.connect('ws://192.168.0.110:6007');
-		//await c.connect('ws://192.168.0.14:6006');
+		//await c.connect('ws://192.168.0.16:6006');
 
 		console.log('连接成功')
 
@@ -42,9 +42,9 @@ async function main(){
 		// await activateAccount(user.address);
 
 		// testSubscribe();
-		// await testRippleAPI();
+		await testRippleAPI();
 		// await testAccount();
-		await testChainsql();
+		// await testChainsql();
 
 		//await c.disconnect();
 		console.log('运行结束')
@@ -62,20 +62,22 @@ async function testRippleAPI(){
 	// await testGetLedger();
 
 	// await testGetTransactions();
-	await testGetTransaction();
-	await testGetServerInfo();
+	// await testGetTransaction();
+	// await testGetServerInfo();
+	await testUnlList();
 }
 
 async function testAccount(){
-	var acc = c.generateAddress("snoPBrXtMeMyMHUVTgbuqAfg1SUTb");
-	console.log(acc);
-	var account = generateAccount();
-	console.log("new account:",account);
-	await activateAccount(account.address);
+	// var acc = c.generateAddress("snoPBrXtMeMyMHUVTgbuqAfg1SUTb");
+	// console.log(acc);
+	// var account = generateAccount();
+	// console.log("new account:",account);
+	// await activateAccount(account.address);
+	await activateAccount("rBuLBiHmssAMHWQMnEN7nXQXaVj7vhAv6Q");
 }
 
 async function testChainsql(){
-	// await testCreateTable();
+	await testCreateTable();
 
 	// //创建另一张表，用来测试rename,drop
 	// await testCreateTable1();
@@ -83,12 +85,12 @@ async function testChainsql(){
 	// await testUpdate();
 	// await testDelete();
 	// await testRename();
-	await testGet();
+	// await testGet();
 	// await testDrop();
-	// await testGrant();
+	await testGrant();
 	// await testTxs();
 	// await insertAfterGrant();
-	// await testOperationRule();	
+	//await testOperationRule();	
 
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
@@ -171,8 +173,8 @@ var testGet = async function(){
 	// var rs = await c.table(sTableName).get(raw).withFields([]).submit();
 
 	// var raw = {id:1}
-	var rs = await c.table(sTableName).get().withFields(["COUNT(*)"]).submit();
-
+	var rs = await c.table(sTableName).get({name:'sss'}).order({id:-1}).limit({index:0,total:1}).withFields([]).submit();
+	// var rs = await c.table(sTableName).get().withFields(["COUNT(*)"]).submit();
 	console.log("testGet",rs.lines);
 }
 var testDrop = async function(){
@@ -182,7 +184,7 @@ var testDrop = async function(){
 
 //重复授权可能出异常，测一下
 var testGrant = async function(){
-	var raw = {insert:true,update:true,delete:true};
+	var raw = {insert:false,update:false,delete:true};
 	var rs = await c.grant(sTableName, user.address, raw, user.publickKey).submit({expect:'db_success'})
 	console.log("testGrant",rs);
 }
@@ -237,8 +239,10 @@ var testOperationRule = async function(){
 		operationRule: 	rule
 	}
 	// 创建表
-	let rs = await c.createTable(sTableName3, raw, option).submit({expect:'db_success'});
-	console.log("testOperationRule",rs)
+	// let rs = await c.createTable(sTableName3, raw, option).submit({expect:'db_success'});
+	// console.log("testOperationRule",rs)
+	let rs = await c.table(sTableName3).get().order({id:-1}).submit();
+	console.log(rs);
 }
 
 var generateAccount = async function(){
@@ -267,33 +271,43 @@ async function testGetLedger(){
 }
 
 async function testGetTransactions(){
-	var opt = {
-		minLedgerVersion : 	1,// || -1,
-		// -1 is equivalent to most recent available validated ledger
-		maxLedgerVersion : 500,
-		earliestFirst : false	
-	}
-	c.getTransactions(opt,callback);
+	// var opt = {
+	// 	minLedgerVersion : 	1,// || -1,
+	// 	// -1 is equivalent to most recent available validated ledger
+	// 	limit:20,
+	// 	maxLedgerVersion : 500
+	// }
+	var opt = {limit:12}
+	c.getTransactions(owner.address,opt,callback);
 	// var rs = await callback2Promise(c.getTransactions,opt);
 	// console.log(rs);
 }
 async function testGetTransaction(){
-	let rs = await c.api.getTransaction('C4DAFE4673C4C84F48FC1C3513045138A8B083DA255E050B4928E29870E8979F');
-	console.log(rs);
+	// let rs = await c.getTransaction('3E02AA296A348F10C1F54D2EF0CBBDA9A6D389F66EFFBA936F1842506FACD4EA');
+	// console.log(rs);
+
+	c.getTransaction('3E02AA296A348F10C1F54D2EF0CBBDA9A6D389F66EFFBA936F1842506FACD4EA',callback);
 	// var rs = await callback2Promise(c.api.getTransaction,opt);
 	// console.log(rs);
 }
 async function testGetServerInfo(){
-	let rs = await c.api.getServerInfo(callback);
-	console.log(rs);
+	// let rs = await c.getServerInfo();
+	// console.log(rs);
+	c.getServerInfo(callback);
 	// var rs = await callback2Promise(c.api.getServerInfo);
 	// console.log(rs);
+}
+
+async function testUnlList(){
+	// c.getUnlList(callback);
+	let rs = await c.getUnlList();
+	console.log(rs);
 }
 
 function callback(err,data){
 	if(err){
 		console.error(err);
 	}else{
-		console.log(data);
+		console.log(JSON.stringify(data));
 	}
 }
