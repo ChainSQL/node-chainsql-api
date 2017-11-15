@@ -6,7 +6,7 @@ function EventManager(connect) {
   this.cache = {};
   this.onMessage = false;
 };
-EventManager.prototype.subscriptTable = function(name, owner, cb) {
+EventManager.prototype.subscribeTable = function(owner, name, cb) {
   var that = this;
   var messageTx = {
     "command": "subscribe",
@@ -21,7 +21,7 @@ EventManager.prototype.subscriptTable = function(name, owner, cb) {
   that.cache[name + owner] = cb;
   return promise;
 };
-EventManager.prototype.subscriptTx = function(id, cb) {
+EventManager.prototype.subscribeTx = function(id, cb) {
   var that = this;
   var messageTx = {
     "command": "subscribe",
@@ -35,31 +35,34 @@ EventManager.prototype.subscriptTx = function(id, cb) {
   that.cache[id] = cb;
   return promise;
 };
-EventManager.prototype.unsubscriptTable = function(owner, name) {
+EventManager.prototype.unsubscribeTable = function(owner, name) {
   var messageTx = {
     "command": "unsubscribe",
     "owner": owner,
     "tablename": name
   };
-  if (!this.onMessage) {
-    _onMessage(this);
-    this.onMessage = true;
-  };
+
+  if(!this.cache.hasOwnProperty(name + owner))
+  {
+    return Promise.reject("have not subscribe the table : " + name);
+  }
 
   var promise = this.connect.request(messageTx);
   delete this.cache[name + owner]; 
   return promise;  
 };
-EventManager.prototype.unsubscriptTx = function(id) {
+EventManager.prototype.unsubscribeTx = function(id) {
   var that = this;
   var messageTx = {
     "command": "unsubscribe",
     "transaction": id
   };
-  if (!this.onMessage) {
-    _onMessage(that);
-    that.onMessage = true;
-  };
+  
+  if(!that.cache.hasOwnProperty(id))
+  {
+    return Promise.reject("have not subscribe the transaction : " + id);
+  }
+
   var promise = that.connect.request(messageTx);
   delete that.cache[id];
   return promise;

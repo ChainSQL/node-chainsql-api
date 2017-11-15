@@ -22,7 +22,7 @@ var owner = {
 // }
 
 
-var sTableName = "sss";
+var sTableName = "test1";
 var sTableName2 = "boy22";
 var sReName = "boy11";
 var sTableName3 = "hijack1";
@@ -31,7 +31,7 @@ main();
 
 async function main(){
 	try {
-		await c.connect('ws://192.168.0.110:6007');
+		await c.connect('ws://192.168.0.175:6009');
 		//await c.connect('ws://192.168.0.16:6006');
 
 		console.log('连接成功')
@@ -41,8 +41,17 @@ async function main(){
 		// //激活user账户
 		// await activateAccount(user.address);
 
-		// testSubscribe();
-		await testRippleAPI();
+		//testSubscribe();
+		//var raw = [
+		//	{'id': 6,'age':'56'}
+		//]
+		//var rs = await c.table(sTableName).insert(raw).submit({expect:'db_success'});
+		//testUnSubscribe();
+
+		//testSubscribeTx();
+		//testUnSubscribeTx();
+
+		//await testRippleAPI();
 		// await testAccount();
 		// await testChainsql();
 
@@ -55,6 +64,33 @@ async function main(){
 
 function testSubscribe(){
 	subTable(sTableName,owner.address);
+}
+
+function testUnSubscribe(){	
+	unsubTable(sTableName,owner.address);	
+}
+
+function testSubscribeTx(){
+	var event = c.event;
+	event.subscribeTx(1,function(err, data) {
+		if(err)
+			console.log(err);
+		else
+			console.log(data)
+	}).then(function(data) {
+		console.log('subTx success.');
+	}).catch(function(error) {
+		console.log('subTx error:' + error);
+	});
+}
+
+function testUnSubscribeTx(){	
+	var event = c.event;
+	event.unsubscribeTx(1).then(function(data) {
+		console.log('unsubTx success.');
+	}).catch(function(error) {
+		console.log('unsubTx error:' + error);
+	});	
 }
 
 async function testRippleAPI(){
@@ -99,7 +135,7 @@ async function testChainsql(){
 
 function subTable(tb, owner) {
 	var event = c.event;
-	event.subscriptTable(tb, owner, function(err, data) {
+	event.subscribeTable(owner,tb,function(err, data) {
 		if(err)
 			console.log(err);
 		else
@@ -108,6 +144,15 @@ function subTable(tb, owner) {
 		console.log('subTable success.');
 	}).catch(function(error) {
 		console.log('subTable error:' + error);
+	});
+}
+
+function unsubTable(tb, owner) {
+	var event = c.event;
+	event.unsubscribeTable(owner, tb).then(function(data) {
+		console.log('unsubTable success.');
+	}).catch(function(error) {
+		console.log('unsubTable error:' + error);
 	});
 }
 

@@ -288,7 +288,7 @@ function transaction() {
 
 function subTable(tb, owner) {
 	var event = r.event;
-	event.subscriptTable(tb, owner, function(err, data) {
+	event.subscribeTable(owner,tb, function(err, data) {
 		console.log(err, data)
 	}).then(function(data) {
 		console.log('subTable success.');
@@ -304,7 +304,7 @@ function subTable(tb, owner) {
 function unsubTable(owner, tb) {
 	try {
 		var event = r.event;
-		event.unsubscriptTable(tb, owner)
+		event.unsubscribeTable(owner,tb)
 		.then(function(data) {
 			console.log('unsubTable success.');
 		})

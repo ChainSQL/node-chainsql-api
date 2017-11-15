@@ -631,7 +631,7 @@ function handleSignedTx(ChainSQL,signed,object,resolve,reject){
 		}
 	}
 	// subscribe event
-	ChainSQL.event.subscriptTx(signed.id, isFunction ? object : function(err, data) {
+	ChainSQL.event.subscribeTx(signed.id, isFunction ? object : function(err, data) {
 		if (err) {
 			errFunc(err);
 		} else {
@@ -667,21 +667,21 @@ function handleSignedTx(ChainSQL,signed,object,resolve,reject){
 			}
 		}
 	}).then(function(data) {
-		// subscriptTx success
+		// subscribeTx success
 	}).catch(function(error) {
-		// subscriptTx failure
-		errFunc('subscriptTx exception.' + error);
+		// subscribeTx failure
+		errFunc('subscribeTx exception.' + error);
 	});
 	
 	// submit transaction
 	ChainSQL.api.submit(signed.signedTransaction).then(function(result) {
 		//console.log('submit ', JSON.stringify(result));
 		if (result.resultCode != 'tesSUCCESS') {
-			ChainSQL.event.unsubscriptTx(signed.id).then(function(data) {
-				// unsubscriptTx success
+			ChainSQL.event.unsubscribeTx(signed.id).then(function(data) {
+				// unsubscribeTx success
 			}).catch(function(error) {
-				// unsubscriptTx failure
-				errFunc('unsubscriptTx failure.' + error);
+				// unsubscribeTx failure
+				errFunc('unsubscribeTx failure.' + error);
 			});
 
 			//return error message

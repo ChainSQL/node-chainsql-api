@@ -365,7 +365,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 				//var payment = data.tx_json;
 				var signedRet = connect.api.sign(JSON.stringify(data.tx_json), ChainSQL.connect.secret);				
 				// subscribe event
-				ChainSQL.event.subscriptTx(signedRet.id, isFunction ? object : function(err, data) {
+				ChainSQL.event.subscribeTx(signedRet.id, isFunction ? object : function(err, data) {
 					if (err) {
 						cb(err, null);
 					} else {
@@ -400,22 +400,22 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 						}
 					}
 				}).then(function(data) {
-					// subscriptTx success
+					// subscribeTx success
 				}).catch(function(error) {
-					// subscriptTx failure
-					reject('subscriptTx failure.' + error);
+					// subscribeTx failure
+					reject('subscribeTx failure.' + error);
 				});
 				
         // submit transaction
 				connect.api.submit(signedRet.signedTransaction).then(function(result) {
 					//console.log('submit ', JSON.stringify(result));
 					if (result.resultCode != 'tesSUCCESS') {
-						ChainSQL.event.unsubscriptTx(signedRet.id)
+						ChainSQL.event.unsubscribeTx(signedRet.id)
 						.then(function(data) {
-							// unsubscriptTx success
+							// unsubscribeTx success
 						}).catch(function(error) {
-							// unsubscriptTx failure
-							reject('unsubscriptTx failure.' + error);
+							// unsubscribeTx failure
+							reject('unsubscribeTx failure.' + error);
             });
     
 						cb(null, result);
