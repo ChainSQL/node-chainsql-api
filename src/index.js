@@ -65,7 +65,7 @@ ChainsqlAPI.prototype.connect = function(url, cb) {
   con.api = ra;
   this.api = ra;
   this.connect = con;
-  this.event = new EventManager(this.connect.api.connection);
+  this.event = new EventManager(this);
   if ((typeof cb) != 'function') {
     return con.connect();
   } else {
@@ -176,7 +176,7 @@ function paymentSetting(ChainSQL, account, resolve, reject) {
 
 }
 
-function preparePayment(ChainSQL, account, resolve, reject) {
+function preparePayment(ChainSQL, account, amount, resolve, reject) {
     let address = ChainSQL.connect.address;
     let secret = ChainSQL.connect.secret;
     let payment = {
@@ -190,7 +190,7 @@ function preparePayment(ChainSQL, account, resolve, reject) {
         destination: {
             address: account,
             amount: {
-                value: '1000',
+                value: amount.toString(),
                 currency: 'ZXC'
             }
         }
@@ -217,7 +217,7 @@ function preparePayment(ChainSQL, account, resolve, reject) {
 				resolve(data);
 			} else {
 				//console.log('sign preparePayment: ', JSON.stringify(data));
-				resolve(data);
+				reject(data);
 			}
 		})
 		.catch(function(error) {
@@ -229,29 +229,28 @@ function preparePayment(ChainSQL, account, resolve, reject) {
 	}
 }
 
-ChainsqlAPI.prototype.pay = function(account) {
+ChainsqlAPI.prototype.pay = function(account,amount) {
 	var self = this;
 	return new Promise(function(resolve, reject) {
-		preparePayment(self, account, resolve, reject);
+		preparePayment(self, account,amount, resolve, reject);
 	});
 }
 
 ChainsqlAPI.prototype.createTable = function(name, raw, opt) {
   validate.create(raw);
-  var opt = opt;
+  var opt = opt ? opt :{};
   let that = this;
   var confidential = false;
-  if (opt && opt.confidential) {
+  if (opt.confidential) {
     confidential = opt.confidential;
   }
   if (that.transaction) {
-
     var json = {
       OpType: opType['t_create'],
       TableName: name,
       Raw: raw,
 			confidential: confidential,
-			operationRule: JSON.stringify(opt.operationRule)
+			operationRule: opt.operationRule ? JSON.stringify(opt.operationRule) : undefined
     };
 
     this.cache.push(json);
@@ -267,7 +266,7 @@ ChainsqlAPI.prototype.createTable = function(name, raw, opt) {
       }],
       raw: JSON.stringify(raw),
 			tsType: 'TableListSet',
-			operationRule: JSON.stringify(opt.operationRule)
+			operationRule: opt.operationRule ? JSON.stringify(opt.operationRule) : undefined
 		};
 		
     if (confidential) {
@@ -337,6 +336,9 @@ ChainsqlAPI.prototype.dropTable = function(name) {
   }
 }
 ChainsqlAPI.prototype.renameTable = function(oldName, newName) {
+	if(newName == '' || !newName){
+		throw Error("Table new name can not be empty")
+	}
   let that = this;
   if (that.transaction) {
     this.cache.push({
@@ -455,10 +457,6 @@ ChainsqlAPI.prototype.beginTran = function() {
   }
 }
 
-ChainsqlAPI.prototype.endTran = function(){
-	this.transaction = false;
-}
-
 function handleCommit(ChainSQL, object, resolve, reject) {
 	var isFunction = false;
 	
@@ -482,7 +480,7 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 	var ary = [];
 	var secretMap = {};
 	var cache = ChainSQL.cache;
-	for (var i = 0; i < ChainSQL.cache.length; i++) {
+	for (var i = 0; i < cache.length; i++) {
 		if (cache[i].OpType.toString().indexOf('2,3,5,7') != -1) {
 			continue;
 		}
@@ -497,7 +495,7 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 		}
 		
 		if (cache[i].OpType != 1) {
-			ary.push(getUserToken(ChainSQL, ChainSQL.cache[i].TableName));
+			ary.push(getUserToken(ChainSQL.api.connection, ChainSQL.connect.scope,ChainSQL.connect.address,ChainSQL.cache[i].TableName));
 		}
 	};
 	
@@ -549,7 +547,11 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 			delete cache[i].confidential;
 			payment.Statements.push(cache[i]);
 		};
-		
+
+		//clear transactin status
+		ChainSQL.transaction = false;
+		ChainSQL.cache = [];
+
 		getTxJson(ChainSQL, payment).then(function(data) {
 			if (data.status == 'error') {
 				ChainSQL.transaction = false;
@@ -574,7 +576,7 @@ ChainsqlAPI.prototype.commit = function(cb) {
   
   if ((typeof cb) != 'function') {
     return new Promise(function(resolve, reject) {
-		handleCommit(that, cb, resolve, reject);
+			handleCommit(that, cb, resolve, reject);
 	});
   } else {
 	  handleCommit(that, cb, null, null);
@@ -685,7 +687,7 @@ function handleSignedTx(ChainSQL,signed,object,resolve,reject){
 			});
 
 			//return error message
-			sucFunc(result);
+			errFunc(result);
 		} else {
 			// submit successfully
 			if (isFunction == false && object != undefined && object.expect == 'send_success') {
@@ -697,7 +699,7 @@ function handleSignedTx(ChainSQL,signed,object,resolve,reject){
 		}
 	}).catch(function(error) {
 		errFunc(error);
-	});``
+	});
 }
 
 function prepareTable(ChainSQL, payment, object, resolve, reject) {	
@@ -722,7 +724,7 @@ function handleGrantPayment(ChainSQL, object, resolve, reject) {
 	var payment = ChainSQL.payment;
 	var name = payment.name;
 	var publicKey = payment.publicKey;		
-	getUserToken(ChainSQL, name).then(function(data) {
+	getUserToken(ChainSQL.api.connection, ChainSQL.connect.scope,ChainSQL.connect.address, name).then(function(data) {
 		var token = data[name];
 		if (token != '') {
 			var secret = decodeToken(ChainSQL, token);

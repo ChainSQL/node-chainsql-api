@@ -6,7 +6,7 @@ const Table = function(name, connect) {
   this.exec = '';
   this.field = null;
   this.connect = connect;
-  this.cache = '';
+  this.cache = [];
 };
 const util = require('./util');
 const convertStringToHex = util.convertStringToHex;
@@ -32,7 +32,7 @@ Table.prototype.insert = function(raw, field) {
   } else {
     this.query.push(raw);
   }
-  if (JSON.stringify(raw).length > 1024) {
+  if (JSON.stringify(raw).length > 512000) {
     throw new Error('Insert too much value,the total value of inserted must not over 1024KB')
   }
   this.exec = 'r_insert';
@@ -43,7 +43,7 @@ Table.prototype.insert = function(raw, field) {
       Raw: this.query,
       OpType: opType[this.exec]
     })
-    return;
+    return this;
   } else {
     return this;
   }
@@ -348,7 +348,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 		}
 	}
 	
-	getUserToken(ChainSQL, ChainSQL.tab).then(function(token) {
+	getUserToken(ChainSQL.connect.api.connection, ChainSQL.connect.scope,ChainSQL.connect.address, ChainSQL.tab).then(function(token) {
 		token = token[ChainSQL.tab];
 		if (token && token != '') {
 		var secret = decodeToken(ChainSQL, token);

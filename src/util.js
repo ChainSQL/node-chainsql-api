@@ -73,18 +73,12 @@ function getTableName(that, name) {
   })
 }
 
-function getUserToken(that, name) {
-  var connection = that.api;
-  if (!connection) {
-    connection = that.connect.api.connection;
-  } else {
-    connection = that.api.connection;
-  }
+function getUserToken(connection,owner,user,name) {
   return connection.request({
     command: 'g_userToken',
     tx_json: {
-      Owner: that.connect.scope,
-      User: that.connect.address,
+      Owner: owner,
+      User: user,
       TableName: name
     }
 
@@ -112,10 +106,40 @@ function convertStringToHex(string) {
   return string ? new Buffer(string, 'utf8').toString('hex').toUpperCase() : undefined;
 }
 
+function convertHexToString(string){
+  return string ? new Buffer(string,'hex').toString('utf8') : undefined;
+}
+
+function unHexTxData(tx){
+  if(tx.Tables){
+    var table = tx.Tables[0].Table;
+    table.TableName = util.convertHexToString(table.TableName);
+    if(table.TableNewName){
+      table.TableNewName = util.convertHexToString(table.TableNewName);
+    }
+  }
+
+  if(tx.Raw){
+    tx.Raw = util.convertHexToString(tx.Raw);
+  }
+
+  if(tx.Statement){
+    var statement = util.convertHexToString(tx.Statement);
+    var stateJson = JSON.parse(statement);
+    tx.Statement = stateJson;
+  }
+
+  if(tx.OperationRule){
+    tx.OperationRule = util.convertHexToString(tx.OperationRule);
+  }
+}
+
 module.exports = {
   getFee: getFee,
   getSequence: getSequence,
   convertStringToHex: convertStringToHex,
+  convertHexToString : convertHexToString,
+  unHexTxData: unHexTxData,
   getTableSequence: getTableSequence,
   getUserToken: getUserToken,
   getTableName: getTableName,

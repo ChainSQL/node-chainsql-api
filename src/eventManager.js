@@ -1,10 +1,14 @@
 'use strict'
 const EventEmitter = require('events');
+const util = require('./util');
+const crypto = require('../lib/crypto');
 
-function EventManager(connect) {
-  this.connect = connect;
+function EventManager(chainsql) {
+  this.connect = chainsql.connect.api.connection;
+  this.chainsql = chainsql;
   this.cache = {};
   this.onMessage = false;
+  this.cachePass = {};
 };
 EventManager.prototype.subscribeTable = function(owner, name, cb) {
   var that = this;
@@ -75,17 +79,88 @@ function _onMessage(that) {
       var key;
       if (data.type === 'table') {
         key = data.tablename + data.owner;
+        _onChainsqlMessage(that,key,data,data.owner,data.tablename);
       };
       if (data.type === 'singleTransaction') {
         key = data.transaction.hash;
-      };
-      if (that.cache[key]) {
-        that.cache[key](null, data);
-        if (data.status != 'validate_success' && data.type === 'singleTransaction') {
-          delete that.cache[key];
+        if (that.cache[key]) {
+          that.cache[key](null, data);
+          if (_isChainsqlType(data) && data.status != 'validate_success' || !_isChainsqlType(data)) {
+            delete that.cache[key];
+          }
         }
-      }
+      };
     }
   });
 }
+
+function _isChainsqlType(data){
+  var type = data.transaction.TransactionType;
+  if(type === "TableListSet" || 
+    type == "SQLStatement" ||
+    type == "SQLTransaction"){
+    return true;
+  }else{
+    return false;
+  }
+}
+
+function _onChainsqlMessage(that,key,data,owner,name){
+  if(that.cachePass[key]){
+    _makeCallback(that,key,data);
+  }else{
+    util.getUserToken(that.connect,owner,that.chainsql.connect.address,name).then(function(tokenData){
+      var token = tokenData[name];
+      if (token != '') {
+        var secret = util.decodeToken(that.chainsql, token);
+        that.cachePass[key] = secret;
+        _makeCallback(that,key,data);
+      }else{
+        that.cachePass[key] = null;
+        _makeCallback(that,key,data);
+      }
+    }).catch(function(err){
+      console.error(err);
+    })
+  }
+}
+
+function _makeCallback(that,key,data){
+  _decryptData(that.cachePass[key],data.transaction);
+  if (that.cache[key]) {
+    that.cache[key](null, data);
+  }
+}
+
+function _decryptData(pass,tx){
+  if(tx.Tables){
+    var table = tx.Tables[0].Table;
+    table.TableName = util.convertHexToString(table.TableName);
+    if(table.TableNewName){
+      table.TableNewName = util.convertHexToString(table.TableNewName);
+    }
+  }
+
+  if(tx.Raw){
+    if(pass){
+      tx.Raw = crypto.aesDecrypt(pass,tx.Raw);
+    }else{
+      tx.Raw = util.convertHexToString(tx.Raw);
+    }
+  }
+
+  if(tx.Statements){
+    var statement = util.convertHexToString(tx.Statements);
+    var stateJson = JSON.parse(statement);
+    for(var i=0; i<stateJson.length; i++){
+      _decryptData(pass,stateJson[i]);
+    }
+    tx.Statements = stateJson;
+  }
+
+  if(tx.OperationRule){
+    tx.OperationRule = util.convertHexToString(tx.OperationRule);
+  }
+}
+
 module.exports = EventManager;
