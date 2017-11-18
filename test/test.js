@@ -41,15 +41,7 @@ async function main(){
 		// //激活user账户
 		// await activateAccount(user.address);
 
-		//testSubscribe();
-		//var raw = [
-		//	{'id': 6,'age':'56'}
-		//]
-		//var rs = await c.table(sTableName).insert(raw).submit({expect:'db_success'});
-		//testUnSubscribe();
-
-		//testSubscribeTx();
-		//testUnSubscribeTx();
+		//await testSubscribe();
 
 		//await testRippleAPI();
 		// await testAccount();
@@ -62,21 +54,51 @@ async function main(){
 	}
 }
 
-function testSubscribe(){
+var testSubscribe = async function(){
 	subTable(sTableName,owner.address);
+	setTimeout(function(){
+		unsubTable(sTableName,owner.address);
+	},5000);
+	await subTx();
 }
 
 function testUnSubscribe(){	
 	unsubTable(sTableName,owner.address);	
 }
 
-function testSubscribeTx(){
+async function subTx() {
+	//获取账户信息
+	let info = await c.api.getAccountInfo("rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh");
+	console.log(info);
+	//获取当前区块号
+	c.getLedgerVersion(function(err,data){
+		var payment = {
+			"Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+			"Amount":"1000000000",
+			"Destination": "rBuLBiHmssAMHWQMnEN7nXQXaVj7vhAv6Q",
+			"TransactionType": "Payment",
+			"Sequence": info.sequence,
+			"LastLedgerSequence":data + 5,
+			"Fee":"50"
+		}
+		let signedRet = c.sign(payment,owner.secret);
+		c.api.submit(signedRet.signedTransaction).then(function(data){
+            console.log(data);
+        });
+		//订阅
+		testSubscribeTx(signedRet.id);
+		setTimeout(function(){
+			testUnSubscribeTx(signedRet.id);
+		},5000);
+	});
+}
+function testSubscribeTx(hash){
 	var event = c.event;
-	event.subscribeTx(1,function(err, data) {
+	event.subscribeTx(hash,function(err, data) {
 		if(err)
 			console.log(err);
 		else
-			console.log(data)
+			console.log("subtx return:", data)
 	}).then(function(data) {
 		console.log('subTx success.');
 	}).catch(function(error) {
@@ -84,9 +106,9 @@ function testSubscribeTx(){
 	});
 }
 
-function testUnSubscribeTx(){	
+function testUnSubscribeTx(hash){	
 	var event = c.event;
-	event.unsubscribeTx(1).then(function(data) {
+	event.unsubscribeTx(hash).then(function(data) {
 		console.log('unsubTx success.');
 	}).catch(function(error) {
 		console.log('unsubTx error:' + error);
