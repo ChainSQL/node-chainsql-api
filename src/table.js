@@ -6,7 +6,7 @@ const Table = function(name, connect) {
   this.exec = '';
   this.field = null;
   this.connect = connect;
-  this.cache = '';
+  this.cache = [];
 };
 const util = require('./util');
 const convertStringToHex = util.convertStringToHex;
@@ -32,7 +32,7 @@ Table.prototype.insert = function(raw, field) {
   } else {
     this.query.push(raw);
   }
-  if (JSON.stringify(raw).length > 1024) {
+  if (JSON.stringify(raw).length > 512000) {
     throw new Error('Insert too much value,the total value of inserted must not over 1024KB')
   }
   this.exec = 'r_insert';
@@ -43,7 +43,7 @@ Table.prototype.insert = function(raw, field) {
       Raw: this.query,
       OpType: opType[this.exec]
     })
-    return;
+    return this;
   } else {
     return this;
   }
@@ -348,7 +348,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 		}
 	}
 	
-	getUserToken(ChainSQL, ChainSQL.tab).then(function(token) {
+	getUserToken(ChainSQL.connect.api.connection, ChainSQL.connect.scope,ChainSQL.connect.address, ChainSQL.tab).then(function(token) {
 		token = token[ChainSQL.tab];
 		if (token && token != '') {
 		var secret = decodeToken(ChainSQL, token);
@@ -365,7 +365,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 				//var payment = data.tx_json;
 				var signedRet = connect.api.sign(JSON.stringify(data.tx_json), ChainSQL.connect.secret);				
 				// subscribe event
-				ChainSQL.event.subscriptTx(signedRet.id, isFunction ? object : function(err, data) {
+				ChainSQL.event.subscribeTx(signedRet.id, isFunction ? object : function(err, data) {
 					if (err) {
 						cb(err, null);
 					} else {
@@ -395,27 +395,27 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
                 cb(null,{
                   status: data.status,
                   tx_hash: signedRet.id,
-                  message:data.error_message
+                  error_message:data.error_message
                 });
 						}
 					}
 				}).then(function(data) {
-					// subscriptTx success
+					// subscribeTx success
 				}).catch(function(error) {
-					// subscriptTx failure
-					reject('subscriptTx failure.' + error);
+					// subscribeTx failure
+					reject('subscribeTx failure.' + error);
 				});
 				
         // submit transaction
 				connect.api.submit(signedRet.signedTransaction).then(function(result) {
 					//console.log('submit ', JSON.stringify(result));
 					if (result.resultCode != 'tesSUCCESS') {
-						ChainSQL.event.unsubscriptTx(signedRet.id)
+						ChainSQL.event.unsubscribeTx(signedRet.id)
 						.then(function(data) {
-							// unsubscriptTx success
+							// unsubscribeTx success
 						}).catch(function(error) {
-							// unsubscriptTx failure
-							reject('unsubscriptTx failure.' + error);
+							// unsubscribeTx failure
+							reject('unsubscribeTx failure.' + error);
             });
     
 						cb(null, result);
@@ -430,7 +430,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 						}
 					}
 				}).catch(function(error) {
-					cb(error, null);
+					throw new Error(error);
 				});
 			});
 		}).catch(function(error) {
@@ -451,7 +451,7 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
 			object(error, data)
 		} else {
 			if (error) {
-				reject(error);
+				resolve(error);
 			} else {
 				resolve(data);
 			}
@@ -463,7 +463,7 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
 	connect.api.connection.request({
 		command: 'r_get',
 		tx_json: {
-            Account:connect.address,
+      Account:connect.address,
 			Owner: connect.scope,
 			Tables: [{
 				Table: {
@@ -474,8 +474,9 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
 			opType: opType[ChainSQL.exec]
 		}
 	}).then(function(data) {
-		if (data.status != 'success')
+		if (data.status != 'success'){
 			cb(new Error(data), null);
+    }
 		cb(null, {diff:data.diff,lines:data.lines});
 	}).catch(function(err) {
 		cb(err, null);
@@ -500,7 +501,7 @@ Table.prototype.submit = function(cb) {
 		  handleGetRecord(that, cb, resolve, reject);
 	  });
     } else {
-		handleGetRecord(that, cb, null, null);
+		  handleGetRecord(that, cb, null, null);
     }
   } else {
     var payment = {
@@ -524,7 +525,7 @@ Table.prototype.submit = function(cb) {
 		  prepareTable(that, payment, cb, resolve, reject);
 	  });
     } else {
-		prepareTable(that, payment, cb, null, null);
+		  prepareTable(that, payment, cb, null, null);
     }
   }
 }
