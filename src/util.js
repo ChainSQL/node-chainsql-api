@@ -134,6 +134,19 @@ function unHexTxData(tx){
   }
 }
 
+function calcFee(tx_json){
+	var fee = parseInt(tx_json.Fee);
+	var drops = 1000000;
+	var multiplier = 0.001;
+	if(tx_json.Raw){
+		var length = tx_json.Raw.length/2;
+		multiplier += length / 1024.0;
+	}
+	var extraFee = drops * multiplier;
+	fee += extraFee;
+	return fee.toString();
+}
+
 module.exports = {
   getFee: getFee,
   getSequence: getSequence,
@@ -145,5 +158,6 @@ module.exports = {
   getTableName: getTableName,
   getTxJson: getTxJson,
   generateToken: generateToken,
-  decodeToken: decodeToken
+  decodeToken: decodeToken,
+  calcFee : calcFee
 }
