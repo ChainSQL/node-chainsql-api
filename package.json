@@ -14,7 +14,7 @@
     "hash.js": "^1.0.3",
     "lodash": "^4.14.1",
     "ripple-address-codec": "^2.0.1",
-    "chainsql-binary-codec": "^0.1.22",
+    "chainsql-binary-codec": "^0.1.23",
     "ripple-keypairs": "^0.10.0",
     "chainsql-lib": "0.17.16",
     "sjcl": "~1.0.3",

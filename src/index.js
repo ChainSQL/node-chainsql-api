@@ -17,6 +17,8 @@ fs.writeFileSync(basePath, data);
 basePath = path.join(require.resolve('chainsql-lib'), '../common/connection.js');
 data = fs.readFileSync(path.join(__dirname, '../lib/connection.js'));
 fs.writeFileSync(basePath, data)
+data = fs.readFileSync(path.join(__dirname,'../lib/address-codec.js'))
+fs.writeFileSync(require.resolve('x-address-codec'),data);
 const RippleAPI = new require('chainsql-lib').RippleAPI;
 
 RippleAPI.prototype.prepareTable = require('./tablePayment');
@@ -121,8 +123,12 @@ ChainsqlAPI.prototype.generateAddress = function() {
 			address : keypairs.deriveAddress(keypair.publicKey)
 		}
 	}
-
-	account.publickKey = keypair.publicKey
+	var opt = {
+		version:35
+	} 
+	var buf = new Buffer(keypair.publicKey,'hex');
+	account.publicKey = addressCodec.encode(buf, opt);
+	// account.publickKey = keypair.publicKey;
 
   return account;
 }
@@ -316,8 +322,7 @@ ChainsqlAPI.prototype.dropTable = function(name) {
   if (that.transaction) {
     this.cache.push({
       OpType: opType['t_drop'],
-      TableName: name,
-      Raw: raw
+      TableName: name
     });
     return;
   } else {
@@ -481,16 +486,13 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 	var secretMap = {};
 	var cache = ChainSQL.cache;
 	for (var i = 0; i < cache.length; i++) {
-		if (cache[i].OpType.toString().indexOf('2,3,5,7') != -1) {
+		var noRaw = [2,3,5,7];
+		if (noRaw.indexOf(cache[i].OpType) != -1) {
 			continue;
 		}
 		
 		if (cache[i].OpType == 1 && cache[i].confidential) {
 			secretMap[cache[i].TableName] = generateToken(ChainSQL.connect.secret);
-			ChainSQL.needVerify = 0;
-		}
-		
-		if (cache[i].OpType.toString().indexOf('6,8,9,10') != -1) {
 			ChainSQL.needVerify = 0;
 		}
 		
@@ -703,11 +705,19 @@ function handleSignedTx(ChainSQL,signed,object,resolve,reject){
 }
 
 function prepareTable(ChainSQL, payment, object, resolve, reject) {	
+	var errFunc = function(error) {
+		if ((typeof object) == 'function') {
+			object(error, null);
+		} else {
+			reject(error);
+		}
+	};
 	ChainSQL.api.prepareTable(payment).then(function(tx_json) {
 		getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function(data) {
 			if (data.status == 'error') {
 				errFunc(new Error('getTxJson error'));
 			}
+			data.tx_json.Fee = util.calcFee(data.tx_json);
 			var payment = data.tx_json;
 			let signedRet = ChainSQL.api.sign(JSON.stringify(data.tx_json), ChainSQL.connect.secret);
 			handleSignedTx(ChainSQL,signedRet,object,resolve,reject);

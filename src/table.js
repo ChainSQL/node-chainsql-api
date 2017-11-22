@@ -361,7 +361,8 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 			getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function(data) {
 				if (data.status == 'error') {
 					throw new Error('getTxJson error');
-				}
+        }
+        data.tx_json.Fee = util.calcFee(data.tx_json);
 				//var payment = data.tx_json;
 				var signedRet = connect.api.sign(JSON.stringify(data.tx_json), ChainSQL.connect.secret);				
 				// subscribe event
