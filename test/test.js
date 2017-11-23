@@ -7,14 +7,14 @@ const c = new ChainsqlAPI();
 const RippleAPI = new require('chainsql-lib').RippleAPI;
 
 var user = {
-	secret: "ssnqAfDUjc6Bkevd1Xmz5dJS5yHdz",
-	address: "rBuLBiHmssAMHWQMnEN7nXQXaVj7vhAv6Q",
-	publickKey: "02F039E54B3A0D209D348F1B2C93BE3689F2A7595DDBFB1530499D03264B87A61F"
+	secret: "xxWFBu6veVgMnAqNf6YFRV2UENRd3",
+	address: "z9VF7yQPLcKgUoHwMbzmQBjvPsyMy19ubs",
+	publicKey: "cBRmXRujuiBPuK46AGpMM5EcJuDtxpxJ8J2mCmgkZnPC1u8wqkUn"
 }
 
 var owner = {
-	"secret": "snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
-	"address": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"	
+	secret: "xnoPBzXtMeMyMHUVTgbuqAfg1SUTb",
+	address: "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh"	
 }
 
 // var owner = {
@@ -22,7 +22,7 @@ var owner = {
 // }
 
 
-var sTableName = "test1";
+var sTableName = "test111";
 var sTableName2 = "boy22";
 var sReName = "boy11";
 var sTableName3 = "hijack1";
@@ -31,7 +31,7 @@ main();
 
 async function main(){
 	try {
-		await c.connect('ws://192.168.0.175:6009');
+		await c.connect('ws://192.168.0.110:6007');
 		//await c.connect('ws://192.168.0.16:6006');
 
 		console.log('连接成功')
@@ -39,13 +39,13 @@ async function main(){
 		c.as(owner);
 
 		// //激活user账户
-		// await activateAccount(user.address);
+		await activateAccount(user.address);
 
 		//await testSubscribe();
 
 		//await testRippleAPI();
 		// await testAccount();
-		// await testChainsql();
+		await testChainsql();
 
 		//await c.disconnect();
 		console.log('运行结束')
@@ -126,18 +126,15 @@ async function testRippleAPI(){
 }
 
 async function testAccount(){
-	// var acc = c.generateAddress("snoPBrXtMeMyMHUVTgbuqAfg1SUTb");
-	// console.log(acc);
-	// var account = generateAccount();
-	// console.log("new account:",account);
-	// await activateAccount(account.address);
-	await activateAccount("rBuLBiHmssAMHWQMnEN7nXQXaVj7vhAv6Q");
+	var account = await generateAccount();
+	console.log("new account:",account);
+	await activateAccount(account.address);
 }
 
 async function testChainsql(){
-	await testCreateTable();
+	// await testCreateTable();
 
-	// //创建另一张表，用来测试rename,drop
+	// // //创建另一张表，用来测试rename,drop
 	// await testCreateTable1();
 	// await testInsert();
 	// await testUpdate();
@@ -145,10 +142,10 @@ async function testChainsql(){
 	// await testRename();
 	// await testGet();
 	// await testDrop();
-	await testGrant();
-	// await testTxs();
-	// await insertAfterGrant();
-	//await testOperationRule();	
+	// await testGrant();
+	await testTxs();
+	await insertAfterGrant();
+	await testOperationRule();	
 
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
@@ -274,7 +271,6 @@ var testTxs = async function(){
 	c.table(sTableName).insert({'age': 333,'name':'hello'});
 	c.table(sTableName).get({'age':333}).update({'name':'world'});
 	var rs = await c.commit({expect: 'db_success'});
-	c.endTran();
 	console.log("testTxs",rs);
 }
 
@@ -306,17 +302,17 @@ var testOperationRule = async function(){
 		operationRule: 	rule
 	}
 	// 创建表
-	// let rs = await c.createTable(sTableName3, raw, option).submit({expect:'db_success'});
-	// console.log("testOperationRule",rs)
-	let rs = await c.table(sTableName3).get().order({id:-1}).submit();
-	console.log(rs);
+	let rs = await c.createTable(sTableName3, raw, option).submit({expect:'db_success'});
+	console.log("testOperationRule",rs)
+	// let rs = await c.table(sTableName3).get().order({id:-1}).submit();
+	// console.log(rs);
 }
 
 var generateAccount = async function(){
 	return c.generateAddress();
 }
 var activateAccount = async function(account){
-	let rs = await c.pay(account);
+	let rs = await c.pay(account,200);
 	console.log(rs);
 }
 

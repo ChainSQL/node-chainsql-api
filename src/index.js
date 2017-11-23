@@ -562,9 +562,12 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 			
 			var payment = data.tx_json;
 			payment.Statements = convertStringToHex(JSON.stringify(payment.Statements));
-			ChainSQL.api.prepareTx(payment).then(function(tx_json) {
+			ChainSQL.api.prepareTx(payment).then(function(data) {
 				//console.log(JSON.stringify(tx_json))
-				let signedRet = ChainSQL.api.sign(tx_json.txJSON, ChainSQL.connect.secret);
+				var txJson = JSON.parse(data.txJSON);
+				txJson.Fee = util.calcFee(txJson);
+				data.txJSON = JSON.stringify(txJson);
+				let signedRet = ChainSQL.api.sign(data.txJSON, ChainSQL.connect.secret);
 				handleSignedTx(ChainSQL,signedRet,object,resolve,reject);
 			}).catch(function(error) {
 				cb(error, null);
