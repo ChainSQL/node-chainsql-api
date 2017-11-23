@@ -141,7 +141,10 @@ function calcFee(tx_json){
 	if(tx_json.Raw){
 		var length = tx_json.Raw.length/2;
 		multiplier += length / 1024.0;
-	}
+	}else if(tx_json.Statements){
+    var length = tx_json.Statements.length/2;
+		multiplier += length / 1024.0;
+  }
 	var extraFee = drops * multiplier;
 	fee += extraFee;
 	return fee.toString();
