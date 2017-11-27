@@ -349,7 +349,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 	}
 	
 	getUserToken(ChainSQL.connect.api.connection, ChainSQL.connect.scope,ChainSQL.connect.address, ChainSQL.tab).then(function(token) {
-		token = token[ChainSQL.tab];
+		token = token[ ChainSQL.connect.scope + ChainSQL.tab];
 		if (token && token != '') {
 		var secret = decodeToken(ChainSQL, token);
 			payment.raw = crypto.aesEncrypt(secret, payment.raw).toUpperCase();

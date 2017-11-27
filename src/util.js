@@ -5,6 +5,7 @@ const common = require(basePath);
 const keypairs = require('ripple-keypairs');
 const cryptoo = require('crypto');
 const crypto = require('../lib/crypto');
+const opType = require('./config').opType;
 
 
 function getFee(api) {
@@ -85,7 +86,7 @@ function getUserToken(connection,owner,user,name) {
   }).then(function(data) {
     if(data.status == 'error') throw new Error(data.error_message);
     var json = {};
-    json[name] = data.token;
+    json[owner + name] = data.token;
     return json;
   })
 }
@@ -146,8 +147,16 @@ function calcFee(tx_json){
 		multiplier += length / 1024.0;
   }
 	var extraFee = drops * multiplier;
-	fee += extraFee;
+	fee += parseInt(extraFee);
 	return fee.toString();
+}
+
+function isSqlStatementTx(type){
+  if(type == opType.r_delete || type == opType.r_update || type == opType.t_assert){
+    return true;
+  }else{
+    return false;
+  }  
 }
 
 module.exports = {
@@ -162,5 +171,6 @@ module.exports = {
   getTxJson: getTxJson,
   generateToken: generateToken,
   decodeToken: decodeToken,
-  calcFee : calcFee
+  calcFee : calcFee,
+  isSqlStatementTx: isSqlStatementTx
 }

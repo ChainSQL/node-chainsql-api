@@ -22,10 +22,10 @@ var owner = {
 // }
 
 
-var sTableName = "test111";
-var sTableName2 = "boy22";
-var sReName = "boy11";
-var sTableName3 = "hijack1";
+var sTableName = "aac";
+var sTableName2 = "boy1234";
+var sReName = "boy1234";
+var sTableName3 = "hijack12";
 
 main();
 
@@ -38,8 +38,9 @@ async function main(){
 
 		c.as(owner);
 
-		// //激活user账户
-		await activateAccount(user.address);
+		c.setRestrict(true);
+		//激活user账户
+		// await activateAccount(user.address);
 
 		//await testSubscribe();
 
@@ -137,15 +138,15 @@ async function testChainsql(){
 	// // //创建另一张表，用来测试rename,drop
 	// await testCreateTable1();
 	// await testInsert();
-	// await testUpdate();
+	// await testUpdate();m
 	// await testDelete();
 	// await testRename();
 	// await testGet();
 	// await testDrop();
-	// await testGrant();
-	await testTxs();
-	await insertAfterGrant();
-	await testOperationRule();	
+	await testGrant();
+	// await testTxs();
+	// await insertAfterGrant();
+	// await testOperationRule();	
 
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
@@ -192,7 +193,7 @@ var testCreateTable = async function() {
 
 var testCreateTable1 = async function() {
 	var raw = [
-		{'field':'id','type':'int','length':11,'PK':1,'NN':1,'UQ':1,'AI':1},
+		{'field':'id','type':'int','length':11,'PK':1,'NN':1,'UQ':1,'AI':1,'default':''},
 		{'field':'name','type':'varchar','length':50,'default':null},
 		{'field':'age','type':'int'}
 	]
@@ -249,7 +250,7 @@ var testDrop = async function(){
 //重复授权可能出异常，测一下
 var testGrant = async function(){
 	var raw = {insert:false,update:false,delete:true};
-	var rs = await c.grant(sTableName, user.address, raw, user.publickKey).submit({expect:'db_success'})
+	var rs = await c.grant(sTableName, user.address, raw, user.publicKey).submit({expect:'db_success'})
 	console.log("testGrant",rs);
 }
 var insertAfterGrant = async function(){
@@ -268,6 +269,18 @@ var insertAfterGrant = async function(){
 
 var testTxs = async function(){
 	c.beginTran();
+	var raw = [
+		{'field':'id','type':'int','length':11,'PK':1,'NN':1,'UQ':1,'AI':1},
+		{'field':'name','type':'varchar','length':50,'default':null},
+		{'field':'age','type':'int'},
+		{'field':'account','type':'varchar','length':64}
+	]
+
+	var option = {
+		confidential: true
+	}
+	c.createTable(sTableName,raw,option);
+	c.grant(sTableName,user.address,{insert:true,update:true},user.publicKey)
 	c.table(sTableName).insert({'age': 333,'name':'hello'});
 	c.table(sTableName).get({'age':333}).update({'name':'world'});
 	var rs = await c.commit({expect: 'db_success'});
