@@ -2,7 +2,7 @@
 const path = require('path');
 const fs = require('fs');
 const crypto = require('../lib/crypto');
-const keypairs = require('ripple-keypairs');
+const keypairs = require('chainsql-keypairs');
 const EventManager = require('./eventManager')
 
 var basePath = path.join(require.resolve('chainsql-binary-codec'), '../enums/definitions.json');
@@ -16,14 +16,12 @@ basePath = path.join(require.resolve('chainsql-lib'), '../common/schemas/objects
 fs.writeFileSync(basePath, data);
 basePath = path.join(require.resolve('chainsql-lib'), '../common/connection.js');
 data = fs.readFileSync(path.join(__dirname, '../lib/connection.js'));
-fs.writeFileSync(basePath, data)
-data = fs.readFileSync(path.join(__dirname,'../lib/address-codec.js'))
-fs.writeFileSync(require.resolve('x-address-codec'),data);
+fs.writeFileSync(basePath, data);
 const RippleAPI = new require('chainsql-lib').RippleAPI;
 
 RippleAPI.prototype.prepareTable = require('./tablePayment');
 RippleAPI.prototype.prepareTx = require('./txPayment');
-const addressCodec = require('ripple-address-codec');
+const addressCodec = require('chainsql-address-codec');
 const _ = require('lodash');
 const validate = require('./validate')
 const Connection = require('./connect');
@@ -249,14 +247,15 @@ ChainsqlAPI.prototype.createTable = function(name, raw, opt) {
   var confidential = false;
   if (opt.confidential) {
     confidential = opt.confidential;
-  }
+	}
+	// console.log(JSON.stringify(opt.operationRule));
   if (that.transaction) {
     var json = {
       OpType: opType['t_create'],
       TableName: name,
       Raw: raw,
 			confidential: confidential,
-			operationRule: opt.operationRule ? JSON.stringify(opt.operationRule) : undefined
+			OperationRule: opt.operationRule ? convertStringToHex(JSON.stringify(opt.operationRule)) : undefined
     };
 
     this.cache.push(json);
@@ -376,7 +375,7 @@ ChainsqlAPI.prototype.grant = function(name, user, flags, publicKey) {
     this.cache.push({
       OpType: opType['t_grant'],
       TableName: name,
-      Raw: flags,
+      Raw: convertStringToHex(JSON.stringify([flags])),
       publicKey: publicKey,
       User: user
     });
@@ -491,13 +490,22 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 			continue;
 		}
 		
-		if (cache[i].OpType == 1 && cache[i].confidential) {
-			secretMap[cache[i].TableName] = generateToken(ChainSQL.connect.secret);
-			ChainSQL.needVerify = 0;
+		if (cache[i].OpType == 1) {
+			var key = ChainSQL.connect.address + cache[i].TableName;
+			if(cache[i].confidential){
+				secretMap[key] = generateToken(ChainSQL.connect.secret);
+			}else{
+				secretMap[key] = " ";
+			}
+			//secretMap[cache[i].TableName] = generateToken(ChainSQL.connect.secret);
 		}
 		
 		if (cache[i].OpType != 1) {
-			ary.push(getUserToken(ChainSQL.api.connection, ChainSQL.connect.scope,ChainSQL.connect.address,ChainSQL.cache[i].TableName));
+			var address = cache[i].Owner ? cache[i].Owner : ChainSQL.connect.address;
+			var key = address + cache[i].TableName;
+			if(!secretMap[key]){
+				ary.push(getUserToken(ChainSQL.api.connection, address,ChainSQL.connect.address,ChainSQL.cache[i].TableName));
+			}	
 		}
 	};
 	
@@ -517,12 +525,16 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 		};
 		
 		for (var i = 0; i < cache.length; i++) {
-			if (secretMap[cache[i].TableName]) {
-				var token = secretMap[cache[i].TableName];
+			var address = cache[i].Owner ? cache[i].Owner : ChainSQL.connect.address;
+			var key = address + cache[i].TableName;
+			if (secretMap[key] && secretMap[key] != " ") {
+				var token = secretMap[key];
 
-				var secret = decodeToken(ChainSQL, secretMap[cache[i].TableName]);
+				var secret = decodeToken(ChainSQL, token);
 				if (cache[i].Raw) {
-					cache[i].Raw = crypto.aesEncrypt(secret, JSON.stringify(cache[i].Raw)).toUpperCase();
+					if(cache[i].OpType != opType.t_grant){
+						cache[i].Raw = crypto.aesEncrypt(secret, JSON.stringify(cache[i].Raw)).toUpperCase();
+					}
 				};
 				
 				if (cache[i].OpType == opType['t_assign'] || cache[i].OpType == opType['t_grant']) {
@@ -531,12 +543,12 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 				
 				if (cache[i].OpType == opType['t_assign'] || cache[i].OpType == opType['t_grant'] || cache[i].OpType == opType['t_create']) {
 					cache[i].Token = token;
-                    //remove publicKey field
-                    delete cache[i].publicKey;
+					//remove publicKey field
+					delete cache[i].publicKey;
 				}
 			} else {
 				cache[i].Raw = convertStringToHex(JSON.stringify(cache[i].Raw));
-                delete cache[i].publicKey;
+      	delete cache[i].publicKey;
 			}
 			
 			var tableName = cache[i].TableName;
@@ -737,8 +749,8 @@ function handleGrantPayment(ChainSQL, object, resolve, reject) {
 	var payment = ChainSQL.payment;
 	var name = payment.name;
 	var publicKey = payment.publicKey;		
-	getUserToken(ChainSQL.api.connection, ChainSQL.connect.scope,ChainSQL.connect.address, name).then(function(data) {
-		var token = data[name];
+	getUserToken(ChainSQL.api.connection, ChainSQL.connect.address,ChainSQL.connect.address, name).then(function(data) {
+		var token = data[ChainSQL.connect.address + name];
 		if (token != '') {
 			var secret = decodeToken(ChainSQL, token);
 			try {

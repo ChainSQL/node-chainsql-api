@@ -110,7 +110,7 @@ function _onChainsqlMessage(that,key,data,owner,name){
     _makeCallback(that,key,data);
   }else{
     util.getUserToken(that.connect,owner,that.chainsql.connect.address,name).then(function(tokenData){
-      var token = tokenData[name];
+      var token = tokenData[owner + name];
       if (token != '') {
         var secret = util.decodeToken(that.chainsql, token);
         that.cachePass[key] = secret;
