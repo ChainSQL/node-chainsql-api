@@ -2,7 +2,7 @@
 const path = require('path');
 const fs = require('fs');
 const crypto = require('../lib/crypto');
-const keypairs = require('ripple-keypairs');
+const keypairs = require('chainsql-keypairs');
 const EventManager = require('./eventManager')
 
 var basePath = path.join(require.resolve('chainsql-binary-codec'), '../enums/definitions.json');
@@ -16,14 +16,12 @@ basePath = path.join(require.resolve('chainsql-lib'), '../common/schemas/objects
 fs.writeFileSync(basePath, data);
 basePath = path.join(require.resolve('chainsql-lib'), '../common/connection.js');
 data = fs.readFileSync(path.join(__dirname, '../lib/connection.js'));
-fs.writeFileSync(basePath, data)
-data = fs.readFileSync(path.join(__dirname,'../lib/address-codec.js'))
-fs.writeFileSync(require.resolve('x-address-codec'),data);
+fs.writeFileSync(basePath, data);
 const RippleAPI = new require('chainsql-lib').RippleAPI;
 
 RippleAPI.prototype.prepareTable = require('./tablePayment');
 RippleAPI.prototype.prepareTx = require('./txPayment');
-const addressCodec = require('ripple-address-codec');
+const addressCodec = require('chainsql-address-codec');
 const _ = require('lodash');
 const validate = require('./validate')
 const Connection = require('./connect');
@@ -250,7 +248,7 @@ ChainsqlAPI.prototype.createTable = function(name, raw, opt) {
   if (opt.confidential) {
     confidential = opt.confidential;
 	}
-	console.log(JSON.stringify(opt.operationRule));
+	// console.log(JSON.stringify(opt.operationRule));
   if (that.transaction) {
     var json = {
       OpType: opType['t_create'],

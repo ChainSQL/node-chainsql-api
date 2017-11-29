@@ -2,7 +2,7 @@
 const path = require('path');
 const basePath = path.join(require.resolve('chainsql-lib'), '../common');
 const common = require(basePath);
-const keypairs = require('ripple-keypairs');
+const keypairs = require('chainsql-keypairs');
 const cryptoo = require('crypto');
 const crypto = require('../lib/crypto');
 const opType = require('./config').opType;
