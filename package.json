@@ -1,6 +1,6 @@
 {
   "name": "chainsql",
-  "version": "0.6.8",
+  "version": "0.6.17",
   "description": "An database driver for chainsql ",
   "main": "src/index.js",
   "scripts": {
@@ -8,16 +8,14 @@
   },
   "dependencies": {
     "bignumber.js": "^2.4.0",
-    "crypto": "0.0.3",
+    "co": "^4.6.0",
     "elliptic": "^5.1.0",
     "hash.js": "^1.0.3",
     "lodash": "^4.14.1",
-    "ripple-binary-codec": "^0.1.10",
-    "ripple-keypairs": "^0.10.0",
-    "ripple-address-codec": "^2.0.1",
-    "ripple-lib": "0.17.6",
+    "chainsql-lib": "0.17.21",
     "sjcl": "~1.0.3",
-    "ws": "^2.2.2"
+    "ws": "^2.2.2",
+    "protobufjs": "^6.8.0"
   },
   "repository": {
     "type": "git",

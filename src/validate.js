@@ -7,7 +7,7 @@ function create(obj) {
 	if (!isArrayFn(obj)) {
 		throw new Error('raw must be an Array');
 	}
-	let isHavePk = false;
+	// let isHavePk = false;
 	for (let i = 0; i < obj.length; i++) {
 		let node = {};
 		if (!obj[i].field || !obj[i].type) {
@@ -33,16 +33,18 @@ function create(obj) {
 
         }else if(obj[i].type === 'datetime'){
 
-        }else{
+        }else if(obj[i].type === 'date'){
+
+		}else{
            throw new Error('invalid type '+obj[i].type)
         }	
-		if (obj[i].PK) {
-			if (isHavePk) {
-				throw new Error('the table only have a PK');
-			}
-			node.PK = 1;
-			isHavePk = true;
-		}
+		// if (obj[i].PK) {
+		// 	if (isHavePk) {
+		// 		throw new Error('the table only have a PK');
+		// 	}
+		// 	node.PK = 1;
+		// 	isHavePk = true;
+		// }
 	}
 }
 
