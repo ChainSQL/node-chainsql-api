@@ -1,0 +1,37 @@
+{
+  "name": "chainsql",
+  "version": "0.6.8",
+  "description": "An database driver for chainsql ",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "bignumber.js": "^2.4.0",
+    "crypto": "0.0.3",
+    "elliptic": "^5.1.0",
+    "hash.js": "^1.0.3",
+    "lodash": "^4.14.1",
+    "ripple-binary-codec": "^0.1.10",
+    "ripple-keypairs": "^0.10.0",
+    "ripple-address-codec": "^2.0.1",
+    "ripple-lib": "0.17.6",
+    "sjcl": "~1.0.3",
+    "ws": "^2.2.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/peersafe/node-chainsql.git"
+  },
+  "keywords": [
+    "chainsql",
+    "ripple",
+    "mysql"
+  ],
+  "author": "peersafe",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/peersafe/node-chainsql/issues"
+  },
+  "homepage": "http://chainsql.net/"
+}
