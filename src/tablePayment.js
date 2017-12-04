@@ -2,7 +2,7 @@
 
 var _ = require('lodash');
 const path = require('path');
-const basePath = path.join(require.resolve('ripple-lib'), '../transaction/utils');
+const basePath = path.join(require.resolve('chainsql-lib'), '../transaction/utils');
 var utils = require(basePath);
 var validate = utils.common.validate;
 var toRippledAmount = utils.common.toRippledAmount;
@@ -13,11 +13,11 @@ var ValidationError = utils.common.errors.ValidationError;
 function isXRPToXRPPayment(payment) {
   var sourceCurrency = _.get(payment, 'source.maxAmount.currency', _.get(payment, 'source.amount.currency'));
   var destinationCurrency = _.get(payment, 'destination.amount.currency', _.get(payment, 'destination.minAmount.currency'));
-  return sourceCurrency === 'XRP' && destinationCurrency === 'XRP';
+  return sourceCurrency === 'ZXC' && destinationCurrency === 'ZXC';
 }
 
 function isIOUWithoutCounterparty(amount) {
-  return amount && amount.currency !== 'XRP' && amount.counterparty === undefined;
+  return amount && amount.currency !== 'ZXC' && amount.counterparty === undefined;
 }
 
 function applyAnyCounterpartyEncoding(payment) {
@@ -38,7 +38,7 @@ function applyAnyCounterpartyEncoding(payment) {
 function createMaximalAmount(amount) {
   var maxXRPValue = '100000000000';
   var maxIOUValue = '9999999999999999e80';
-  var maxValue = amount.currency === 'XRP' ? maxXRPValue : maxIOUValue;
+  var maxValue = amount.currency === 'ZXC' ? maxXRPValue : maxIOUValue;
   return _.assign({}, amount, {
     value: maxValue
   });
@@ -59,7 +59,8 @@ function createPaymentTransaction(paymentArgument) {
     User:payment.user,
     AutoFillField:payment.autoFillField,
     Token:payment.token,
-    StrictMode: payment.strictMode
+    StrictMode: payment.strictMode,
+    OperationRule: payment.operationRule
   }
   return txJSON;
 }

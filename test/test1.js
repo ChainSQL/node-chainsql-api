@@ -23,7 +23,7 @@ r.connect('ws://127.0.0.1:6006', function(err, data) {
 	// 	"secret": "ssnqAfDUjc6Bkevd1Xmz5dJS5yHdz",
 	// 	"address": "rBuLBiHmssAMHWQMnEN7nXQXaVj7vhAv6Q"
 	// });
-	//createTable(tb, false); //创建表
+	createTable(tb, false); //创建表
 	// 
 	// insertData(tb); //插入数据
 	// del(tb)//删除数据
@@ -288,7 +288,7 @@ function transaction() {
 
 function subTable(tb, owner) {
 	var event = r.event;
-	event.subscriptTable(tb, owner, function(err, data) {
+	event.subscribeTable(owner,tb, function(err, data) {
 		console.log(err, data)
 	}).then(function(data) {
 		console.log('subTable success.');
@@ -304,7 +304,7 @@ function subTable(tb, owner) {
 function unsubTable(owner, tb) {
 	try {
 		var event = r.event;
-		event.unsubscriptTable(tb, owner)
+		event.unsubscribeTable(owner,tb)
 		.then(function(data) {
 			console.log('unsubTable success.');
 		})
