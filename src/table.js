@@ -49,7 +49,7 @@ Table.prototype.insert = function(raw, field) {
   }
 }
 
-Table.prototype.update = function(raw) {
+Table.prototype.update = function() {
   if (!this.tab) throw new Error('you must appoint the table name');
   if (this.exec !== 'r_get') throw new Error('Object can not hava function update');
   this.query.unshift(Array.prototype.slice.call(arguments)[0]);
@@ -66,7 +66,7 @@ Table.prototype.update = function(raw) {
     return this;
   }
 }
-Table.prototype.delete = function(raw) {
+Table.prototype.delete = function() {
   if (!this.tab) throw new Error('you must appoint the table name');
   //if (this.exec !== 'r_get') throw new Error('Object can not hava function delete');
   this.exec = 'r_delete';
@@ -74,7 +74,7 @@ Table.prototype.delete = function(raw) {
     this.cache.push({
       Owner: this.connect.scope,
       TableName: this.tab,
-      Raw: that.query,
+      Raw: this.query,
       OpType: opType[this.exec]
     })
     return;
