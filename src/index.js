@@ -375,7 +375,7 @@ ChainsqlAPI.prototype.grant = function(name, user, flags, publicKey) {
     this.cache.push({
       OpType: opType['t_grant'],
       TableName: name,
-      Raw: convertStringToHex(JSON.stringify([flags])),
+      Raw: [flags],
       publicKey: publicKey,
       User: user
     });
@@ -730,7 +730,10 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 	ChainSQL.api.prepareTable(payment).then(function(tx_json) {
 		getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function(data) {
 			if (data.status == 'error') {
-				errFunc(new Error('getTxJson error'));
+				if(data.error_message)
+					errFunc(new Error(data.error_message));
+				else
+					errFunc(new Error('getTxJson error'));
 			}
 			data.tx_json.Fee = util.calcFee(data.tx_json);
 			var payment = data.tx_json;
