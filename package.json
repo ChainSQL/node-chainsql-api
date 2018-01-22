@@ -1,6 +1,6 @@
 {
   "name": "chainsql",
-  "version": "0.6.21",
+  "version": "0.6.22",
   "description": "An database driver for chainsql ",
   "main": "src/index.js",
   "scripts": {
@@ -12,7 +12,7 @@
     "elliptic": "^5.1.0",
     "hash.js": "^1.0.3",
     "lodash": "^4.14.1",
-    "chainsql-lib": "0.17.22",
+    "chainsql-lib": "^0.17.25",
     "sjcl": "~1.0.3",
     "ws": "^2.2.2",
     "protobufjs": "^6.8.0"

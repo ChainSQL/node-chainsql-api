@@ -5,11 +5,11 @@ const crypto = require('../lib/crypto');
 const keypairs = require('chainsql-keypairs');
 const EventManager = require('./eventManager')
 
-var basePath = path.join(require.resolve('chainsql-binary-codec'), '../enums/definitions.json');
-var data = fs.readFileSync(path.join(__dirname, '../lib/definitions.json'))
-fs.writeFileSync(basePath, data);
-data = fs.readFileSync(path.join(__dirname, '../lib/parse-transaction.js'));
-basePath = path.join(require.resolve('chainsql-lib'), '../ledger/parse/transaction.js');
+// var basePath = path.join(require.resolve('chainsql-binary-codec'), '../enums/definitions.json');
+// var data = fs.readFileSync(path.join(__dirname, '../lib/definitions.json'))
+// fs.writeFileSync(basePath, data);
+var data = fs.readFileSync(path.join(__dirname, '../lib/parse-transaction.js'));
+var basePath = path.join(require.resolve('chainsql-lib'), '../ledger/parse/transaction.js');
 fs.writeFileSync(basePath, data)
 data = fs.readFileSync(path.join(__dirname, '../lib/tx-type.json'));
 basePath = path.join(require.resolve('chainsql-lib'), '../common/schemas/objects/tx-type.json');
@@ -17,7 +17,7 @@ fs.writeFileSync(basePath, data);
 basePath = path.join(require.resolve('chainsql-lib'), '../common/connection.js');
 data = fs.readFileSync(path.join(__dirname, '../lib/connection.js'));
 fs.writeFileSync(basePath, data);
-const RippleAPI = new require('chainsql-lib').RippleAPI;
+const RippleAPI = new require('chainsql-lib').ChainsqlLibAPI;
 
 RippleAPI.prototype.prepareTable = require('./tablePayment');
 RippleAPI.prototype.prepareTx = require('./txPayment');
