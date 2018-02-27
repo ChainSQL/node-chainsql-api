@@ -88,6 +88,9 @@ function getUserToken(connection,owner,user,name) {
     var json = {};
     json[owner + name] = data.token;
     return json;
+  }).catch(function(err){
+    console.error(err);
+    return {'status':'error'};
   })
 }
 
