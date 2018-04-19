@@ -33,26 +33,26 @@ co(function*() {
 		// });
 		
 
-		var cipher = crypto.eciesEncrypt("hello","02F039E54B3A0D209D348F1B2C93BE3689F2A7595DDBFB1530499D03264B87A61F");
-		var keypair = keypairs.deriveKeypair("ssnqAfDUjc6Bkevd1Xmz5dJS5yHdz");
+		var cipher = crypto.eciesEncrypt("hello","03B7FBF1AC149B0D297B7407CAB9636792333B8D8B8A4036B2D4DE2E6D69D435B5");
+		var keypair = keypairs.deriveKeypair("xxHgHoRAHdGZxy5gWUdMeUK7hWrgr");
 		var plain = crypto.eciesDecrypt(cipher,keypair.privateKey);
 		console.log(plain);
 		
 		//字段级加密
 		console.log("multi encrypt test:");
-		var listPublic = ["aBP8JEiNXr3a9nnBFDNKKzAoGNezoXzsa1N8kQAoLU5F5HrQbFvs", "aBP8EvA6tSMzCRbfsLwiFj51vDjE4jPv9Wfkta6oNXEn8TovcxaT"];
+		var listPublic = ["cBP7JPfSVPgqGfGXVJVw168sJU5HhQfPbvDRZyriyKNeYjYLVL8M", "cBPaLRSCwtsJbz4Rq4K2NvoiDZWJyL2RnfdGv5CQ2UFWqyJ7ekHM"];
 		var cip = yield crypto.encryptText("test",listPublic);
 		console.log("cipher:" + cip);
-		var text = yield crypto.decryptText(cip,"snEqBjWd2NWZK3VgiosJbfwCiLPPZ");
+		var text = yield crypto.decryptText(cip,"xpvPjSRCtmQ3G99Pfu1VMDMd9ET3W");
 		console.log("plain text:" + text);
-		var text2 = yield crypto.decryptText(cip,"ssnqAfDUjc6Bkevd1Xmz5dJS5yHdz");
+		var text2 = yield crypto.decryptText(cip,"xnHAcvtn1eVLDskhxPKNrhTsYKqde");
 		console.log("plain text2:" + text2);
 		
 
 		console.log("AesPadding Test");
-		var aesCipher = crypto.aesEncrypt("123","test");
+		var aesCipher = crypto.aesEncrypt("abcdefg","hello,world");
 		console.log(aesCipher);
-		var aesDecrypted = crypto.aesDecrypt("123","EFBFBD01EFBFBDEFBFBD027CEFBFBD636C1C6522EFBFBD2FEFBFBDEFBFBD");
+		var aesDecrypted = crypto.aesDecrypt("abcdefg",aesCipher);
 		console.log(aesDecrypted);
 		
 
