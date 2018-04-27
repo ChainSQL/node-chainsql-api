@@ -361,7 +361,11 @@ ChainsqlAPI.prototype.renameTable = function(oldName, newName) {
   }
 }
 ChainsqlAPI.prototype.grant = function(name, user, flags, publicKey) {
-  if (!(name && user && flags)) throw new Error('args is not enough')
+	if (!(name && user && flags)) throw new Error('args is not enough')
+	if (!util.checkUserMatchPublicKey(user,publicKey)){
+		throw new Error('Publickey does not match User')
+	}
+
   let that = this;
   if (that.transaction) {
     this.cache.push({

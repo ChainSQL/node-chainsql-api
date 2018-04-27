@@ -33,7 +33,7 @@ Table.prototype.insert = function(raw, field) {
     this.query.push(raw);
   }
   if (JSON.stringify(raw).length > 512000) {
-    throw new Error('Insert too much value,the total value of inserted must not over 1024KB')
+    throw new Error('Insert too much value,the total value of inserted must not over 512KB')
   }
   this.exec = 'r_insert';
   if (this.transaction) {
@@ -177,6 +177,12 @@ function hasExtraCond(item) {
 }
 
 Table.prototype.limit = function(limit) {
+  if(limit){
+    if(typeof(limit.index) != 'number')
+      throw new Error('limit.index must be a number')
+    if(typeof(limit.total) != 'number')
+    throw new Error('limit.total must be a number')
+  }
   if (this.exec !== 'r_get')
     throw new Error('Object can not hava function limit');
 

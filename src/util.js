@@ -6,7 +6,11 @@ const keypairs = require('chainsql-keypairs');
 const cryptoo = require('crypto');
 const crypto = require('../lib/crypto');
 const opType = require('./config').opType;
+const addressCodec = require('chainsql-address-codec');
+const elliptic = require('elliptic');
+const Secp256k1 = elliptic.ec('secp256k1');
 
+var AESKeyLength = 32;
 
 function getFee(api) {
   let cushion = api._feeCushion;
@@ -30,9 +34,9 @@ function generateToken(key, secret) {
   var secret = secret;
   var token;
   if (!secret) {
-    secret = cryptoo.randomBytes(8).toString('hex');
+    secret = cryptoo.randomBytes(AESKeyLength/2).toString('hex');
     var keypair = keypairs.deriveKeypair(key);
-    token = crypto.eciesEncrypt('3b2a3563a37cdf77', keypair.publicKey);
+    token = crypto.eciesEncrypt(secret, keypair.publicKey);
   } else {
     token = crypto.eciesEncrypt(secret, key);
   }
@@ -162,6 +166,40 @@ function isSqlStatementTx(type){
   }  
 }
 
+/**
+ * byte型转换十六进制
+ * @param b
+ * @returns {string}
+ * @constructor
+ */
+const Bytes2HexString = (b)=> {
+  let hexs = "";
+  for (let i = 0; i < b.length; i++) {
+      let hex = (b[i]).toString(16);
+      if (hex.length === 1) {
+          hexs += '0' + hex.toUpperCase();
+      }else {
+          hexs += hex.toUpperCase();
+      }
+  }
+  return hexs;
+}
+
+function checkUserMatchPublicKey(user,publicKey){
+  if(user && !publicKey){
+    return true;
+  }
+  var PUBLICKEY_LENGTH = 33;
+  var ACCOUNT_PUBLIC = 35;
+  if(publicKey.length != 2 * PUBLICKEY_LENGTH){
+    var decoded = addressCodec.decode(publicKey, ACCOUNT_PUBLIC);
+    var decodedPublic = decoded.slice(1,1+PUBLICKEY_LENGTH);
+    publicKey = Bytes2HexString(decodedPublic);
+  }
+  var address = keypairs.deriveAddress(publicKey)
+  return user == address;
+}
+
 module.exports = {
   getFee: getFee,
   getSequence: getSequence,
@@ -175,5 +213,6 @@ module.exports = {
   generateToken: generateToken,
   decodeToken: decodeToken,
   calcFee : calcFee,
-  isSqlStatementTx: isSqlStatementTx
+  isSqlStatementTx: isSqlStatementTx,
+  checkUserMatchPublicKey: checkUserMatchPublicKey
 }
