@@ -16,7 +16,11 @@
     "chainsql-keypairs": "^0.10.4",
     "sjcl": "~1.0.3",
     "ws": "^2.2.2",
-    "protobufjs": "^6.8.0"
+    "protobufjs": "^6.8.0",
+    "web3-eth-abi": "1.0.0-beta.34",
+    "web3-utils": "1.0.0-beta.34",
+    "web3-core-helpers": "1.0.0-beta.34",
+    "web3-core-promievent": "1.0.0-beta.34"
   },
   "repository": {
     "type": "git",
