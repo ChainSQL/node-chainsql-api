@@ -23,7 +23,6 @@ var Contract = function Contract(chainsql, jsonInterface, address, options) {
 
     this.chainsql = chainsql;
     this.connect = chainsql.connect;
-    //this.address = address;
 
     if(!(this instanceof Contract)) {
         throw new Error('Please use the "new" keyword to instantiate a chainsql contract() object!');
@@ -172,7 +171,6 @@ var Contract = function Contract(chainsql, jsonInterface, address, options) {
     // set getter/setter properties
     this.options.address = address;
     this.options.jsonInterface = jsonInterface;
-
 };
 
 /**
@@ -289,7 +287,6 @@ Contract.prototype._decodeEventABI = function (data) {
     // create empty inputs if none are present (e.g. anonymous events on allEvents)
     event.inputs = event.inputs || [];
 
-
     var argTopics = event.anonymous ? data.topics : data.topics.slice(1);
 
     result.returnValues = abi.decodeLog(event.inputs, data.data, argTopics);
@@ -308,7 +305,6 @@ Contract.prototype._decodeEventABI = function (data) {
     };
     delete result.data;
     delete result.topics;
-
 
     return result;
 };
@@ -350,10 +346,8 @@ Contract.prototype._encodeMethodABI = function _encodeMethodABI() {
             throw new Error('The contract has no contract data option set. This is necessary to append the constructor parameters.');
 
         return this._deployData + paramsABI;
-
     // return method
     } else {
-
         var returnValue = (signature) ? signature + paramsABI : paramsABI;
 
         if(!returnValue) {
@@ -362,7 +356,6 @@ Contract.prototype._encodeMethodABI = function _encodeMethodABI() {
             return returnValue;
         }
     }
-
 };
 
 /**
@@ -443,7 +436,6 @@ Contract.prototype.deploy = function(options, callback){
     //     deployData: options.data,
     //     _ethAccounts: this.constructor._ethAccounts
     // }, options.arguments);
-
 };
 function executeDeployPayment(chainSQL, deployPayment, callback, resolve, reject){
     var errFunc = function(error) {
@@ -463,7 +455,7 @@ function executeDeployPayment(chainSQL, deployPayment, callback, resolve, reject
 function prepareDeployPayment(chainSQL, depolyPayment){
     var instructions = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
     const txJSON = createDeployPaymentTx(depolyPayment);
-    return chainsqlUtils.prepareTransaction(txJSON, chainSQL.api, instructions);//this?
+    return chainsqlUtils.prepareTransaction(txJSON, chainSQL.api, instructions);
 }
 function createDeployPaymentTx(depolyPayment){
     var newDeployPayment = _.cloneDeep(depolyPayment);
@@ -555,7 +547,6 @@ function handleDeployTx(chainSQL, signedVal, callback, resolve, reject){
 			if (data.status == 'db_error' 
 				|| data.status == 'db_timeout' 
 				|| data.status == 'validate_timeout') {
-				
 				errFunc({
 					status: data.status,
 					tx_hash: signed.id,
@@ -665,10 +656,8 @@ Contract.prototype._createTxObject =  function _createTxObject(){
     var txObject = {};
 
     if(this.method.type === 'function') {
-
         txObject.call = this.parent._executeMethod.bind(txObject, 'call');
         txObject.call.request = this.parent._executeMethod.bind(txObject, 'call', true); // to make batch requests
-
     }
 
     txObject.send = this.parent._executeMethod.bind(txObject, 'send');
@@ -725,7 +714,6 @@ Contract.prototype._executeMethod = function _executeMethod(){
         }
 
         return payload;
-
     } else {
         switch (args.type) {
             case 'estimate':
@@ -813,20 +801,15 @@ function handleContractCall(curFunObj, callObj, callBack, resolve, reject) {
     const contractData = callObj.data.length >= 2 ? callObj.data.slice(2) : callObj.data;
 	connect.api.connection.request({
 		command: 'contract_call',
-		tx_json: {
-            Account : connect.address,
-			ContractAddress : callObj.to,
-			ContractData : contractData.toUpperCase()
-		}
+        Account : connect.address,
+		ContractAddress : callObj.to,
+        ContractData : contractData.toUpperCase()
 	}).then(function(data) {
 		// if (data.status != 'success'){
-		// 	callBack(new Error(data), null);
+		// 	callBackFun(new Error(data), null);
         // }
         //begin to decode return value,then get result and set to callBack
-        //do some decode work
-        //const curFuncSign = contractObj.curFuncSign;
-        //const funcOutput = contractObj.methods[curFuncSign].outputs;
-        var resultStr = "0x" + data.contract_local_call_result;
+        var resultStr = data.contract_call_result;
         var localcallResult = contractObj._decodeMethodReturn(curFunObj._method.outputs, resultStr);
         callBackFun(null, localcallResult);
 	}).catch(function(err) {

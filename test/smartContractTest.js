@@ -23,7 +23,6 @@ async function main(){
         //deployContract();
 
         const myContract = chainsql.contract(JSON.parse(abi), contractAddr);
-        const inputData = "0x6606873b000000000000000000000000000000000000000000000000000000000000000f";
         // myContract.methods.setMem(15).send({
         //     gas:500000
         // }, (err, result) => {
