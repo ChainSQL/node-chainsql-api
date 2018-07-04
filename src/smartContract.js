@@ -410,7 +410,7 @@ Contract.prototype.deploy = function(options, callback){
         });
     }
     else{
-        executeDeployPayment(this.chainsql, deployPayment, callback, null, null);
+        executeDeployPayment(this, deployPayment, callback, null, null);
     }
     
 
@@ -437,7 +437,8 @@ Contract.prototype.deploy = function(options, callback){
     //     _ethAccounts: this.constructor._ethAccounts
     // }, options.arguments);
 };
-function executeDeployPayment(chainSQL, deployPayment, callback, resolve, reject){
+function executeDeployPayment(contractObj, deployPayment, callback, resolve, reject){
+    let chainSQL = contractObj.chainsql;
     var errFunc = function(error) {
 		if ((typeof callback) == 'function') {
 			callback(error, null);
@@ -447,7 +448,7 @@ function executeDeployPayment(chainSQL, deployPayment, callback, resolve, reject
 	};
     prepareDeployPayment(chainSQL, deployPayment).then(data => {
         let signedRet = chainSQL.api.sign(data.txJSON, chainSQL.connect.secret);
-		handleDeployTx(chainSQL, signedRet, callback, resolve, reject);
+		handleDeployTx(contractObj, signedRet, callback, resolve, reject);
     }).catch(err => {
         errFunc(err);
     });
@@ -470,7 +471,8 @@ function createDeployPaymentTx(depolyPayment){
     }
     return txJSON;
 }
-function handleDeployTx(chainSQL, signedVal, callback, resolve, reject){
+function handleDeployTx(contractObj, signedVal, callback, resolve, reject){
+    let chainSQL = contractObj.chainsql;
     var isFunction = false;
 	if ((typeof callback) == 'function')
 		isFunction = true;
@@ -514,6 +516,7 @@ function handleDeployTx(chainSQL, signedVal, callback, resolve, reject){
                         });
                     }
 					else{
+                        contractObj.options.address = contractAddr;
                         sucFunc({
                         status:data.status,
                         tx_hash: data.transaction.hash,
@@ -534,6 +537,7 @@ function handleDeployTx(chainSQL, signedVal, callback, resolve, reject){
                         });
                     }
 					else{
+                        contractObj.options.address = contractAddr;
                         sucFunc({
                         //status: object.expect,
                         status:data.status,
@@ -766,7 +770,7 @@ Contract.prototype._executeMethod = function _executeMethod(){
             	    ContractOpType : 2,
             	    Account : this._parent.connect.address,
             	    ContractAddress : args.options.to,
-            	    Gas : args.options.gas,
+            	    Gas : args.options.Gas,
             	    ContractData : contractData.toUpperCase()
                 }
                 if ((typeof args.callback) != 'function') {

@@ -20,23 +20,19 @@ async function main(){
 
         chainsql.as(RootUser);
     
-        //deployContract();
+        deployContract();
 
-        const myContract = chainsql.contract(JSON.parse(abi), contractAddr);
-        // myContract.methods.setMem(15).send({
-        //     gas:500000
+        // const myContract = chainsql.contract(JSON.parse(abi), contractAddr);
+        // myContract.methods.setMem(16).send({
+        //     Gas:500000
         // }, (err, result) => {
         //     console.log(err);
         //     console.log(result);
-        //     myContract.methods.getMem().call(function(err, res){
-        //         console.log(err);
-        //         console.log(res);
-        //     })
+        // });
+        // myContract.methods.getMem().call(function(err, res){
+        //     console.log(err);
+        //     console.log(res);
         // })
-        myContract.methods.getMem().call(function(err, res){
-            console.log(err);
-            console.log(res);
-        })
     
         //testGetDeployTxhash();    
     } catch (error) {
@@ -48,11 +44,18 @@ function deployContract(){
     const myContract = chainsql.contract(JSON.parse(abi));
     myContract.deploy({
         ContractValue : "10000000",
-        Gas : "400000",
+        Gas : 400000,
         ContractData : deployBytecode
     },function(err,result){
         console.log(err);
         console.log(result);
+
+        myContract.methods.setMem(16).send({
+            Gas:500000
+        }, (err, result) => {
+            console.log(err);
+            console.log(result);
+        });
     });
 }
 
