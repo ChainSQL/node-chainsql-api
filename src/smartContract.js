@@ -805,9 +805,9 @@ function handleContractCall(curFunObj, callObj, callBack, resolve, reject) {
     const contractData = callObj.data.length >= 2 ? callObj.data.slice(2) : callObj.data;
 	connect.api.connection.request({
 		command: 'contract_call',
-        Account : connect.address,
-		ContractAddress : callObj.to,
-        ContractData : contractData.toUpperCase()
+        account : connect.address,
+		contract_address : callObj.to,
+        contract_data : contractData.toUpperCase()
 	}).then(function(data) {
 		// if (data.status != 'success'){
 		// 	callBackFun(new Error(data), null);
