@@ -2,8 +2,7 @@
 
 const _ = require('lodash');
 const path = require('path');
-const chainsqlUtilPath = path.join(require.resolve('chainsql-lib'), '../transaction/utils');
-var chainsqlUtils = require(chainsqlUtilPath);
+var chainsqlUtils = require('chainsql-lib').ChainsqlLibUtil;
 var abi = require('web3-eth-abi');
 var utils = require('web3-utils');
 var formatters = require('web3-core-helpers').formatters;

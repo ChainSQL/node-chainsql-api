@@ -1,7 +1,6 @@
 'use strict'
 const path = require('path');
-const basePath = path.join(require.resolve('chainsql-lib'), '../common');
-const common = require(basePath);
+const common = require('chainsql-lib').ChainsqlLibCommon;
 const keypairs = require('chainsql-keypairs');
 const cryptoo = require('crypto');
 const crypto = require('../lib/crypto');
