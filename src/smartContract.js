@@ -405,38 +405,16 @@ Contract.prototype.deploy = function(options, callback){
 	};
 
 	if ((typeof callback) != 'function') {
+		let this_ = this;
 		return new Promise(function(resolve, reject){
-			executeDeployPayment(this, deployPayment, callback, resolve, reject);
+			executeDeployPayment(this_, deployPayment, callback, resolve, reject);
 		});
 	}
 	else{
 		executeDeployPayment(this, deployPayment, callback, null, null);
 	}
-    
-
-	// options = options || {};
-
-	// options.arguments = options.arguments || [];
-	// options = this._getOrSetDefaultOptions(options);
-
-
-	// // return error, if no "data" is specified
-	// if(!options.data) {
-	//     return utils._fireError(new Error('No "data" specified in neither the given options, nor the default options.'), null, null, callback);
-	// }
-
-	// var constructor = _.find(this.options.jsonInterface, function (method) {
-	//     return (method.type === 'constructor');
-	// }) || {};
-	// constructor.signature = 'constructor';
-
-	// return this._createTxObject.apply({
-	//     method: constructor,
-	//     parent: this,
-	//     deployData: options.data,
-	//     _ethAccounts: this.constructor._ethAccounts
-	// }, options.arguments);
 };
+
 function executeDeployPayment(contractObj, deployPayment, callback, resolve, reject){
 	let chainSQL = contractObj.chainsql;
 	var errFunc = function(error) {
@@ -572,7 +550,6 @@ async function getContractAddr(chainSQL, txHash){
 	let txDetail = await chainSQL.api.getTransaction(txHash);
 	let affectedNodes = txDetail.specification.meta.AffectedNodes;
 	let contractAddr = "";
-	console.log(affectedNodes);
 	for(let node of affectedNodes){
 		if(node.hasOwnProperty("CreatedNode")){
 			let createdNodeObj = node.CreatedNode;
@@ -673,9 +650,9 @@ Contract.prototype._createTxObject =  function _createTxObject(){
  */
 Contract.prototype._executeMethod = function _executeMethod(){
 	var _this = this,
-		args = this._parent._processExecuteArguments.call(this, Array.prototype.slice.call(arguments)/*, defer*/),
+		args = this._parent._processExecuteArguments.call(this, Array.prototype.slice.call(arguments)/*, defer*/);
 		//defer = promiEvent((args.type !== 'send')),
-		ethAccounts = _this.constructor._ethAccounts || _this._ethAccounts;
+		//ethAccounts = _this.constructor._ethAccounts || _this._ethAccounts;
 
 	// simple return request for batch requests
 	if(args.generateRequest) {
@@ -714,8 +691,9 @@ Contract.prototype._executeMethod = function _executeMethod(){
 
 		case 'call':
 			if ((typeof args.callback) != 'function') {
+				let this_ = this;
 				return new Promise(function (resolve, reject) {
-					handleContractCall(this, args.options, args.callback, resolve, reject);
+					handleContractCall(this_, args.options, args.callback, resolve, reject);
 				});
 			} else {
 				handleContractCall(this, args.options, args.callback, null, null);
@@ -733,8 +711,9 @@ Contract.prototype._executeMethod = function _executeMethod(){
 				ContractData : contractData.toUpperCase()
 			};
 			if ((typeof args.callback) != 'function') {
+				let contractObj = this._parent;
 				return new Promise(function (resolve, reject) {
-					handleContractSendTx(this._parent, sendTxPayment, args.callback, resolve, reject);
+					handleContractSendTx(contractObj, sendTxPayment, args.callback, resolve, reject);
 				});
 			} else {
 				handleContractSendTx(this._parent, sendTxPayment, args.callback, null, null);
