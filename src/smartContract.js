@@ -105,18 +105,18 @@ var Contract = function Contract(chainsql, jsonInterface, address, options) {
 					// event
 				} else if (method.type === 'event') {
 					method.signature = abi.encodeEventSignature(funcName);
-					//var event = _this._on.bind(_this, method.signature);
+					var event = _this._on.bind(_this, method.signature);
 
 					// add method only if not already exists
-					// if(!_this.events[method.name] || _this.events[method.name].name === 'bound ')
-					//     _this.events[method.name] = event;
+					if(!_this.events[method.name] || _this.events[method.name].name === 'bound ')
+						_this.events[method.name] = event;
 
 					// definitely add the method based on its signature
-					//_this.events[method.signature] = event;
-					_this.events[method.signature] = method;
+					_this.events[method.signature] = event;
+					//_this.events[method.signature] = method;
 
 					// add event by name
-					//_this.events[funcName] = event;
+					_this.events[funcName] = event;
 				}
 				return method;
 			});
@@ -269,11 +269,12 @@ Contract.prototype._encodeEventABI = function (event, options) {
  * @param {Object} data
  * @return {Object} result object with decoded indexed && not indexed params
  */
-Contract.prototype._decodeEventABI = function (data) {
-	var event = this;
+Contract.prototype._decodeEventABI = function (currentEvent, data) {
+	//var event = this;
+	var event = currentEvent;
 
-	data.data = data.data || '';
-	data.topics = data.topics || [];
+	data.data = data.ContractEventInfo || '';
+	data.topics = data.ContractEventTopics || [];
 	var result = formatters.outputLogFormatter(data);
 
 	// if allEvents get the right event
@@ -561,6 +562,30 @@ async function getContractAddr(chainSQL, txHash){
 }
 
 /**
+ * Adds event listeners and creates a subscription.
+ *
+ * @method _on
+ * @param {String} event
+ * @param {Object} options
+ * @param {Function} callback
+ * @return {Object} the event subscription
+ */
+Contract.prototype._on = function(){
+	var subOptions = this._generateEventOptions.apply(this, arguments);
+
+
+	// prevent the event "newListener" and "removeListener" from being overwritten
+	this._checkListener('newListener', subOptions.event.name, subOptions.callback);
+	this._checkListener('removeListener', subOptions.event.name, subOptions.callback);
+
+	// TODO check if listener already exists? and reuse subscription if options are the same.
+
+	let chainSQL = this.chainsql;
+	//this._decodeEventABI.bind(subOptions.event),
+	chainSQL.event.subscribeCtrAddr(this, subOptions.event.signature, subOptions.callback);
+};
+
+/**
  * Gets the event signature and outputformatters
  *
  * @method _generateEventOptions
@@ -590,7 +615,10 @@ Contract.prototype._generateEventOptions = function() {
 		throw new Error('Event "' + event.name + '" doesn\'t exist in this contract.');
 	}
 
-	if (!utils.isAddress(this.options.address)) {
+	// if (!utils.isAddress(this.options.address)) {
+	// 	throw new Error('This contract object doesn\'t have address set yet, please set an address first.');
+	// }
+	if (!this.options.address) {
 		throw new Error('This contract object doesn\'t have address set yet, please set an address first.');
 	}
 
@@ -599,6 +627,20 @@ Contract.prototype._generateEventOptions = function() {
 		event: event,
 		callback: callback
 	};
+};
+
+/**
+ * Checks that no listener with name "newListener" or "removeListener" is added.
+ *
+ * @method _checkListener
+ * @param {String} type
+ * @param {String} event
+ * @return {Object} the contract instance
+ */
+Contract.prototype._checkListener = function(type, event){
+	if(event === type) {
+		throw new Error('The event "'+ type +'" is a reserved event name, you can\'t use it.');
+	}
 };
 
 /**
