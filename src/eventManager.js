@@ -124,7 +124,7 @@ function _onMessage(that, contractObj = undefined) {
 					return (json.type === 'event' && json.signature === '0x'+ key.replace('0x',''));
 				});
 				let output = contractObj._decodeEventABI(currentEvent, data);
-				that.cache[key](null, data);
+				that.cache[key](null, output);
 			}
 		}
 	});

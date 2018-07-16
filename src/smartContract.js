@@ -113,7 +113,6 @@ var Contract = function Contract(chainsql, jsonInterface, address, options) {
 
 					// definitely add the method based on its signature
 					_this.events[method.signature] = event;
-					//_this.events[method.signature] = method;
 
 					// add event by name
 					_this.events[funcName] = event;
@@ -256,7 +255,8 @@ Contract.prototype._encodeEventABI = function (event, options) {
 	}
 
 	if(this.options.address) {
-		result.address = this.options.address.toLowerCase();
+		//result.address = this.options.address.toLowerCase();
+		result.address = this.options.address;
 	}
 
 	return result;
@@ -275,7 +275,10 @@ Contract.prototype._decodeEventABI = function (currentEvent, data) {
 
 	data.data = data.ContractEventInfo || '';
 	data.topics = data.ContractEventTopics || [];
-	var result = formatters.outputLogFormatter(data);
+	delete data.ContractEventInfo;
+	delete data.ContractEventTopics;
+	//var result = formatters.outputLogFormatter(data); //keep for later-lc
+	var result = data;
 
 	// if allEvents get the right event
 	if(event.name === 'ALLEVENTS') {
@@ -484,7 +487,7 @@ function handleDeployTx(contractObj, signedVal, callback, resolve, reject){
 			// success
 			// if 'submit()' called without param, default is validate_success
 			if (data.status === 'validate_success' && data.type === 'singleTransaction') {
-				let contractAddr = await getContractAddr(chainSQL, data.transaction.hash);
+				let contractAddr = await getNewDeployCtrAddr(chainSQL, data.transaction.hash);
 				if (contractAddr === "") {
 					errFunc({
 						status: data.status,
@@ -546,7 +549,7 @@ function handleDeployTx(contractObj, signedVal, callback, resolve, reject){
 	});
 }
 
-async function getContractAddr(chainSQL, txHash){
+async function getNewDeployCtrAddr(chainSQL, txHash){
 	let txDetail = await chainSQL.api.getTransaction(txHash);
 	let affectedNodes = txDetail.specification.meta.AffectedNodes;
 	let contractAddr = "";
