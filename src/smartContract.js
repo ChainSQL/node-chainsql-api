@@ -659,6 +659,7 @@ Contract.prototype._createTxObject =  function _createTxObject(){
 	if(this.method.type === 'function') {
 		txObject.call = this.parent._executeMethod.bind(txObject, 'call');
 		txObject.call.request = this.parent._executeMethod.bind(txObject, 'call', true); // to make batch requests
+		txObject.auto = this.parent._executeMethod.bind(txObject, 'auto');
 	}
 
 	txObject.send = this.parent._executeMethod.bind(txObject, 'send');
@@ -670,13 +671,14 @@ Contract.prototype._createTxObject =  function _createTxObject(){
 		if (this.nextMethod) {
 			return this.nextMethod.apply(null, args);
 		}
-		throw errors.InvalidNumberOfParams(args.length, this.method.inputs.length, this.method.name);
+		//throw errors.InvalidNumberOfParams(args.length, this.method.inputs.length, this.method.name);
+		throw "Invalid Method Params!";
 	}
 
 	txObject.arguments = args || [];
 	txObject._method = this.method;
 	txObject._parent = this.parent;
-	txObject._ethAccounts = this.parent.constructor._ethAccounts || this._ethAccounts;
+	//txObject._ethAccounts = this.parent.constructor._ethAccounts || this._ethAccounts;
 
 	if(this.deployData) {
 		txObject._deployData = this.deployData;
@@ -700,7 +702,6 @@ Contract.prototype._executeMethod = function _executeMethod(){
 
 	// simple return request for batch requests
 	if(args.generateRequest) {
-
 		var payload = {
 			params: [formatters.inputCallFormatter.call(this._parent, args.options)],
 			callback: args.callback
@@ -732,6 +733,16 @@ Contract.prototype._executeMethod = function _executeMethod(){
 		// 	})).createFunction();
 
 		// 	return estimateGas(args.options, args.callback);
+		case 'auto':
+			if(this._method.constant === true){
+				//call
+				this.call.apply(this, Array.prototype.slice.call(arguments));
+			}
+			else{
+				//send
+				this.send.apply(this, Array.prototype.slice.call(arguments));
+			}
+			break;
 
 		case 'call':
 			if ((typeof args.callback) != 'function') {
