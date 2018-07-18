@@ -2,8 +2,7 @@
 
 var _ = require('lodash');
 const path = require('path');
-const basePath = path.join(require.resolve('chainsql-lib'), '../transaction/utils');
-var utils = require(basePath);
+var utils = require('chainsql-lib').ChainsqlLibUtil;
 var validate = utils.common.validate;
 var toRippledAmount = utils.common.toRippledAmount;
 var paymentFlags = utils.common.txFlags.Payment;

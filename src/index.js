@@ -4,17 +4,18 @@ const fs = require('fs');
 const crypto = require('../lib/crypto');
 const keypairs = require('chainsql-keypairs');
 const EventManager = require('./eventManager')
-
+const _ = require('lodash');
 // var basePath = path.join(require.resolve('chainsql-binary-codec'), '../enums/definitions.json');
 // var data = fs.readFileSync(path.join(__dirname, '../lib/definitions.json'))
 // fs.writeFileSync(basePath, data);
 
-const RippleAPI = new require('chainsql-lib').ChainsqlLibAPI;
+const RippleAPI = require('chainsql-lib').ChainsqlLibAPI;
 
-RippleAPI.prototype.prepareTable = require('./tablePayment');
-RippleAPI.prototype.prepareTx = require('./txPayment');
+_.assign(RippleAPI.prototype,{
+	prepareTable:require('./tablePayment'),
+	prepareTx:require('./txPayment')
+})
 const addressCodec = require('chainsql-address-codec');
-const _ = require('lodash');
 const validate = require('./validate')
 const Connection = require('./connect');
 const Table = require('./table');
