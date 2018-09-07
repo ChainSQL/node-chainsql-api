@@ -1,13 +1,9 @@
 'use strict'
 const path = require('path');
-const fs = require('fs');
 const crypto = require('../lib/crypto');
 const keypairs = require('chainsql-keypairs');
 const EventManager = require('./eventManager')
 const _ = require('lodash');
-// var basePath = path.join(require.resolve('chainsql-binary-codec'), '../enums/definitions.json');
-// var data = fs.readFileSync(path.join(__dirname, '../lib/definitions.json'))
-// fs.writeFileSync(basePath, data);
 
 const RippleAPI = require('chainsql-lib').ChainsqlLibAPI;
 

@@ -7,16 +7,20 @@ const c = new ChainsqlAPI();
 const RippleAPI = new require('chainsql-lib').RippleAPI;
 
 var user = {
-	secret: "xxWFBu6veVgMnAqNf6YFRV2UENRd3",
-	address: "z9VF7yQPLcKgUoHwMbzmQBjvPsyMy19ubs",
+	secret: "xhW53JaGnb6QePRHz1ysehGNodu4p",
+	address: "zMbBhnQAPu7KHgtRXWFxp4YGX4LjtMpgo1",
 	publicKey: "cBRmXRujuiBPuK46AGpMM5EcJuDtxpxJ8J2mCmgkZnPC1u8wqkUn"
 }
 
-var owner = {
-	secret: "xnoPBzXtMeMyMHUVTgbuqAfg1SUTb",
-	address: "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh"	
-}
+// var owner = {
+// 	secret: "xnoPBzXtMeMyMHUVTgbuqAfg1SUTb",
+// 	address: "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh"	
+// }
 
+var issuer = {
+	secret: "xxEiFWFxpUARr9tq1XfvkykyR97iK",
+	address: "znbWk4iuz2HL1e1Ux91TzYfFzJHGeYxBA4"	
+}
 // var owner = {
 // 	"address":"r93pPN539JdTNqFsmeSJBYafd7ZzzpVCC"
 // }
@@ -31,22 +35,22 @@ main();
 
 async function main(){
 	try {
-		await c.connect('ws://192.168.0.110:6007');
+		await c.connect('ws://127.0.0.1:6007');
 		//await c.connect('ws://192.168.0.16:6006');
 
 		console.log('连接成功')
 
-		c.as(owner);
+		// c.as(owner);
 
-		c.setRestrict(true);
+		// c.setRestrict(true);
 		//激活user账户
 		// await activateAccount(user.address);
 
 		//await testSubscribe();
 
-		//await testRippleAPI();
+		await testRippleAPI();
 		// await testAccount();
-		await testChainsql();
+		// await testChainsql();
 
 		//await c.disconnect();
 		console.log('运行结束')
@@ -121,9 +125,10 @@ async function testRippleAPI(){
 	// await testGetLedger();
 
 	// await testGetTransactions();
-	// await testGetTransaction();
+	await testGetTransaction();
 	// await testGetServerInfo();
-	await testUnlList();
+	// await testUnlList();
+	// await testEscrow();
 }
 
 async function testAccount(){
@@ -362,7 +367,7 @@ async function testGetTransaction(){
 	// let rs = await c.getTransaction('3E02AA296A348F10C1F54D2EF0CBBDA9A6D389F66EFFBA936F1842506FACD4EA');
 	// console.log(rs);
 
-	c.getTransaction('3E02AA296A348F10C1F54D2EF0CBBDA9A6D389F66EFFBA936F1842506FACD4EA',callback);
+	c.getTransaction('3DD9408D358077015F3ED8D25F88D9EC0D8DA4B54047EF2A6E2DE8593F0B4F30',callback);
 	// var rs = await callback2Promise(c.api.getTransaction,opt);
 	// console.log(rs);
 }
@@ -372,6 +377,44 @@ async function testGetServerInfo(){
 	c.getServerInfo(callback);
 	// var rs = await callback2Promise(c.api.getServerInfo);
 	// console.log(rs);
+}
+
+async function testEscrow(){
+	const address = user.address;
+	var hash= "";
+	const escrowCreation = {
+		destination: "zHYfrrZyyfAMrNgm3akQot6CuSmMM6MLda",
+		amount: {
+			// counterparty:issuer.address,
+			value:"1000",
+			currency:"ZXC"
+		},
+		allowExecuteAfter: "2018-08-15T11:06:50.000Z",
+		allowCancelAfter:  "2018-08-15T11:08:50.000Z"
+	};
+	return c.api.prepareEscrowCreation(address, escrowCreation)
+	.then(data =>{
+		// console.log('preparePayment: ', data);
+		try {
+			let signedRet = c.api.sign(data.txJSON, user.secret);
+			hash = signedRet.id;
+			return c.api.submit(signedRet.signedTransaction);
+		} catch (error) {
+			console.log('sign escrow failure.', JSON.stringify(error));
+		}
+	}).then(function(data) {
+		if (data.resultCode === 'tesSUCCESS') {
+			//paymentSetting(ChainSQL, account, resolve, reject);
+			data.tx_hash = hash;
+			// resolve(data);
+			console.log(data);
+		} else {
+			console.log('submit escrow: ', JSON.stringify(data));
+			// reject(data);
+		}
+	}).catch(function(error) {
+		console.log(error);
+	});
 }
 
 async function testUnlList(){
