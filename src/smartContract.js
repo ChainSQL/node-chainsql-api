@@ -662,8 +662,10 @@ Contract.prototype._createTxObject =  function _createTxObject(){
 		txObject.auto = this.parent._executeMethod.bind(txObject, 'auto');
 	}
 
-	txObject.send = this.parent._executeMethod.bind(txObject, 'send');
-	txObject.send.request = this.parent._executeMethod.bind(txObject, 'send', true); // to make batch requests
+	// txObject.send = this.parent._executeMethod.bind(txObject, 'send');
+	// txObject.send.request = this.parent._executeMethod.bind(txObject, 'send', true); // to make batch requests
+	txObject.submit = this.parent._executeMethod.bind(txObject, 'submit');
+	txObject.submit.request = this.parent._executeMethod.bind(txObject, 'submit', true); // to make batch requests
 	txObject.encodeABI = this.parent._encodeMethodABI.bind(txObject);
 	txObject.estimateGas = this.parent._executeMethod.bind(txObject, 'estimate');
 
@@ -755,14 +757,19 @@ Contract.prototype._executeMethod = function _executeMethod(){
 			}
 			break;
 			// TODO check errors: missing "from" should give error on deploy and send, call ?
-		case 'send':{
+		case 'submit':{
 			let contractData = args.options.data.length >= 2 ? args.options.data.slice(2) : args.options.data;
+			let contractValue = "0";
+			if(args.options.hasOwnProperty("ContractValue")){
+				contractValue = args.options.ContractValue;
+			}
 			let sendTxPayment = {
 				TransactionType : "Contract",
 				ContractOpType : 2,
 				Account : this._parent.connect.address,
 				ContractAddress : args.options.to,
 				Gas : args.options.Gas,
+				ContractValue : contractValue,
 				ContractData : contractData.toUpperCase()
 			};
 			if ((typeof args.callback) != 'function') {
@@ -855,6 +862,7 @@ function createSendTxPayment(sendTxPayment){
 		Account : newTxCallPayment.Account,
 		ContractAddress : newTxCallPayment.ContractAddress,
 		ContractData : newTxCallPayment.ContractData,
+		ContractValue : newTxCallPayment.ContractValue,
 		Gas : newTxCallPayment.Gas
 	};
 	return txJSON;

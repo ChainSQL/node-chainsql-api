@@ -7,8 +7,8 @@ const RootUser = {
 	secret: "xnoPBzXtMeMyMHUVTgbuqAfg1SUTb",
 	address: "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh"
 };
-const abi = '[{"constant":false,"inputs":[],"name":"return2int","outputs":[{"name":"","type":"uint256"},{"name":"","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[],"name":"returnMixType","outputs":[{"name":"","type":"uint256"},{"name":"","type":"string"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"newMem","type":"uint256"}],"name":"setMem","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[],"name":"returnString","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[],"name":"getTxOrigin","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"a","type":"uint256"}],"name":"multiply","outputs":[{"name":"d","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"getMem","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"number","type":"uint256"},{"indexed":false,"name":"result","type":"uint256"}],"name":"multiplylog","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"member","type":"uint256"},{"indexed":true,"name":"res","type":"uint256"}],"name":"memChangelog","type":"event"}]';
-const deployBytecode = "0x608060405261039d806100136000396000f3006080604052600436106100825763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166326e021cc8114610087578063645c9ac8146100b45780636606873b146101485780636cf4334714610162578063b8077e28146101ec578063c6888fa114610243578063f05913081461026e575b600080fd5b34801561009357600080fd5b5061009c610283565b60408051928352602092830191825251910181900390f35b3480156100c057600080fd5b506100c961028c565b6040518083815260200180602001828103825283818151815260200191508051906020019080838360005b8381101561010c5781810151838201526020016100f4565b50505050905090810190601f1680156101395780820380516001836020036101000a031916815260200191505b50935050505060405180910390f35b34801561015457600080fd5b506101606004356102c6565b005b34801561016e57600080fd5b50610177610302565b6040516020808201828103835283518152835183929182019185019080838360005b838110156101b1578181015183820152602001610199565b50505050905090810190601f1680156101de5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b3480156101f857600080fd5b50610201610361565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b34801561024f57600080fd5b5061025b600435610365565b6040805191825251602090910181900390f35b34801561027a57600080fd5b5061025b61036b565b61010060389091565b60408051808201909152601b81527f737472696e675465737432666f724d69785479706552657475726e0000000000602082015261029a91565b60008190556040516006820290819083907f02cb7b283370c69d61be9056414d801096aab9b1a02748363b416eb5603384c79080800390a35050565b6040805160608101909152602981527f737472696e675465737431666f72616c6f6e67537472696e674d6f726574686160208083019182527f6e3332427974653431000000000000000000000000000000000000000000000091015290565b3290565b60070290565b600054905600a165627a7a72305820d7ae95f907f084164a231ae69f3c0c508843e9da3b9a4919f166591c7dec26400029";
+const abi = '[{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"amount","type":"uint256"}],"name":"sendToUser","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[],"name":"transferToContract","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"amount","type":"uint256"}],"name":"transferToUser","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"payable":true,"stateMutability":"payable","type":"fallback"},{"inputs":[],"payable":true,"stateMutability":"payable","type":"constructor"},{"constant":false,"inputs":[{"name":"to","type":"address"}],"name":"userTransferUser","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":true,"inputs":[{"name":"user","type":"address"}],"name":"getBalance","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}]';
+const deployBytecode = "0x60806040526101c3806100136000396000f30060806040526004361061006c5763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166312cccb34811461006e57806338c182ee146100765780635f7807a41461008d578063e8b3891e146100a4578063f8b2cb4f146100b8575b005b61006c6100eb565b61006c600160a060020a03600435166024356100ed565b61006c600160a060020a0360043516602435610116565b61006c600160a060020a0360043516610151565b3480156100c457600080fd5b506100d9600160a060020a036004351661018a565b60408051918252519081900360200190f35b565b604051600160a060020a0383169082156108fc029083906000818181858888f150505050505050565b604051600160a060020a0383169082156108fc029083906000818181858888f1935050505015801561014c573d6000803e3d6000fd5b505050565b604051600160a060020a038216903480156108fc02916000818181858888f19350505050158015610186573d6000803e3d6000fd5b5050565b600160a060020a031631905600a165627a7a72305820b4a088913af4175418d403984fe429f224fa0fc388522e5a3f33e2fd579f25ea0029";
 const contractAddr = "zLFo2CP5GNtvqRkiJEaRQL6G5aNG9cUxCs";
 
 main();
@@ -26,38 +26,50 @@ async function main(){
 		callContract();
 		
 	} catch (error) {
-		console.log(error);   
+		console.log(error);
 	}
 }
 
 function callContract(){
 	const myContract = chainsql.contract(JSON.parse(abi), contractAddr);
 
-	// myContract.events.memChangelog({
-	// 	filter: {member:15}
-	// }, (err, res) => {
-	// 	console.log(err);
-	// 	console.log(res);
-	// });
-	myContract.methods.setMem(16).auto({
-		Gas: 500000
-	}, (err, result) => {
-		console.log(err);
-		console.log(result);
-	});
-	// myContract.methods.setMem(16).send({
-	// 	Gas: 500000
+	// // myContract.events.memChangelog({
+	// // 	filter: {member:15}
+	// // }, (err, res) => {
+	// // 	console.log(err);
+	// // 	console.log(res);
+	// // });
+
+	/*methods.function.submit*/
+	// myContract.methods.userTransferUser("814D712456570A7DD0254B574A93E3CD58BF3608").submit({
+	// 	Gas: 500000,
+	// 	ContractValue: "1111111"
 	// }, (err, result) => {
 	// 	console.log(err);
 	// 	console.log(result);
 	// });
 
-	let funInputData = myContract.methods.setMem(16).encodeABI();
-	console.log(funInputData);
-	myContract.methods.getMem().auto(function (err, res) {
+	/*methods.function.call*/
+	myContract.methods.getBalance("814D712456570A7DD0254B574A93E3CD58BF3608").call(function (err, res) {
 		console.log(err);
 		console.log(res);
 	});
+	
+	/*methods.function.encodeABI*/
+	// let funInputData = myContract.methods.setMem(16).encodeABI();
+	// console.log(funInputData);
+
+	/*methods.function.auto*/
+	// myContract.methods.setMem(16).auto({
+	// 	Gas: 500000
+	// }, (err, result) => {
+	// 	console.log(err);
+	// 	console.log(result);
+	// });
+	// myContract.methods.getMem().auto(function (err, res) {
+	// 	console.log(err);
+	// 	console.log(res);
+	// });
 }
 
 function deployContract(){
