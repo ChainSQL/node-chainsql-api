@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const path = require('path');
 var chainsqlUtils = require('chainsql-lib').ChainsqlLibUtil;
+const addressCodec = require('chainsql-address-codec');
 var abi = require('web3-eth-abi');
 var utils = require('web3-utils');
 var formatters = require('web3-core-helpers').formatters;
@@ -340,7 +341,8 @@ Contract.prototype._encodeMethodABI = function _encodeMethodABI() {
 			}
 			return _.isArray(json.inputs) ? json.inputs.map(function (input) { return input.type; }) : [];
 		}).map(function (types) {
-			return abi.encodeParameters(types, args).replace('0x','');
+			let newArgs = decodeChainsqlAddrParam(types, args);
+			return abi.encodeParameters(types, newArgs).replace('0x','');
 		})[0] || '';
 
 	// return constructor
@@ -376,6 +378,8 @@ Contract.prototype._decodeMethodReturn = function (outputs, returnValues) {
 
 	returnValues = returnValues.length >= 2 ? returnValues.slice(2) : returnValues;
 	var result = abi.decodeParameters(outputs, returnValues);
+	let newOutputs = _.isArray(outputs) ? outputs.map(function (output) { return output.type; }) : [];
+	encodeChainsqlAddrParam(newOutputs, result);
 
 	if (result.__length__ === 1) {
 		return result[0];
@@ -904,6 +908,37 @@ function submitTxCallTx(chainSQL, signedVal, callBack, resolve, reject){
 	}).catch(function(error) {
 		errFunc(error);
 	});
+}
+
+function encodeChainsqlAddrParam(types, result){
+	types.map(function(item, index) {
+		if(item === "address"){
+			result[index] = encodeChainsqlAddr(result[index].slice(2));
+		}
+	});
+}
+
+function decodeChainsqlAddrParam(types, args){
+	let newArgs = args.map(function(item, index) { 
+		if(types[index] === "address"){
+			item = decodeChainsqlAddr(item);
+		}
+		return item;
+	});
+	return newArgs;
+}
+
+function encodeChainsqlAddr(hexStr){
+	let hexArray = new Buffer(hexStr,'hex');
+	let encodeRes = addressCodec.encodeAddress(hexArray);
+	return encodeRes;
+}
+
+function decodeChainsqlAddr(addrStr){
+	let decodeRes = addressCodec.decodeAddress(addrStr);
+	//decodeRes is decimal, format to hex
+	let hexAddrStr = new Buffer(decodeRes).toString('hex').toUpperCase();
+	return hexAddrStr;
 }
 
 /**
