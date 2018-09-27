@@ -21,7 +21,22 @@ contract test {
         return mem;
     }
     
-    function return2int() returns(uint,uint){
+	//合约给用户转账，指定amount
+    function transferToUser(address to,uint amount) public payable {
+        to.transfer(amount);
+    }
+    // 合约给用户转账，使用msg.value
+    function userTransferUser(address to) public payable {
+        to.transfer(msg.value);
+    }
+    function getBalance(address user) public view returns (uint) {
+        return user.balance;
+    }
+    function getMsgSender() public view returns(address, uint){
+        return (msg.sender,6);
+    }
+
+    function return2int() public pure returns(uint,uint){
         uint a1 = 256;
         uint a2 = 56;
         return (a1, a2);

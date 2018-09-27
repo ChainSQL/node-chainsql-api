@@ -33,27 +33,28 @@ async function main(){
 function callContract(){
 	const myContract = chainsql.contract(JSON.parse(abi), contractAddr);
 
-	// // myContract.events.memChangelog({
-	// // 	filter: {member:15}
-	// // }, (err, res) => {
-	// // 	console.log(err);
-	// // 	console.log(res);
-	// // });
-
-	/*methods.function.submit*/
-	// myContract.methods.userTransferUser("zU8gAWTXZgLmaF1XVR8briCdnWXJsT8njM").submit({
-	// 	Gas: 500000,
-	// 	ContractValue: "1111111"
-	// }, (err, result) => {
+	// myContract.events.memChangelog({
+	// 	filter: {member:15}
+	// }, (err, res) => {
 	// 	console.log(err);
-	// 	console.log(result);
+	// 	console.log(res);
 	// });
 
-	/*methods.function.call*/
-	myContract.methods.getMsgSender().call(function (err, res) {
+	/*methods.function.submit*/
+	myContract.methods.userTransferUser("zU8gAWTXZgLmaF1XVR8briCdnWXJsT8njM").submit({
+		Gas: 500000,
+		ContractValue: "1111111",
+		expect: "validate_success"
+	}, (err, result) => {
 		console.log(err);
-		console.log(res);
+		console.log(result);
 	});
+
+	/*methods.function.call*/
+	// myContract.methods.getMsgSender().call(function (err, res) {
+	// 	console.log(err);
+	// 	console.log(res);
+	// });
 	
 	/*methods.function.encodeABI*/
 	// let funInputData = myContract.methods.setMem(16).encodeABI();

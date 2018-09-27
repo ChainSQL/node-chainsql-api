@@ -745,8 +745,8 @@ Contract.prototype._executeMethod = function _executeMethod(){
 				this.call.apply(this, Array.prototype.slice.call(arguments));
 			}
 			else{
-				//send
-				this.send.apply(this, Array.prototype.slice.call(arguments));
+				//submit
+				this.submit.apply(this, Array.prototype.slice.call(arguments));
 			}
 			break;
 
@@ -776,13 +776,19 @@ Contract.prototype._executeMethod = function _executeMethod(){
 				ContractValue : contractValue,
 				ContractData : contractData.toUpperCase()
 			};
+			let txCallbackProperty = {};
+			txCallbackProperty.callbackFunc = args.callback;
+			txCallbackProperty.callbackExpect = "send_success";
+			if(args.options.hasOwnProperty("expect")){
+				txCallbackProperty.callbackExpect = args.options.expect;
+			}
 			if ((typeof args.callback) != 'function') {
 				let contractObj = this._parent;
 				return new Promise(function (resolve, reject) {
-					handleContractSendTx(contractObj, sendTxPayment, args.callback, resolve, reject);
+					handleContractSendTx(contractObj, sendTxPayment, txCallbackProperty, resolve, reject);
 				});
 			} else {
-				handleContractSendTx(this._parent, sendTxPayment, args.callback, null, null);
+				handleContractSendTx(this._parent, sendTxPayment, txCallbackProperty, null, null);
 			}
 			break;
 		}
@@ -836,8 +842,9 @@ function handleContractCall(curFunObj, callObj, callBack, resolve, reject) {
 	});
 }
 
-function handleContractSendTx(contractObj, sendTxObj, callBack, resolve, reject){
+function handleContractSendTx(contractObj, sendTxObj, txCallbackProperty, resolve, reject){
 	let chainSQL = contractObj.chainsql;
+	var callBack = txCallbackProperty.callbackFunc;
 	var errFunc = function(error) {
 		if ((typeof callBack) == 'function') {
 			callBack(error, null);
@@ -847,7 +854,7 @@ function handleContractSendTx(contractObj, sendTxObj, callBack, resolve, reject)
 	};
 	prepareSendTxPayment(chainSQL, sendTxObj).then(data => {
 		let signedRet = chainSQL.api.sign(data.txJSON, chainSQL.connect.secret);
-		submitTxCallTx(chainSQL, signedRet, callBack, resolve, reject);
+		submitTxCallTx(chainSQL, signedRet, txCallbackProperty, resolve, reject);
 	}).catch(err => {
 		errFunc(err);
 	});
@@ -871,7 +878,8 @@ function createSendTxPayment(sendTxPayment){
 	};
 	return txJSON;
 }
-function submitTxCallTx(chainSQL, signedVal, callBack, resolve, reject){
+function submitTxCallTx(chainSQL, signedVal, txCallbackProperty, resolve, reject){
+	var callBack = txCallbackProperty.callbackFunc;
 	var isFunction = false;
 	if ((typeof callBack) == 'function')
 		isFunction = true;
@@ -891,19 +899,60 @@ function submitTxCallTx(chainSQL, signedVal, callBack, resolve, reject){
 		}
 	};
 	//will handle solidity event later
+	if(txCallbackProperty.callbackExpect !== "send_success"){
+		chainSQL.event.subscribeTx(signedVal.id, async function(err, data) {
+			if (err) {
+				errFunc(err);
+			} else {
+				// success
+				if (txCallbackProperty.callbackExpect === data.status && data.type === 'singleTransaction') {
+					sucFunc({
+						status: data.status,
+						tx_hash: data.transaction.hash,
+					});
+				}
+				// failure
+				if (data.status == 'db_error' 
+					|| data.status == 'db_timeout' 
+					|| data.status == 'validate_timeout') {
+					errFunc({
+						status: data.status,
+						tx_hash: data.transaction.hash,
+						error_message: data.error_message
+					});
+				}
+			}
+		}).then(function(data) {
+			// subscribeTx success
+		}).catch(function(error) {
+			// subscribeTx failure
+			errFunc('subscribeTx exception.' + error);
+		});
+	}
 	
 	// submit transaction
 	chainSQL.api.submit(signedVal.signedTransaction).then(function(result) {
 		//console.log('submit ', JSON.stringify(result));
 		if (result.resultCode !== 'tesSUCCESS') {
+			if(txCallbackProperty.callbackExpect !== "send_success"){
+				chainSQL.event.unsubscribeTx(signedVal.id).then(function(data) {
+					// unsubscribeTx success
+				}).catch(function(error) {
+					// unsubscribeTx failure
+					errFunc('unsubscribeTx failure.' + error);
+				});
+			}
+			
 			//return error message
 			errFunc(result);
 		} else {
 			// submit successfully
-			sucFunc({
-				status: 'send_success',
-				tx_hash: signedVal.id
-			});
+			if(txCallbackProperty.callbackExpect === "send_success"){
+				sucFunc({
+					status: 'send_success',
+					tx_hash: signedVal.id
+				});
+			}
 		}
 	}).catch(function(error) {
 		errFunc(error);
