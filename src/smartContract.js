@@ -168,6 +168,7 @@ var Contract = function Contract(chainsql, jsonInterface, address, options) {
 	this._jsonInterface = [];
 
 	// set getter/setter properties
+	this.options.isDeploy = false;
 	this.options.address = address;
 	this.options.jsonInterface = jsonInterface;
 };
@@ -411,6 +412,7 @@ Contract.prototype._decodeMethodReturn = function (outputs, returnValues) {
  * @return {Object} EventEmitter possible events are "error", "transactionHash" and "receipt"
  */
 Contract.prototype.deploy = function(options, callback){
+	this.isDeploy = true;
 	let connect = this.connect;
 	let contractData = options.ContractData.length >= 2 ? options.ContractData.slice(2) : options.ContractData;
 	let deployPayment = {
@@ -422,162 +424,19 @@ Contract.prototype.deploy = function(options, callback){
 		ContractData : contractData.toUpperCase()
 	};
 
+	let txCallbackProperty = {};
+	txCallbackProperty.callbackFunc = callback;
+	txCallbackProperty.callbackExpect = "validate_success";
 	if ((typeof callback) != 'function') {
 		let this_ = this;
 		return new Promise(function(resolve, reject){
-			executeDeployPayment(this_, deployPayment, callback, resolve, reject);
+			handleContractPayment(this_, deployPayment, txCallbackProperty, resolve, reject);
 		});
 	}
 	else{
-		executeDeployPayment(this, deployPayment, callback, null, null);
+		handleContractPayment(this, deployPayment, txCallbackProperty, null, null);
 	}
 };
-
-function executeDeployPayment(contractObj, deployPayment, callback, resolve, reject){
-	let chainSQL = contractObj.chainsql;
-	var errFunc = function(error) {
-		if ((typeof callback) == 'function') {
-			callback(error, null);
-		} else {
-			reject(error);
-		}
-	};
-	prepareDeployPayment(chainSQL, deployPayment).then(data => {
-		let signedRet = chainSQL.api.sign(data.txJSON, chainSQL.connect.secret);
-		handleDeployTx(contractObj, signedRet, callback, resolve, reject);
-	}).catch(err => {
-		errFunc(err);
-	});
-}
-function prepareDeployPayment(chainSQL, depolyPayment){
-	var instructions = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
-	const txJSON = createDeployPaymentTx(depolyPayment);
-	return chainsqlUtils.prepareTransaction(txJSON, chainSQL.api, instructions);
-}
-function createDeployPaymentTx(deployPayment){
-	var newDeployPayment = _.cloneDeep(deployPayment);
-
-	var txJSON = {
-		TransactionType : newDeployPayment.TransactionType,
-		ContractOpType  : newDeployPayment.ContractOpType,
-		Account : newDeployPayment.Account,
-		ContractValue : newDeployPayment.ContractValue,
-		ContractData : newDeployPayment.ContractData,
-		Gas : newDeployPayment.Gas
-	};
-	return txJSON;
-}
-function handleDeployTx(contractObj, signedVal, callback, resolve, reject){
-	let chainSQL = contractObj.chainsql;
-	var isFunction = false;
-	if ((typeof callback) == 'function')
-		isFunction = true;
-	
-	var errFunc = function(error) {
-		if (isFunction) {
-			callback(error, null);
-		} else {
-			reject(error);
-		}
-	};
-	// var exceptFunc = function(exception){
-	// 	if (isFunction) {
-	// 		object(exception, null);
-	// 	} else {
-	// 		reject(exception);
-	// 	}
-	// }
-	var sucFunc = function(data){
-		if(isFunction){
-			callback(null,data);
-		}else{
-			resolve(data);
-		}
-	};
-	// subscribe event
-	chainSQL.event.subscribeTx(signedVal.id, async function(err, data) {
-		if (err) {
-			errFunc(err);
-		} else {
-			// success
-			// if 'submit()' called without param, default is validate_success
-			if (data.status === 'validate_success' && data.type === 'singleTransaction') {
-				let contractAddr = await getNewDeployCtrAddr(chainSQL, data.transaction.hash);
-				if (contractAddr === "") {
-					errFunc({
-						status: data.status,
-						tx_hash: data.transaction.hash,
-						contractAddress: "Can not find CreateNode"
-					});
-				}
-				else {
-					contractObj.options.address = contractAddr;
-					sucFunc({
-						status: data.status,
-						tx_hash: data.transaction.hash,
-						contractAddress: contractAddr
-					});
-				}
-			}
-			// failure
-			if (data.status == 'db_error' 
-				|| data.status == 'db_timeout' 
-				|| data.status == 'validate_timeout') {
-				errFunc({
-					status: data.status,
-					tx_hash: data.transaction.hash,
-					error_message: data.error_message
-				});
-			}
-		}
-	}).then(function(data) {
-		// subscribeTx success
-	}).catch(function(error) {
-		// subscribeTx failure
-		errFunc('subscribeTx exception.' + error);
-	});
-	
-	// submit transaction
-	chainSQL.api.submit(signedVal.signedTransaction).then(function(result) {
-		//console.log('submit ', JSON.stringify(result));
-		if (result.resultCode !== 'tesSUCCESS') {
-			chainSQL.event.unsubscribeTx(signedVal.id).then(function(data) {
-				// unsubscribeTx success
-			}).catch(function(error) {
-				// unsubscribeTx failure
-				errFunc('unsubscribeTx failure.' + error);
-			});
-
-			//return error message
-			errFunc(result);
-		} else {
-			// submit successfully
-			if (isFunction === false && callback !== undefined && callback.expect === 'send_success') {
-				sucFunc({
-					status: 'send_success',
-					tx_hash: signedVal.id
-				});
-			}
-		}
-	}).catch(function(error) {
-		errFunc(error);
-	});
-}
-
-async function getNewDeployCtrAddr(chainSQL, txHash){
-	let txDetail = await chainSQL.api.getTransaction(txHash);
-	let affectedNodes = txDetail.specification.meta.AffectedNodes;
-	let contractAddr = "";
-	for(let node of affectedNodes){
-		if(node.hasOwnProperty("CreatedNode")){
-			let createdNodeObj = node.CreatedNode;
-			contractAddr = createdNodeObj.NewFields.Account;
-			break;
-		}
-		else continue;
-	}
-	return contractAddr;
-}
 
 /**
  * Adds event listeners and creates a subscription.
@@ -796,10 +655,10 @@ Contract.prototype._executeMethod = function _executeMethod(){
 			if ((typeof args.callback) != 'function') {
 				let contractObj = this._parent;
 				return new Promise(function (resolve, reject) {
-					handleContractSendTx(contractObj, sendTxPayment, txCallbackProperty, resolve, reject);
+					handleContractPayment(contractObj, sendTxPayment, txCallbackProperty, resolve, reject);
 				});
 			} else {
-				handleContractSendTx(this._parent, sendTxPayment, txCallbackProperty, null, null);
+				handleContractPayment(this._parent, sendTxPayment, txCallbackProperty, null, null);
 			}
 			break;
 		}
@@ -853,9 +712,9 @@ function handleContractCall(curFunObj, callObj, callBack, resolve, reject) {
 	});
 }
 
-function handleContractSendTx(contractObj, sendTxObj, txCallbackProperty, resolve, reject){
+function handleContractPayment(contractObj, contractPaymet, callbackProperty, resolve, reject){
 	let chainSQL = contractObj.chainsql;
-	var callBack = txCallbackProperty.callbackFunc;
+	var callBack = callbackProperty.callbackFunc;
 	var errFunc = function(error) {
 		if ((typeof callBack) == 'function') {
 			callBack(error, null);
@@ -863,34 +722,37 @@ function handleContractSendTx(contractObj, sendTxObj, txCallbackProperty, resolv
 			reject(error);
 		}
 	};
-	prepareSendTxPayment(chainSQL, sendTxObj).then(data => {
+	prepareContractPayment(chainSQL, contractPaymet).then(data => {
 		let signedRet = chainSQL.api.sign(data.txJSON, chainSQL.connect.secret);
-		submitTxCallTx(chainSQL, signedRet, txCallbackProperty, resolve, reject);
+		submitContractTx(contractObj, signedRet, callbackProperty, resolve, reject);
 	}).catch(err => {
 		errFunc(err);
 	});
 }
-function prepareSendTxPayment(chainSQL, sendTxPayment){
+function prepareContractPayment(chainSQL, contractPayment){
 	var instructions = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
-	const txJSON = createSendTxPayment(sendTxPayment);
+	const txJSON = createContractPayment(contractPayment);
 	return chainsqlUtils.prepareTransaction(txJSON, chainSQL.api, instructions);
 }
-function createSendTxPayment(sendTxPayment){
-	var newTxCallPayment = _.cloneDeep(sendTxPayment);
+function createContractPayment(contractPayment){
+	var newContractPayment = _.cloneDeep(contractPayment);
 
 	var txJSON = {
-		TransactionType : newTxCallPayment.TransactionType,
-		ContractOpType  : newTxCallPayment.ContractOpType,
-		Account : newTxCallPayment.Account,
-		ContractAddress : newTxCallPayment.ContractAddress,
-		ContractData : newTxCallPayment.ContractData,
-		ContractValue : newTxCallPayment.ContractValue,
-		Gas : newTxCallPayment.Gas
+		TransactionType : newContractPayment.TransactionType,
+		ContractOpType  : newContractPayment.ContractOpType,
+		Account : newContractPayment.Account,
+		ContractData : newContractPayment.ContractData,
+		ContractValue : newContractPayment.ContractValue,
+		Gas : newContractPayment.Gas
 	};
+	if(/*!isDeploy && */newContractPayment.hasOwnProperty("ContractAddress")){
+		txJSON.ContractAddress = newContractPayment.ContractAddress;
+	}
 	return txJSON;
 }
-function submitTxCallTx(chainSQL, signedVal, txCallbackProperty, resolve, reject){
-	var callBack = txCallbackProperty.callbackFunc;
+function submitContractTx(contractObj, signedVal, callbackProperty, resolve, reject){
+	let chainSQL = contractObj.chainsql;
+	var callBack = callbackProperty.callbackFunc;
 	var isFunction = false;
 	if ((typeof callBack) == 'function')
 		isFunction = true;
@@ -902,6 +764,13 @@ function submitTxCallTx(chainSQL, signedVal, txCallbackProperty, resolve, reject
 			reject(error);
 		}
 	};
+	// var exceptFunc = function(exception){
+	// 	if (isFunction) {
+	// 		object(exception, null);
+	// 	} else {
+	// 		reject(exception);
+	// 	}
+	// }
 	var sucFunc = function(data){
 		if(isFunction){
 			callBack(null,data);
@@ -909,28 +778,39 @@ function submitTxCallTx(chainSQL, signedVal, txCallbackProperty, resolve, reject
 			resolve(data);
 		}
 	};
-	//will handle solidity event later
-	if(txCallbackProperty.callbackExpect !== "send_success"){
+	//according to callbackProperty to subscribe event
+	if(callbackProperty.callbackExpect !== "send_success"){
 		chainSQL.event.subscribeTx(signedVal.id, async function(err, data) {
 			if (err) {
 				errFunc(err);
 			} else {
 				// success
-				if (txCallbackProperty.callbackExpect === data.status && data.type === 'singleTransaction') {
-					sucFunc({
-						status: data.status,
-						tx_hash: data.transaction.hash,
-					});
+				// if 'submit()' called without param, default is validate_success
+				let resultObj = {};
+				resultObj.status = data.status;
+				resultObj.tx_hash = data.transaction.hash;
+
+				if (callbackProperty.callbackExpect === data.status && data.type === 'singleTransaction') {
+					if (contractObj.isDeploy) {
+						contractObj.isDeploy = false;
+						let contractAddr = await getNewDeployCtrAddr(chainSQL, data.transaction.hash);
+						if (contractAddr === "") {
+							resultObj.contractAddress = "Can not find CreateNode";
+							errFunc(resultObj);
+						}
+						else {
+							contractObj.options.address = contractAddr;
+							resultObj.contractAddress = contractAddr;
+						}
+					}
+					sucFunc(resultObj);
 				}
 				// failure
-				if (data.status == 'db_error' 
-					|| data.status == 'db_timeout' 
+				if (data.status == 'db_error'
+					|| data.status == 'db_timeout'
 					|| data.status == 'validate_timeout') {
-					errFunc({
-						status: data.status,
-						tx_hash: data.transaction.hash,
-						error_message: data.error_message
-					});
+					resultObj.error_message = data.error_message;
+					errFunc(resultObj);
 				}
 			}
 		}).then(function(data) {
@@ -945,7 +825,7 @@ function submitTxCallTx(chainSQL, signedVal, txCallbackProperty, resolve, reject
 	chainSQL.api.submit(signedVal.signedTransaction).then(function(result) {
 		//console.log('submit ', JSON.stringify(result));
 		if (result.resultCode !== 'tesSUCCESS') {
-			if(txCallbackProperty.callbackExpect !== "send_success"){
+			if(callbackProperty.callbackExpect !== "send_success"){
 				chainSQL.event.unsubscribeTx(signedVal.id).then(function(data) {
 					// unsubscribeTx success
 				}).catch(function(error) {
@@ -958,9 +838,9 @@ function submitTxCallTx(chainSQL, signedVal, txCallbackProperty, resolve, reject
 			errFunc(result);
 		} else {
 			// submit successfully
-			if(txCallbackProperty.callbackExpect === "send_success"){
+			if(callbackProperty.callbackExpect === "send_success"){
 				sucFunc({
-					status: 'send_success',
+					status: "send_success",
 					tx_hash: signedVal.id
 				});
 			}
@@ -968,6 +848,21 @@ function submitTxCallTx(chainSQL, signedVal, txCallbackProperty, resolve, reject
 	}).catch(function(error) {
 		errFunc(error);
 	});
+}
+
+async function getNewDeployCtrAddr(chainSQL, txHash){
+	let txDetail = await chainSQL.api.getTransaction(txHash);
+	let affectedNodes = txDetail.specification.meta.AffectedNodes;
+	let contractAddr = "";
+	for(let node of affectedNodes){
+		if(node.hasOwnProperty("CreatedNode")){
+			let createdNodeObj = node.CreatedNode;
+			contractAddr = createdNodeObj.NewFields.Account;
+			break;
+		}
+		else continue;
+	}
+	return contractAddr;
 }
 
 function encodeChainsqlAddrParam(types, result){
