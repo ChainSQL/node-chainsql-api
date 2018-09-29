@@ -24,7 +24,6 @@ async function main(){
 		//deployContract();
 
 		callContract();
-		
 	} catch (error) {
 		console.log(error);
 	}
@@ -33,6 +32,15 @@ async function main(){
 function callContract(){
 	const myContract = chainsql.contract(JSON.parse(abi), contractAddr);
 
+	//callContractWithMsgValue(myContract);
+
+	/*get function encodeABI*/
+	//getFuncEncodeABI(myContract);
+
+	/*get contract value*/
+	//getContractValue(myContract);
+
+	/*methods.events.eventlog*/
 	myContract.events.multiplylog({
 		filter: {member:15}
 	}, (err, res) => {
@@ -48,17 +56,7 @@ function callContract(){
 		console.log(err);
 		console.log(result);
 	});
-
-	/*methods.function.call*/
-	// myContract.methods.getMsgSender().call(function (err, res) {
-	// 	console.log(err);
-	// 	console.log(res);
-	// });
 	
-	/*methods.function.encodeABI*/
-	// let funInputData = myContract.methods.setMem(16).encodeABI();
-	// console.log(funInputData);
-
 	/*methods.function.auto*/
 	// myContract.methods.setMem(16).auto({
 	// 	Gas: 500000
@@ -70,6 +68,30 @@ function callContract(){
 	// 	console.log(err);
 	// 	console.log(res);
 	// });
+}
+function callContractWithMsgValue(contractObj){
+	contractObj.methods.userTransferUser("zU8gAWTXZgLmaF1XVR8briCdnWXJsT8njM").submit({
+		Gas: 500000,
+		ContractValue: "111111",
+		expect: "validate_success"
+	}, (err, result) => {
+		console.log(err);
+		console.log(result);
+	});
+}
+
+function getFuncEncodeABI(contractObj){
+	/*methods.function.encodeABI*/
+	let funInputData = contractObj.methods.setMem(16).encodeABI();
+	console.log(funInputData);
+}
+
+function getContractValue(contractObj){
+	/*methods.function.call*/
+	contractObj.methods.getMsgSender().call(function (err, res) {
+		console.log(err);
+		console.log(res);
+	});
 }
 
 function deployContract(){
