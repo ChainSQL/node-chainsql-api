@@ -34,7 +34,7 @@ EventManager.prototype.subscribeTx = function(id, cb) {
 	if (!that.onMessage) {
 		_onMessage(that);
 		that.onMessage = true;
-	};
+	}
 	var promise = that.connect.request(messageTx);
 	that.cache[id] = cb;
 	return promise;
@@ -100,7 +100,7 @@ function _onMessage(that, contractObj = undefined) {
 			if (data.type === 'table') {
 				key = data.tablename + data.owner;
 				_onChainsqlMessage(that,key,data,data.owner,data.tablename);
-			};
+			}
 			if (data.type === 'singleTransaction') {
 				key = data.transaction.hash;
 				if (that.cache[key]) {
@@ -109,11 +109,13 @@ function _onMessage(that, contractObj = undefined) {
 						delete that.cache[key];
 					}
 				}
-			};
+			}
 		}
 		else if(data.type === "contract_event" && contractObj !== undefined){
 			if(data.hasOwnProperty("ContractEventTopics")){
-				data.ContractEventTopics[0] = "0x" + data.ContractEventTopics[0].toLowerCase();
+				data.ContractEventTopics.map(function(topic,index){
+					data.ContractEventTopics[index] = "0x" + data.ContractEventTopics[index].toLowerCase();
+				});
 			}
 			if(data.hasOwnProperty("ContractEventInfo")){
 				data.ContractEventInfo = "0x" + data.ContractEventInfo;

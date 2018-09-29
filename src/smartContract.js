@@ -295,6 +295,17 @@ Contract.prototype._decodeEventABI = function (currentEvent, data) {
 
 	result.returnValues = abi.decodeLog(event.inputs, data.data, argTopics);
 	delete result.returnValues.__length__;
+	if(_.isArray(event.inputs)){
+		event.inputs.map(function (input, index) {
+			if(input.type === "address"){
+				result.returnValues[index] = encodeChainsqlAddr(result.returnValues[index].slice(2));
+				result.returnValues[input.name] = result.returnValues[index];
+			}
+		});
+	}
+	else{
+		//not array,what todo?
+	}
 
 	// add name
 	result.event = event.name;

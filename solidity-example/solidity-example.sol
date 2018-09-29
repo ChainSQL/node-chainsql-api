@@ -1,31 +1,31 @@
 pragma solidity ^0.4.4;
 
 contract test {
-    event multiplylog(uint number, uint result);
+    event multiplylog(address sender, uint indexed number, uint result);
     //event memChangelog(uint mem);
     uint mem;
     
-    function test() payable {}
+    constructor () public payable {}
     
-    function multiply(uint a) returns(uint d){
+    function multiply(uint a) public returns(uint d){
         uint result = a * 7;
-        multiplylog(a, result);
+        emit multiplylog(msg.sender, a, result);
         return result;
     }
     
-    function setMem(uint newMem){
+    function setMem(uint newMem) public {
         mem = newMem;
         //memChangelog(mem);
     }
-    function getMem() returns(uint){
+    function getMem() public view returns(uint){
         return mem;
     }
     
-	//合约给用户转账，指定amount
+    //鍚堢害缁欑敤鎴疯浆璐︼紝鎸囧畾amount
     function transferToUser(address to,uint amount) public payable {
         to.transfer(amount);
     }
-    // 合约给用户转账，使用msg.value
+    // 鍚堢害缁欑敤鎴疯浆璐︼紝浣跨敤msg.value
     function userTransferUser(address to) public payable {
         to.transfer(msg.value);
     }
@@ -35,17 +35,11 @@ contract test {
     function getMsgSender() public view returns(address, uint){
         return (msg.sender,6);
     }
-
-    function return2int() public pure returns(uint,uint){
-        uint a1 = 256;
-        uint a2 = 56;
-        return (a1, a2);
-    }
     
-    function returnString() returns(string){
+    function returnString() public returns(string){
         //string public str1;
         //return str1;
-		return "stringTest1foralongStringMorethan32Byte41";
+        return "stringTest1foralongStringMorethan32Byte41";
     }
     
     function returnMixType() returns(uint, string){
