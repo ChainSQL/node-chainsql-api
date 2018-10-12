@@ -11,7 +11,7 @@ class Submit {
 		this.txType = "";
 		this.instructions = { maxLedgerVersionOffset: 8 };
 	}
-	prepareSign(reject) { };
+	prepareSign() { };
 	prepareJSon() { };
 }
 
@@ -22,7 +22,7 @@ Submit.prototype.submit = function (cb) {
 			self.prepareJSon()
 				.then(function (prepared) {
 					self.txJSON = prepared.txJSON;
-					let signedRet = self.prepareSign(reject);
+					let signedRet = self.prepareSign();
 					self.ChainsqlAPI.handleSignedTx(self.ChainsqlAPI, signedRet, cb, resolve, reject);
 				})
 				.catch(function (error) {

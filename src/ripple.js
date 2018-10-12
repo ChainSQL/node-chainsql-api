@@ -1,6 +1,7 @@
 'use strict'
 var util = require('util');
 var Submit = require('./submit');
+const FloatOperation = require('./floatOperation');
 
 class Ripple extends Submit {
     constructor(ChainsqlAPI) {
@@ -8,13 +9,8 @@ class Ripple extends Submit {
     }
 }
 
-Ripple.prototype.prepareSign = function (reject) {
-    try {
-        return this.ChainsqlAPI.api.sign(this.txJSON, this.ChainsqlAPI.connect.secret);
-    }
-    catch (error) {
-        reject(error);
-    }
+Ripple.prototype.prepareSign = function () {
+    return this.ChainsqlAPI.api.sign(this.txJSON, this.ChainsqlAPI.connect.secret);
 };
 
 Ripple.prototype.prepareJSon = function () {
@@ -31,8 +27,30 @@ Ripple.prototype.prepareJSon = function () {
         return new Promise(function (resolve, reject) {
             self.ChainsqlAPI.getTransferFee(issuer)
                 .then(function (data) {
-                    if (bIssuer && data.max) {
-                        txJson.source.maxAmount.value = (txJson.source.maxAmount.value + data.max).toString();
+                    if (bIssuer && data) {
+                        let value = txJson.source.maxAmount.value;
+                        let fee = 0;
+                        if (data.min &&
+                            data.max &&
+                            data.min == data.max) {
+                            //Fixed fee
+                            fee = parseFloat(data.min);
+                        } else if (data.rate) {
+                            //Only TransferRate or with TranferFeeMin < TransferFeeMax
+                            fee = FloatOperation.accMul(parseFloat(value), data.rate - 1);
+                            if (data.min) {
+                                fee = Math.max(fee, parseFloat(data.min));
+                            }
+                            if (data.max) {
+                                fee = Math.min(fee, parseFloat(data.max));
+                            }
+                        } else if (data.min || data.max) {
+                            //Not valid if set alone or not equal
+                            throw new Error('Exception:transfer fee not valid');
+                        }
+                        if (fee > 0) {
+                            txJson.source.maxAmount.value = (FloatOperation.accAdd(parseFloat(value), fee)).toString();
+                        }
                     }
                     self.ChainsqlAPI.api.preparePayment(self.ChainsqlAPI.connect.address, txJson, instructions)
                         .then(function (data) {
