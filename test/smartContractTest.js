@@ -1,5 +1,7 @@
 "use strict";
 
+//const fs = require ('fs');
+//const solc = require('solc');
 const ChainsqlAPI = require("../src/index").ChainsqlAPI;
 const chainsql = new ChainsqlAPI();
 
@@ -19,6 +21,16 @@ async function main(){
 		console.log("connected successfully");
 
 		chainsql.as(RootUser);
+		// let contractCode = fs.readFileSync("./solidity-example/solidity-example.sol");
+		// let compileResult = solc.compile(contractCode.toString(), 1);
+		// for (var contractName in compileResult.contracts) {
+		// 	// code and ABI that are needed by web3
+		// 	console.log(contractName + ': ' + compileResult.contracts[contractName].bytecode);
+		// 	deployBytecode = "0x" + compileResult.contracts[contractName].bytecode;
+		// 	console.log(contractName + ': ' + compileResult.contracts[contractName].interface);
+		// 	abi = compileResult.contracts[contractName].interface;
+		// }
+
 	
 		//deployContractAwait();
 		//deployContract();
@@ -41,9 +53,7 @@ function callContract(){
 	//getContractValue(myContract);
 
 	/*methods.events.eventlog*/
-	myContract.events.multiplylog({
-		filter: {member:15}
-	}, (err, res) => {
+	myContract.events.multiplylog((err, res) => {
 		console.log(err);
 		console.log(res);
 	});
