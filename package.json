@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "bignumber.js": "^2.4.0",
+    "chainsql-keypairs": "^0.10.4",
     "co": "^4.6.0",
     "elliptic": "^5.1.0",
     "hash.js": "^1.0.3",
@@ -16,9 +17,9 @@
     "sjcl": "~1.0.3",
     "ws": "^2.2.2",
     "protobufjs": "^6.8.0",
-    "web3-eth-abi": "1.0.0-beta.34",
-    "web3-utils": "1.0.0-beta.34",
-    "web3-core-helpers": "1.0.0-beta.34"
+    "web3-core-helpers": "1.0.0-beta.36",
+    "web3-eth-abi": "1.0.0-beta.36",
+    "web3-utils": "1.0.0-beta.36",
   },
   "repository": {
     "type": "git",

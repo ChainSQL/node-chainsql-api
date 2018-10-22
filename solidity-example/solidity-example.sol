@@ -1,7 +1,8 @@
 pragma solidity ^0.4.4;
 
 contract test {
-    event multiplylog(address sender, uint indexed number, uint result);
+    //event multiplylog(address sender, uint indexed number, uint result);
+    event multiplylog(address sender, string indexed testStr, uint result);
     //event memChangelog(uint mem);
     uint mem;
     
@@ -9,7 +10,7 @@ contract test {
     
     function multiply(uint a) public returns(uint d){
         uint result = a * 7;
-        emit multiplylog(msg.sender, a, result);
+        emit multiplylog(msg.sender, "hello,tester", result);
         return result;
     }
     
