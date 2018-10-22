@@ -54,29 +54,25 @@ function callContract(){
 
 	/*methods.events.eventlog*/
 	myContract.events.multiplylog((err, res) => {
-		console.log(err);
-		console.log(res);
+		err ? console.log(err) : console.log(res);
 	});
 
 	/*methods.function.submit*/
 	myContract.methods.multiply(6).submit({
 		Gas: 500000,
 		expect: "validate_success"
-	}, (err, result) => {
-		console.log(err);
-		console.log(result);
+	}, (err, res) => {
+		err ? console.log(err) : console.log(res);
 	});
 	
 	/*methods.function.auto*/
 	// myContract.methods.setMem(16).auto({
 	// 	Gas: 500000
-	// }, (err, result) => {
-	// 	console.log(err);
-	// 	console.log(result);
+	// }, (err, res) => {
+	// 	err ? console.log(err) : console.log(res);
 	// });
 	// myContract.methods.getMem().auto(function (err, res) {
-	// 	console.log(err);
-	// 	console.log(res);
+	// 	err ? console.log(err) : console.log(res);
 	// });
 }
 function callContractWithMsgValue(contractObj){
@@ -84,9 +80,8 @@ function callContractWithMsgValue(contractObj){
 		Gas: 500000,
 		ContractValue: "111111",
 		expect: "validate_success"
-	}, (err, result) => {
-		console.log(err);
-		console.log(result);
+	}, (err, res) => {
+		err ? console.log(err) : console.log(res);
 	});
 }
 
@@ -99,8 +94,7 @@ function getFuncEncodeABI(contractObj){
 function getContractValue(contractObj){
 	/*methods.function.call*/
 	contractObj.methods.getMsgSender().call(function (err, res) {
-		console.log(err);
-		console.log(res);
+		err ? console.log(err) : console.log(res);
 	});
 }
 
@@ -110,15 +104,13 @@ function deployContract(){
 		ContractValue : "10000000",
 		Gas : 400000,
 		ContractData : deployBytecode
-	}, function (err, result) {
-		console.log(err);
-		console.log(result);
+	}, function (err, res) {
+		err ? console.log(err) : console.log(res);
 
 		// myContract.methods.setMem(16).send({
 		// 	Gas: 500000
-		// }, (err, result) => {
-		// 	console.log(err);
-		// 	console.log(result);
+		// }, (err, res) => {
+		// 	err ? console.log(err) : console.log(res);
 		// });
 	});
 }
@@ -134,9 +126,8 @@ async function deployContractAwait(){
 		console.log(deployRes);
 		myContract.methods.setMem(16).send({
 			Gas:500000
-		}, (err, result) => {
-			console.log(err);
-			console.log(result);
+		}, (err, res) => {
+			err ? console.log(err) : console.log(res);
 		});
 	} catch (error) {
 		console.log(error);

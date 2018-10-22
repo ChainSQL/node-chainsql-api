@@ -650,7 +650,13 @@ Contract.prototype._executeMethod = function _executeMethod(){
 			txCallbackProperty.callbackFunc = args.callback;
 			txCallbackProperty.callbackExpect = "send_success";
 			if(args.options.hasOwnProperty("expect")){
-				txCallbackProperty.callbackExpect = args.options.expect;
+				if(args.options.expect === "send_success" || args.options.expect === "validate_success"){
+					txCallbackProperty.callbackExpect = args.options.expect;
+				}
+				else{
+					errorMsg = "Unknown 'expect' value, please check!";
+					return errFuncGlobal(errorMsg, args.callback);
+				}
 			}
 			if ((typeof args.callback) != 'function') {
 				let contractObj = this._parent;
@@ -663,17 +669,22 @@ Contract.prototype._executeMethod = function _executeMethod(){
 			break;
 		}
 		default:
+			//in fact, if call type is wrong ,it will throw error befor here.
 			errorMsg = "Error, not defined call type!";
-			if ((typeof args.callback) != 'function') {
-				return new Promise(function (resolve, reject) {
-					reject(errorMsg);
-				});
-			} else {
-				args.callback(errorMsg, null);
-			}
+			return errFuncGlobal(errorMsg, args.callback);
 		}
 	}
 };
+
+function errFuncGlobal(errMsg, callback){
+	if ((typeof callback) != 'function') {
+		return new Promise(function (resolve, reject) {
+			reject(errMsg);
+		});
+	} else {
+		callback(errMsg, null);
+	}
+}
 
 function handleContractCall(curFunObj, callObj, callBack, resolve, reject) {
 	var isFunction = false;
