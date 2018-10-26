@@ -1,5 +1,5 @@
 'use strict'
-var util = require('util');
+var util = require('./util');
 var Submit = require('./submit');
 const FloatOperation = require('./floatOperation');
 
@@ -82,30 +82,31 @@ Ripple.prototype.prepareJSon = function () {
     }
 }
 
-Ripple.prototype.preparePayment = function (account, value, sCurrency, issuer, memos) {
+Ripple.prototype.preparePayment = function (account, amount, memos) {
     let payment = {
         source: {
             address: this.ChainsqlAPI.connect.address,
             maxAmount: {
-                value: value.toString()
+                value: amount.value.toString(),
+                currency: 'ZXC'
             }
         },
         destination: {
             address: account,
             amount: {
-                value: value.toString()
+                value: amount.value.toString(),
+                currency: 'ZXC'
             }
         },
         memos: memos
     };
-    if (sCurrency == "" || sCurrency == undefined || sCurrency == null) {
-        sCurrency = 'ZXC';
+    if (util.isMeaningful(amount.currency)) {
+        payment.source.maxAmount.currency = amount.currency;
+        payment.destination.amount.currency = amount.currency;
     }
-    payment.source.maxAmount.currency = sCurrency;
-    payment.destination.amount.currency = sCurrency;
-    if (issuer != "" && issuer != undefined && issuer != null) {
-        payment.source.maxAmount.counterparty = issuer;
-        payment.destination.amount.counterparty = issuer;
+    if (util.isMeaningful(amount.issuer)) {
+        payment.source.maxAmount.counterparty = amount.issuer;
+        payment.destination.amount.counterparty = amount.issuer;
     }
 
     //
@@ -185,7 +186,7 @@ Ripple.prototype.getTransferFee = function (issuerAddr) {
     var self = this;
     //
     return new Promise(function (resolve, reject) {
-        if (issuerAddr == "" || issuerAddr == undefined || issuerAddr == null) {
+        if (util.isMeaningless(issuerAddr)) {
             resolve({});
         }
         else {
@@ -215,11 +216,11 @@ Ripple.prototype.getTransferFee = function (issuerAddr) {
 }
 
 
-Ripple.prototype.trustSet = function (value, sCurrency, sIssuer) {
+Ripple.prototype.trustSet = function (amount) {
     let trustline = {
-        currency: sCurrency,
-        counterparty: sIssuer,
-        limit: value,
+        currency: amount.currency,
+        counterparty: amount.issuer,
+        limit: amount.value.toString(),
         qualityIn: 1,
         qualityOut: 1,
         ripplingDisabled: true,
@@ -236,26 +237,25 @@ Ripple.prototype.trustSet = function (value, sCurrency, sIssuer) {
     return this;
 }
 
-Ripple.prototype.escrowCreate = function (sDestAddr, sValue, dateFormatTMFinish, dateFormatTMCancel, sCurrency, sIssuer) {
+Ripple.prototype.escrowCreate = function (sDestAddr, amount, dateFormatTMFinish, dateFormatTMCancel) {
     let dateFinish = new Date(dateFormatTMFinish);
     let tmExec = dateFinish.toISOString();
     let dateCancel = new Date(dateFormatTMCancel);
     let tmCancel = dateCancel.toISOString();
-    var hash = "";
     const escrowCreation = {
         destination: sDestAddr,
         amount: {
-            value: sValue
+            value: amount.value.toString(),
+            currency: 'ZXC'
         },
         allowExecuteAfter: tmExec,
         allowCancelAfter: tmCancel
     };
-    if (sCurrency == "" || sCurrency == undefined || sCurrency == null) {
-        sCurrency = 'ZXC';
+    if (util.isMeaningful(amount.currency)) {
+        escrowCreation.amount.currency = amount.currency;
     }
-    escrowCreation.amount.currency = sCurrency;
-    if (sIssuer != "" && sIssuer != undefined && sIssuer != null) {
-        escrowCreation.amount.counterparty = sIssuer;
+    if (util.isMeaningful(amount.issuer)) {
+        escrowCreation.amount.counterparty = amount.issuer;
     }
     //
     this.txType = "EscrowCreate";
