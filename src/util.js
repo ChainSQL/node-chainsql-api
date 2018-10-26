@@ -199,6 +199,14 @@ function checkUserMatchPublicKey(user,publicKey){
   return user == address;
 }
 
+function isMeaningful(variable){
+  return (variable != "" && variable != undefined && variable != null);
+}
+
+function isMeaningless(variable){
+  return (variable == "" || variable == undefined || variable == null);
+}
+
 module.exports = {
   getFee: getFee,
   getSequence: getSequence,
@@ -213,5 +221,7 @@ module.exports = {
   decodeToken: decodeToken,
   calcFee : calcFee,
   isSqlStatementTx: isSqlStatementTx,
-  checkUserMatchPublicKey: checkUserMatchPublicKey
+  checkUserMatchPublicKey: checkUserMatchPublicKey,
+  isMeaningful: isMeaningful,
+  isMeaningless: isMeaningless
 }

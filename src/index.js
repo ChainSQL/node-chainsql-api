@@ -176,9 +176,9 @@ function paymentSetting(ChainSQL, account, resolve, reject) {
 
 }
 
-ChainsqlAPI.prototype.pay = function (account, value, sCurrency, issuer, memos) {
+ChainsqlAPI.prototype.pay = function (account, amount, memos) {
 	let ripple = new Ripple(this);
-	return ripple.preparePayment(account, value, sCurrency, issuer, memos);
+	return ripple.preparePayment(account, amount, memos);
 }
 
 ChainsqlAPI.prototype.accountSet = function (opt) {
@@ -191,14 +191,14 @@ ChainsqlAPI.prototype.getTransferFee = function (issuerAddr) {
 	return ripple.getTransferFee(issuerAddr);
 }
 
-ChainsqlAPI.prototype.trustSet = function (value, sCurrency, issuer) {
+ChainsqlAPI.prototype.trustSet = function (amount) {
 	let ripple = new Ripple(this);
-	return ripple.trustSet(value, sCurrency, issuer);
+	return ripple.trustSet(amount);
 }
 
-ChainsqlAPI.prototype.escrowCreate = function (sDestAddr, sValue, dateFormatTMFinish, dateFormatTMCancel, sCurrency, sIssuer) {
+ChainsqlAPI.prototype.escrowCreate = function (sDestAddr, amount, dateFormatTMFinish, dateFormatTMCancel) {
 	let ripple = new Ripple(this);
-	return ripple.escrowCreate(sDestAddr, sValue, dateFormatTMFinish, dateFormatTMCancel, sCurrency, sIssuer);
+	return ripple.escrowCreate(sDestAddr, amount, dateFormatTMFinish, dateFormatTMCancel);
 }
 
 ChainsqlAPI.prototype.escrowExecute = function (sOwnerAddr, nCreateEscrowSeq) {
