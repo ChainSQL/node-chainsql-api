@@ -17,6 +17,7 @@ const addressCodec = require('chainsql-address-codec');
 const validate = require('./validate')
 const Connection = require('./connect');
 const Table = require('./table');
+const Contract = require('./smartContract');
 const util = require('./util');
 const opType = require('./config').opType;
 const getFee = util.getFee;
@@ -376,7 +377,9 @@ ChainsqlAPI.prototype.grant = function (name, user, flags, publicKey) {
 
 ChainsqlAPI.prototype.getTransactions = function (address, opts, cb) {
 	if (!opts) {
-		opts = {}
+		opts = {
+			
+		}
 	};
 	if ((typeof cb) != 'function') {
 		return this.api.getTransactions(address, opts)
@@ -803,4 +806,4 @@ function callback(data, callback) {
 
 }
 
-module.exports = ChainsqlAPI;
+module.exports.ChainsqlAPI = ChainsqlAPI;
