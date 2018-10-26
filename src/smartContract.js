@@ -310,7 +310,6 @@ Contract.prototype._decodeEventABI = function (currentEvent, data) {
 
 	// add name
 	result.event = event.name;
-
 	// add signature
 	result.signature = (event.anonymous || !data.topics[0]) ? null : data.topics[0];
 
@@ -449,7 +448,6 @@ Contract.prototype.deploy = function(options, callback){
  */
 Contract.prototype._on = function(){
 	var subOptions = this._generateEventOptions.apply(this, arguments);
-
 
 	// prevent the event "newListener" and "removeListener" from being overwritten
 	this._checkListener('newListener', subOptions.event.name, subOptions.callback);
@@ -791,7 +789,7 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 	};
 	//according to callbackProperty to subscribe event
 	if(callbackProperty.callbackExpect !== "send_success"){
-		chainSQL.event.subscribeTx(signedVal.id, async function(err, data) {
+		chainSQL.event.subscribeTx(signedVal.id, function(err, data) {
 			if (err) {
 				errFunc(err);
 			} else {
@@ -804,24 +802,30 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 				if (callbackProperty.callbackExpect === data.status && data.type === 'singleTransaction') {
 					if (contractObj.isDeploy) {
 						contractObj.isDeploy = false;
-						let contractAddr = await getNewDeployCtrAddr(chainSQL, data.transaction.hash);
-						if (contractAddr === "") {
-							resultObj.contractAddress = "Can not find CreateNode";
-							errFunc(resultObj);
-						}
-						else {
-							contractObj.options.address = contractAddr;
-							resultObj.contractAddress = contractAddr;
-						}
+						return getNewDeployCtrAddr(chainSQL, data.transaction.hash).then(contractAddr => {
+							if (contractAddr === "") {
+								resultObj.contractAddress = "Can not find CreateNode";
+								errFunc(resultObj);
+							}
+							else {
+								contractObj.options.address = contractAddr;
+								resultObj.contractAddress = contractAddr;
+							}
+							sucFunc(resultObj);
+						}).catch(err => {
+							errFunc(err);
+						})
 					}
-					sucFunc(resultObj);
+					else{
+						return sucFunc(resultObj);
+					}
 				}
 				// failure
-				if (data.status == 'db_error'
-					|| data.status == 'db_timeout'
-					|| data.status == 'validate_timeout') {
+				if (data.status === 'db_error'
+					|| data.status === 'db_timeout'
+					|| data.status === 'validate_timeout') {
 					resultObj.error_message = data.error_message;
-					errFunc(resultObj);
+					return errFunc(resultObj);
 				}
 			}
 		}).then(function(data) {
@@ -844,7 +848,6 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 					errFunc('unsubscribeTx failure.' + error);
 				});
 			}
-			
 			//return error message
 			errFunc(result);
 		} else {
@@ -861,19 +864,24 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 	});
 }
 
-async function getNewDeployCtrAddr(chainSQL, txHash){
-	let txDetail = await chainSQL.api.getTransaction(txHash);
-	let affectedNodes = txDetail.specification.meta.AffectedNodes;
-	let contractAddr = "";
-	for(let node of affectedNodes){
-		if(node.hasOwnProperty("CreatedNode")){
-			let createdNodeObj = node.CreatedNode;
-			contractAddr = createdNodeObj.NewFields.Account;
-			break;
-		}
-		else continue;
-	}
-	return contractAddr;
+function getNewDeployCtrAddr(chainSQL, txHash){
+	return new Promise(function(resolve, reject){
+		chainSQL.api.getTransaction(txHash).then(txDetail => {
+			let affectedNodes = txDetail.specification.meta.AffectedNodes;
+			let contractAddr = "";
+			for (let node of affectedNodes) {
+				if (node.hasOwnProperty("CreatedNode")) {
+					let createdNodeObj = node.CreatedNode;
+					contractAddr = createdNodeObj.NewFields.Account;
+					break;
+				}
+				else continue;
+			}
+			resolve(contractAddr);
+		}).catch(err => {
+			reject(err);
+		})
+	})
 }
 
 function encodeChainsqlAddrParam(types, result){
