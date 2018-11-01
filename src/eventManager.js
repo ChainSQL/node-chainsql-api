@@ -117,7 +117,7 @@ function _onMessage(that, contractObj = undefined) {
 					data.ContractEventTopics[index] = "0x" + data.ContractEventTopics[index].toLowerCase();
 				});
 			}
-			if(data.hasOwnProperty("ContractEventInfo")){
+			if(data.hasOwnProperty("ContractEventInfo") && data.ContractEventInfo !== ""){
 				data.ContractEventInfo = "0x" + data.ContractEventInfo;
 			}
 			let key = data.ContractEventTopics[0];

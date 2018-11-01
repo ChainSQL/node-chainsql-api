@@ -814,7 +814,7 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 							sucFunc(resultObj);
 						}).catch(err => {
 							errFunc(err);
-						})
+						});
 					}
 					else{
 						return sucFunc(resultObj);
@@ -880,8 +880,8 @@ function getNewDeployCtrAddr(chainSQL, txHash){
 			resolve(contractAddr);
 		}).catch(err => {
 			reject(err);
-		})
-	})
+		});
+	});
 }
 
 function encodeChainsqlAddrParam(types, result){
