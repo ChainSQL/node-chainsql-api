@@ -66,9 +66,7 @@ async function main() {
 }
 
 var testActive = async function () {
-    var amount = {
-        value: 20000
-    }
+    var amount = 20000
     console.log("----------- active >>>>>>>>>>>>>");
     let res = await c.pay(issuer.address, amount).submit({ expect: 'validate_success' })
     console.log("   active issuer", issuer.address, ":", res)
@@ -127,6 +125,8 @@ var testGateWay = async function () {
 var testEscrow = async function () {
     console.log("----------- Escrow >>>>>>>>>>>>>");
     let res;
+    // var amount = "1000";
+    var amount = 1000;
     var amount = {
         value: 1000,
         currency: sCurrency,

@@ -83,30 +83,38 @@ Ripple.prototype.prepareJSon = function () {
 }
 
 Ripple.prototype.preparePayment = function (account, amount, memos) {
+    var _amount = { value: 0 }
+    var type = typeof(amount);
+    if (type == "number" || type == "string") { _amount.value = amount; }
+    else if (type == "object") { _amount = amount; }
+    else {
+        throw new Error('error amount, amount must be object type or number type')
+    }
+    //
     let payment = {
         source: {
             address: this.ChainsqlAPI.connect.address,
             maxAmount: {
-                value: amount.value.toString(),
+                value: _amount.value.toString(),
                 currency: 'ZXC'
             }
         },
         destination: {
             address: account,
             amount: {
-                value: amount.value.toString(),
+                value: _amount.value.toString(),
                 currency: 'ZXC'
             }
         },
         memos: memos
     };
-    if (util.isMeaningful(amount.currency)) {
-        payment.source.maxAmount.currency = amount.currency;
-        payment.destination.amount.currency = amount.currency;
+    if (util.isMeaningful(_amount.currency)) {
+        payment.source.maxAmount.currency = _amount.currency;
+        payment.destination.amount.currency = _amount.currency;
     }
-    if (util.isMeaningful(amount.issuer)) {
-        payment.source.maxAmount.counterparty = amount.issuer;
-        payment.destination.amount.counterparty = amount.issuer;
+    if (util.isMeaningful(_amount.issuer)) {
+        payment.source.maxAmount.counterparty = _amount.issuer;
+        payment.destination.amount.counterparty = _amount.issuer;
     }
 
     //
@@ -238,6 +246,14 @@ Ripple.prototype.trustSet = function (amount) {
 }
 
 Ripple.prototype.escrowCreate = function (sDestAddr, amount, dateFormatTMFinish, dateFormatTMCancel) {
+    var _amount = { value: 0 }
+    var type = typeof(amount);
+    if (type == "number" || type == "string") { _amount.value = amount; }
+    else if (type == "object") { _amount = amount; }
+    else {
+        throw new Error('error amount, amount must be object type or number type')
+    }
+    //
     let dateFinish = new Date(dateFormatTMFinish);
     let tmExec = dateFinish.toISOString();
     let dateCancel = new Date(dateFormatTMCancel);
@@ -245,17 +261,17 @@ Ripple.prototype.escrowCreate = function (sDestAddr, amount, dateFormatTMFinish,
     const escrowCreation = {
         destination: sDestAddr,
         amount: {
-            value: amount.value.toString(),
+            value: _amount.value.toString(),
             currency: 'ZXC'
         },
         allowExecuteAfter: tmExec,
         allowCancelAfter: tmCancel
     };
-    if (util.isMeaningful(amount.currency)) {
-        escrowCreation.amount.currency = amount.currency;
+    if (util.isMeaningful(_amount.currency)) {
+        escrowCreation.amount.currency = _amount.currency;
     }
-    if (util.isMeaningful(amount.issuer)) {
-        escrowCreation.amount.counterparty = amount.issuer;
+    if (util.isMeaningful(_amount.issuer)) {
+        escrowCreation.amount.counterparty = _amount.issuer;
     }
     //
     this.txType = "EscrowCreate";
