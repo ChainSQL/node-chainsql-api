@@ -840,14 +840,7 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 	chainSQL.api.submit(signedVal.signedTransaction).then(function(result) {
 		//console.log('submit ', JSON.stringify(result));
 		if (result.resultCode !== 'tesSUCCESS') {
-			if(callbackProperty.callbackExpect !== "send_success"){
-				chainSQL.event.unsubscribeTx(signedVal.id).then(function(data) {
-					// unsubscribeTx success
-				}).catch(function(error) {
-					// unsubscribeTx failure
-					errFunc('unsubscribeTx failure.' + error);
-				});
-			}
+			unsubscribeTx(callbackProperty.callbackExpect, chainSQL, signedVal, errFunc);
 			//return error message
 			errFunc(result);
 		} else {
@@ -860,8 +853,20 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 			}
 		}
 	}).catch(function(error) {
+		unsubscribeTx(callbackProperty.callbackExpect, chainSQL, signedVal, errFunc);
 		errFunc(error);
 	});
+}
+
+function unsubscribeTx(expectValue, chainsql, signedVal, errFunc){
+	if(expectValue !== "send_success"){
+		chainsql.event.unsubscribeTx(signedVal.id).then(function(data) {
+			// unsubscribeTx success
+		}).catch(function(error) {
+			// unsubscribeTx failure
+			errFunc('unsubscribeTx failure.' + error);
+		});
+	}
 }
 
 function getNewDeployCtrAddr(chainSQL, txHash){
