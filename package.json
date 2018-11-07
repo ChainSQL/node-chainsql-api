@@ -1,6 +1,6 @@
 {
   "name": "chainsql",
-  "version": "0.6.35",
+  "version": "0.6.38",
   "description": "An database driver for chainsql ",
   "main": "src/index.js",
   "scripts": {
@@ -19,7 +19,7 @@
     "protobufjs": "^6.8.0",
     "web3-core-helpers": "1.0.0-beta.36",
     "web3-eth-abi": "1.0.0-beta.36",
-    "web3-utils": "1.0.0-beta.36",
+    "web3-utils": "1.0.0-beta.36"
   },
   "repository": {
     "type": "git",

@@ -103,6 +103,17 @@ ChainsqlAPI.prototype.table = function (name) {
 	return this.tab;
 }
 
+ChainsqlAPI.prototype.contract = function(jsonInterface, address, options) {
+	this.contract = new Contract(this, jsonInterface, address, options);
+	// if (this.transaction) {
+	//   this.tab.transaction = this.transaction;
+	//   this.tab.cache = this.cache;
+	// }
+	// this.tab.strictMode = this.strictMode;
+	// this.tab.event = this.event;
+	return this.contract;
+}
+
 ChainsqlAPI.prototype.generateAddress = function () {
 	var account;
 	var keypair;
