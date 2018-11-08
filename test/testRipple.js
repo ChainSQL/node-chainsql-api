@@ -30,15 +30,9 @@ var user3 = {
     secret: "xncmqYJG4P9iyaYUf6T81GHs9W1kn"
 }
 
-var publicAcount = {
-    address: "zPcimjPjkhQk7a7uFHLKEv6fyGHwFGQjHa",
-    secret: "xxCosoAJMADiy6kQFVgq1Nz8QewkU"
-}
-
 var tagStep = {
     active: 1, gateWay: 2, escrow: 3,
-    balances: 4, getLedger: 5, getTxs: 6,
-    table: 7, tableOperationRule: 8
+    balances: 4, getLedger: 5, getTxs: 6
 }
 var sCurrency = "aaa"
 
@@ -58,8 +52,6 @@ async function main() {
         case tagStep.balances: testBalances(); break;//账户余额
         case tagStep.getTxs: testTransactions(); break;
         case tagStep.getLedger: testGetLedger(); break;
-        case tagStep.table: testTable(); break;
-        case tagStep.tableOperationRule: testTableOperationRule(); break;
         default: break;
     }
     /**************************************/
@@ -179,106 +171,6 @@ var testBalances = async function () {
     if (res.length > 0) {
         console.log("   system coin balances:", res[0]);
         // console.log("   balance:", res[0].value);
-    }
-}
-
-var testTable = async function () {
-    c.as(root)
-    // c.as(user);
-    var sTableName = "test1";
-
-    //
-    let bGet = true;
-    let bUpdate = false;
-    let bCreate = false;
-    let bDrop = false;
-    if (bCreate) {
-        var raw = [
-            { 'field': 'id', 'type': 'int', 'length': 11, 'PK': 1, 'NN': 1, 'UQ': 1, 'AI': 1 },
-            { 'field': 'name', 'type': 'varchar', 'length': 50, 'default': null },
-            { 'field': 'age', 'type': 'int' },
-            { 'field': 'email', 'type': 'varchar', 'length': 64 }
-        ];
-        var option = {
-            confidential: false
-        };
-        let lll = await c.createTable(sTableName, raw, option).submit({ expect: 'validate_success' });
-        console.log("    createTable", lll);
-    }
-    if (bDrop) {
-        let lll = await c.dropTable(sTableName).submit({ expect: 'validate_success' });
-        console.log("    dropTable", lll);
-    }
-    if (bGet) {
-        let lll = await c.table("user").get().submit();
-        console.log("    all record:", lll);
-        lll = await c.table("user").get({ $or: [{ email: "123" }, { name: "zengxing1" }] }).submit();
-        console.log("    record (or)", lll);
-        lll = await c.table("user").get({ name: { $regex: '/s/' } }).submit();
-        console.log("    regex record:", lll);
-        lll = await c.table("user").get({ name: { $regex: '/s/' } }).withFields(["COUNT(*) as count"]).submit();
-        console.log("    record count:", lll);
-        lll = await c.table("user").get({ name: { $regex: '/s/' } }).withFields([]).submit();
-        console.log("    record count:", lll);
-        lll = await c.table("user").get({ name: { $regex: '/s/' } }).limit({ index: 0, total: 1 }).withFields([]).submit();
-        console.log("    record count(limit):", lll);
-        lll = await c.table("user").get({ name: { $regex: '/s/' } }).withFields(["address"]).submit();
-        console.log("    record with fields:", lll);
-    }
-    if (bUpdate) {
-        let lll = await c.table("user").get().update({ email: "134" }).submit();
-        console.log("    regex record:", lll);
-        //
-        lll = await c.table("user").get({ email: 123 }).submit();
-        console.log("    regex record:", lll);
-        lll = await c.table("user").get({ email: 123 }).update({ email: "134" }).submit();
-        console.log("    regex record:", lll);
-        //
-        lll = await c.table("user").get({ $or: [{ email: "123" }, { name: "zengxing1" }] }).submit();
-        console.log("    record (or)", lll);
-        lll = await c.table("user").get({ $or: [{ email: "123" }, { name: "zengxing1" }] }).update({ email: "134" }).submit();
-        console.log("    record (or)", lll);
-    }
-}
-
-var testTableOperationRule = async function () {
-    c.as(root)
-    // c.as(user);
-    var sTableName = "test2";
-
-    //
-    let bCreate = true;
-    let bInsert = true;
-    let bDrop = false;
-    if (bDrop) {
-        let lll = await c.dropTable(sTableName).submit({ expect: 'validate_success' });
-        console.log("    dropTable", lll);
-    }
-    if (bCreate) {
-        var raw = [
-            { 'field': 'lotteryID', 'type': 'varchar', 'length': 50, 'PK': 1, 'NN': 1 },
-            { 'field': 'account', 'type': 'varchar', 'length': 40, 'PK': 1, 'NN': 1 },
-            { 'field': 'bettingTime', 'type': 'datetime', 'NN': 1 },
-            { 'field': 'txHash', 'type': 'varchar', 'length': 100, 'NN': 1 }
-        ];
-        var rule = {
-            'Insert': {
-                'Condition': { 'txHash': '$tx_hash' } //Condition:指定插入操作可设置的默认值
-            }
-        };
-        var option = {
-            confidential: false,
-            operationRule: rule
-        };
-        let lll = await c.createTable(sTableName, raw, option).submit({ expect: 'validate_success' });
-        console.log("    createTable", lll);
-    }
-    if (bInsert) {
-        var raw = [
-            { 'lotteryID': 'lotteryID1', 'account': user.address, 'bettingTime': '2018-10-25 14:31:00' }
-        ];
-        let lll = await c.table(sTableName).insert(raw).submit({ expect: 'validate_success' });
-        console.log("    insert", lll);
     }
 }
 
