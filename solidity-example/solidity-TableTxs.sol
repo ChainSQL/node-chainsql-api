@@ -70,7 +70,7 @@ contract DBTest {
 	* @param tableName eg: "test1"
 	* @param raw eg: ""
     */
-    function get(string tableName, string raw) public returns(uint256) {
+    function get(string tableName, string raw) public view returns(uint) {
         return msg.sender.get(tableName, raw);
     }
 	
