@@ -7,6 +7,7 @@ function EventManager(chainsql) {
 	this.connect = chainsql.connect.api.connection;
 	this.chainsql = chainsql;
 	this.cache = {};
+	this.onConnect = false;
 	this.onMessage = false;
 	this.cachePass = {};
 };
@@ -93,43 +94,64 @@ EventManager.prototype.unsubscribeTx = function(id) {
 };
 
 function _onMessage(that, contractObj = undefined) {
-	that.connect._ws.on('message', function(dataRes) {
-		var data = JSON.parse(dataRes);
-		if (data.type === 'table' || data.type === 'singleTransaction') {
-			var key;
-			if (data.type === 'table') {
-				key = data.tablename + data.owner;
-				_onChainsqlMessage(that,key,data,data.owner,data.tablename);
-			}
-			if (data.type === 'singleTransaction') {
-				key = data.transaction.hash;
-				if (that.cache[key]) {
-					that.cache[key](null, data);
-					if (_isChainsqlType(data) && data.status != 'validate_success' || !_isChainsqlType(data)) {
-						delete that.cache[key];
-					}
+	that.connect.on('disconnected',function(code){
+		if (code !== 1000) {
+		  console.log('Connection is closed due to error.');
+		} else {
+		  console.log('Connection is closed normally.');
+		}
+	
+		if(!that.onConnect){
+		  that.onConnect = true;
+		  that.connect.on('connected',function(){
+			console.log('Connection is open now.');
+			that.connect._ws.on('message', function(data) {
+			  onMessage(that,data,contractObj);
+			});
+		  });
+		}
+	  });
+	that.connect._ws.on('message', function(data) {
+		onMessage(that,data,contractObj);
+	});
+}
+
+function onMessage(that,dataRes,contractObj = undefined){
+	var data = JSON.parse(dataRes);
+	if (data.type === 'table' || data.type === 'singleTransaction') {
+		var key;
+		if (data.type === 'table') {
+			key = data.tablename + data.owner;
+			_onChainsqlMessage(that,key,data,data.owner,data.tablename);
+		}
+		if (data.type === 'singleTransaction') {
+			key = data.transaction.hash;
+			if (that.cache[key]) {
+				that.cache[key](null, data);
+				if (_isChainsqlType(data) && data.status != 'validate_success' || !_isChainsqlType(data)) {
+					delete that.cache[key];
 				}
 			}
 		}
-		else if(data.type === "contract_event" && contractObj !== undefined){
-			if(data.hasOwnProperty("ContractEventTopics")){
-				data.ContractEventTopics.map(function(topic,index){
-					data.ContractEventTopics[index] = "0x" + data.ContractEventTopics[index].toLowerCase();
-				});
-			}
-			if(data.hasOwnProperty("ContractEventInfo")){
-				data.ContractEventInfo = "0x" + data.ContractEventInfo;
-			}
-			let key = data.ContractEventTopics[0];
-			if(that.cache[key]){
-				let currentEvent = contractObj.options.jsonInterface.find(function (json) {
-					return (json.type === 'event' && json.signature === '0x'+ key.replace('0x',''));
-				});
-				let output = contractObj._decodeEventABI(currentEvent, data);
-				that.cache[key](null, output);
-			}
+	}
+	else if(data.type === "contract_event" && contractObj !== undefined){
+		if(data.hasOwnProperty("ContractEventTopics")){
+			data.ContractEventTopics.map(function(topic,index){
+				data.ContractEventTopics[index] = "0x" + data.ContractEventTopics[index].toLowerCase();
+			});
 		}
-	});
+		if(data.hasOwnProperty("ContractEventInfo")){
+			data.ContractEventInfo = "0x" + data.ContractEventInfo;
+		}
+		let key = data.ContractEventTopics[0];
+		if(that.cache[key]){
+			let currentEvent = contractObj.options.jsonInterface.find(function (json) {
+				return (json.type === 'event' && json.signature === '0x'+ key.replace('0x',''));
+			});
+			let output = contractObj._decodeEventABI(currentEvent, data);
+			that.cache[key](null, output);
+		}
+	}
 }
 
 function _isChainsqlType(data){
