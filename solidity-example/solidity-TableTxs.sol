@@ -16,6 +16,15 @@ contract DBTest {
 	}
 	
 	/*
+	* @param owner table's owner'
+	* @param tableName eg: "test1"
+	* @param raw eg: "[{\"account\":\"zU42yDW3fzFjGWosdeVjVasyPsF4YHj224\", \"id\":0}, {\"account\":\"zU42yDW3fzFjGWosdeVjVasyPsF4YHj224\",   \"id\":1}, {\"account\":\"zU42yDW3fzFjGWosdeVjVasyPsF4YHj224\", \"id\":2}]"
+	*/
+	function insert(address owner, string tableName, string raw) public returns(bool) {
+	    return owner.insert(tableName, raw);
+	}
+	
+	/*
 	* @param tableName eg: "test1"
 	* @param raw eg: "[{\"account\":\"zU42yDW3fzFjGWosdeVjVasyPsF4YHj224\", \"id\":0}, {\"account\":\"zU42yDW3fzFjGWosdeVjVasyPsF4YHj224\",   \"id\":1}, {\"account\":\"zU42yDW3fzFjGWosdeVjVasyPsF4YHj224\", \"id\":2}]"
 	*/
@@ -24,11 +33,30 @@ contract DBTest {
 	}
 	
 	/*
+	* @param owner table's owner'
+	* @param tableName "test1"
+	* @param raw eg: "{\"id\":1}"
+	*/
+	function deletex(address owner, string tableName, string raw) public returns(bool) {
+	    return owner.deletex(tableName, raw);
+	}
+	
+	/*
 	* @param tableName "test1"
 	* @param raw eg: "{\"id\":1}"
 	*/
 	function deletex(string tableName, string raw) public returns(bool) {
 	    return msg.sender.deletex(tableName, raw);
+	}
+	
+	/*
+	* @param owner table's owner'
+	* @param tableName eg: "test1"
+	* @param rawUpdate eg: "{\"age\":15}"
+	* @param rawGet eg: "{\"id\": 2}"
+	*/
+	function update(address owner, string tableName, string rawUpdate, string rawGet) public returns(bool) {
+	    return owner.update(tableName, rawUpdate, rawGet);
 	}
 	
 	/*
@@ -67,10 +95,19 @@ contract DBTest {
 	}
 	
     /*
+	* @param owner table's owner'
 	* @param tableName eg: "test1"
 	* @param raw eg: ""
     */
-    function get(string tableName, string raw) public view returns(uint) {
+    function get(address owner, string tableName, string raw) public view returns(uint256) {
+        return owner.get(tableName, raw);
+    }
+    
+    /*
+	* @param tableName eg: "test1"
+	* @param raw eg: ""
+    */
+    function get(string tableName, string raw) public view returns(uint256) {
         return msg.sender.get(tableName, raw);
     }
 	
