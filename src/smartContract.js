@@ -166,9 +166,11 @@ var Contract = function Contract(chainsql, jsonInterface, address, options) {
 
 	this._address = null;
 	this._jsonInterface = [];
+	this.registeredEvent = [];
 
 	// set getter/setter properties
 	this.options.isDeploy = false;
+	this.options.isFirstSubscribe = true;
 	this.options.address = address;
 	this.options.jsonInterface = jsonInterface;
 };
@@ -456,8 +458,20 @@ Contract.prototype._on = function(){
 	// TODO check if listener already exists? and reuse subscription if options are the same.
 
 	let chainSQL = this.chainsql;
-	//this._decodeEventABI.bind(subOptions.event),
-	chainSQL.event.subscribeCtrAddr(this, subOptions.event.signature, subOptions.callback);
+	if(this.options.isFirstSubscribe){
+		//this._decodeEventABI.bind(subOptions.event),
+		chainSQL.event.subscribeCtrAddr(this).then(subRes => {
+			//subscribeCtrAddr success
+			//console.log("subscribeCtrAddr success");
+		}).catch(err => {
+			chainSQL.event.unsubscribeCtrAddr(this);
+			this.registeredEvent.splice(0, this.registeredEvent.length);
+			subOptions.callback(null, err);
+		});
+		this.options.isFirstSubscribe = false;
+	}
+	this.registeredEvent.push(subOptions.event.signature);
+	chainSQL.event.registerCtrEvent(subOptions.event.signature, subOptions.callback);
 };
 
 /**

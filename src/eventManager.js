@@ -40,7 +40,7 @@ EventManager.prototype.subscribeTx = function(id, cb) {
 	return promise;
 };
 
-EventManager.prototype.subscribeCtrAddr = function(contractObj, eventSign, cb) {
+EventManager.prototype.subscribeCtrAddr = function(contractObj) {
 	if(contractObj === undefined){
 		return Promise.reject("Can not call subscribeCtrAddr");
 	}
@@ -51,12 +51,17 @@ EventManager.prototype.subscribeCtrAddr = function(contractObj, eventSign, cb) {
 		"accounts_contract": contractAddrs
 	};
 	if (!that.onMessage) {
-		_onMessage(that, contractObj);
+		_onMessage(that);
 		that.onMessage = true;
 	}
 	var promise = that.connect.request(messageTx);
-	that.cache[eventSign] = cb;
+	that.cache[contractObj.options.address] = contractObj;
 	return promise;
+};
+
+EventManager.prototype.registerCtrEvent = function(eventSign, cb) {
+	var that = this;
+	that.cache[eventSign] = cb;
 };
 
 EventManager.prototype.unsubscribeTable = function(owner, name) {
@@ -92,7 +97,31 @@ EventManager.prototype.unsubscribeTx = function(id) {
 	return promise;
 };
 
-function _onMessage(that, contractObj = undefined) {
+EventManager.prototype.unsubscribeCtrAddr = function(contractObj){
+	if(contractObj === undefined){
+		return Promise.reject("Can not call subscribeCtrAddr");
+	}
+	var that = this;
+	let contractAddrs = new Array(contractObj.options.address);
+	var messageTx = {
+		"command": "unsubscribe",
+		"accounts_contract": contractAddrs
+	};
+	if(!that.cache.hasOwnProperty(contractObj.options.address))
+	{
+		return Promise.reject("Have not subscribe the contract : " + contractObj.options.address);
+	}
+	var promise = that.connect.request(messageTx);
+	delete that.cache[contractObj.options.address];
+	for(let item of contractObj.registeredEvent){
+		if(that.cache.hasOwnProperty(item)){
+			delete that.cache[item];
+		}
+	}
+	return promise;
+};
+
+function _onMessage(that) {
 	that.connect._ws.on('message', function(dataRes) {
 		var data = JSON.parse(dataRes);
 		if (data.type === 'table' || data.type === 'singleTransaction') {
@@ -111,7 +140,7 @@ function _onMessage(that, contractObj = undefined) {
 				}
 			}
 		}
-		else if(data.type === "contract_event" && contractObj !== undefined){
+		else if(data.type === "contract_event" && that.cache[data.ContractAddress] !== undefined){
 			if(data.hasOwnProperty("ContractEventTopics")){
 				data.ContractEventTopics.map(function(topic,index){
 					data.ContractEventTopics[index] = "0x" + data.ContractEventTopics[index].toLowerCase();
@@ -122,11 +151,15 @@ function _onMessage(that, contractObj = undefined) {
 			}
 			let key = data.ContractEventTopics[0];
 			if(that.cache[key]){
+				let contractObj = that.cache[data.ContractAddress];
 				let currentEvent = contractObj.options.jsonInterface.find(function (json) {
 					return (json.type === 'event' && json.signature === '0x'+ key.replace('0x',''));
 				});
 				let output = contractObj._decodeEventABI(currentEvent, data);
 				that.cache[key](null, output);
+				delete that.cache[key];
+				let keyIndex = contractObj.registeredEvent.indexOf(key);
+				contractObj.registeredEvent.splice(keyIndex,1);
 			}
 		}
 	});
