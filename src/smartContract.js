@@ -166,9 +166,11 @@ var Contract = function Contract(chainsql, jsonInterface, address, options) {
 
 	this._address = null;
 	this._jsonInterface = [];
+	this.registeredEvent = [];
 
 	// set getter/setter properties
 	this.options.isDeploy = false;
+	this.options.isFirstSubscribe = true;
 	this.options.address = address;
 	this.options.jsonInterface = jsonInterface;
 };
@@ -310,7 +312,6 @@ Contract.prototype._decodeEventABI = function (currentEvent, data) {
 
 	// add name
 	result.event = event.name;
-
 	// add signature
 	result.signature = (event.anonymous || !data.topics[0]) ? null : data.topics[0];
 
@@ -450,7 +451,6 @@ Contract.prototype.deploy = function(options, callback){
 Contract.prototype._on = function(){
 	var subOptions = this._generateEventOptions.apply(this, arguments);
 
-
 	// prevent the event "newListener" and "removeListener" from being overwritten
 	this._checkListener('newListener', subOptions.event.name, subOptions.callback);
 	this._checkListener('removeListener', subOptions.event.name, subOptions.callback);
@@ -458,8 +458,20 @@ Contract.prototype._on = function(){
 	// TODO check if listener already exists? and reuse subscription if options are the same.
 
 	let chainSQL = this.chainsql;
-	//this._decodeEventABI.bind(subOptions.event),
-	chainSQL.event.subscribeCtrAddr(this, subOptions.event.signature, subOptions.callback);
+	if(this.options.isFirstSubscribe){
+		//this._decodeEventABI.bind(subOptions.event),
+		chainSQL.event.subscribeCtrAddr(this).then(subRes => {
+			//subscribeCtrAddr success
+			//console.log("subscribeCtrAddr success");
+		}).catch(err => {
+			chainSQL.event.unsubscribeCtrAddr(this);
+			this.registeredEvent.splice(0, this.registeredEvent.length);
+			subOptions.callback(null, err);
+		});
+		this.options.isFirstSubscribe = false;
+	}
+	this.registeredEvent.push(subOptions.event.signature);
+	chainSQL.event.registerCtrEvent(subOptions.event.signature, subOptions.callback);
 };
 
 /**
@@ -791,7 +803,7 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 	};
 	//according to callbackProperty to subscribe event
 	if(callbackProperty.callbackExpect !== "send_success"){
-		chainSQL.event.subscribeTx(signedVal.id, async function(err, data) {
+		chainSQL.event.subscribeTx(signedVal.id, function(err, data) {
 			if (err) {
 				errFunc(err);
 			} else {
@@ -804,24 +816,30 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 				if (callbackProperty.callbackExpect === data.status && data.type === 'singleTransaction') {
 					if (contractObj.isDeploy) {
 						contractObj.isDeploy = false;
-						let contractAddr = await getNewDeployCtrAddr(chainSQL, data.transaction.hash);
-						if (contractAddr === "") {
-							resultObj.contractAddress = "Can not find CreateNode";
-							errFunc(resultObj);
-						}
-						else {
-							contractObj.options.address = contractAddr;
-							resultObj.contractAddress = contractAddr;
-						}
+						return getNewDeployCtrAddr(chainSQL, data.transaction.hash).then(contractAddr => {
+							if (contractAddr === "") {
+								resultObj.contractAddress = "Can not find CreateNode";
+								errFunc(resultObj);
+							}
+							else {
+								contractObj.options.address = contractAddr;
+								resultObj.contractAddress = contractAddr;
+							}
+							sucFunc(resultObj);
+						}).catch(err => {
+							errFunc(err);
+						});
 					}
-					sucFunc(resultObj);
+					else{
+						return sucFunc(resultObj);
+					}
 				}
 				// failure
-				if (data.status == 'db_error'
-					|| data.status == 'db_timeout'
-					|| data.status == 'validate_timeout') {
+				if (data.status === 'db_error'
+					|| data.status === 'db_timeout'
+					|| data.status === 'validate_timeout') {
 					resultObj.error_message = data.error_message;
-					errFunc(resultObj);
+					return errFunc(resultObj);
 				}
 			}
 		}).then(function(data) {
@@ -836,15 +854,7 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 	chainSQL.api.submit(signedVal.signedTransaction).then(function(result) {
 		//console.log('submit ', JSON.stringify(result));
 		if (result.resultCode !== 'tesSUCCESS') {
-			if(callbackProperty.callbackExpect !== "send_success"){
-				chainSQL.event.unsubscribeTx(signedVal.id).then(function(data) {
-					// unsubscribeTx success
-				}).catch(function(error) {
-					// unsubscribeTx failure
-					errFunc('unsubscribeTx failure.' + error);
-				});
-			}
-			
+			unsubscribeTx(callbackProperty.callbackExpect, chainSQL, signedVal, errFunc);
 			//return error message
 			errFunc(result);
 		} else {
@@ -857,23 +867,40 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 			}
 		}
 	}).catch(function(error) {
+		unsubscribeTx(callbackProperty.callbackExpect, chainSQL, signedVal, errFunc);
 		errFunc(error);
 	});
 }
 
-async function getNewDeployCtrAddr(chainSQL, txHash){
-	let txDetail = await chainSQL.api.getTransaction(txHash);
-	let affectedNodes = txDetail.specification.meta.AffectedNodes;
-	let contractAddr = "";
-	for(let node of affectedNodes){
-		if(node.hasOwnProperty("CreatedNode")){
-			let createdNodeObj = node.CreatedNode;
-			contractAddr = createdNodeObj.NewFields.Account;
-			break;
-		}
-		else continue;
+function unsubscribeTx(expectValue, chainsql, signedVal, errFunc){
+	if(expectValue !== "send_success"){
+		chainsql.event.unsubscribeTx(signedVal.id).then(function(data) {
+			// unsubscribeTx success
+		}).catch(function(error) {
+			// unsubscribeTx failure
+			errFunc('unsubscribeTx failure.' + error);
+		});
 	}
-	return contractAddr;
+}
+
+function getNewDeployCtrAddr(chainSQL, txHash){
+	return new Promise(function(resolve, reject){
+		chainSQL.api.getTransaction(txHash).then(txDetail => {
+			let affectedNodes = txDetail.specification.meta.AffectedNodes;
+			let contractAddr = "";
+			for (let node of affectedNodes) {
+				if (node.hasOwnProperty("CreatedNode")) {
+					let createdNodeObj = node.CreatedNode;
+					contractAddr = createdNodeObj.NewFields.Account;
+					break;
+				}
+				else continue;
+			}
+			resolve(contractAddr);
+		}).catch(err => {
+			reject(err);
+		});
+	});
 }
 
 function encodeChainsqlAddrParam(types, result){
