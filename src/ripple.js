@@ -177,12 +177,6 @@ Ripple.prototype.accountSet = function (opt) {
             throw new Error('opt.rate must be a number >= 1.0 && <= 2.0')
         }
         setting.transferRate = opt.rate;
-        if (!setting.hasOwnProperty("transferFeeMin")) {
-            setting.transferFeeMin = '0';
-        }
-        if (!setting.hasOwnProperty("transferFeeMax")) {
-            setting.transferFeeMax = '0';
-        }
     }
     //
     this.txType = "AccountSet";
@@ -253,20 +247,28 @@ Ripple.prototype.escrowCreate = function (sDestAddr, amount, dateFormatTMFinish,
     else {
         throw new Error('error amount, amount must be object type or number type')
     }
+
+    if(util.isMeaningless(dateFormatTMFinish) && util.isMeaningless(dateFormatTMCancel)) {
+        throw new Error('temBAD_EXPIRATION, Malformed: Bad expiration');
+    }
     //
-    let dateFinish = new Date(dateFormatTMFinish);
-    let tmExec = dateFinish.toISOString();
-    let dateCancel = new Date(dateFormatTMCancel);
-    let tmCancel = dateCancel.toISOString();
     const escrowCreation = {
         destination: sDestAddr,
         amount: {
             value: _amount.value.toString(),
             currency: 'ZXC'
-        },
-        allowExecuteAfter: tmExec,
-        allowCancelAfter: tmCancel
+        }
     };
+    if(util.isMeaningful(dateFormatTMFinish)){
+        let dateFinish = new Date(dateFormatTMFinish);
+        let tmExec = dateFinish.toISOString();
+        escrowCreation.allowExecuteAfter = tmExec;
+    }
+    if(util.isMeaningful(dateFormatTMCancel)){
+        let dateCancel = new Date(dateFormatTMCancel);
+        let tmCancel = dateCancel.toISOString();
+        escrowCreation.allowCancelAfter = tmCancel;
+    }
     if (util.isMeaningful(_amount.currency)) {
         escrowCreation.amount.currency = _amount.currency;
     }
