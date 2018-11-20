@@ -93,47 +93,64 @@ contract DBTest {
         msg.sender.update(tableName, "{\"account\":\"id==2\"}", "{\"id\": 2}");
         return db.commit();
 	}
-	
+
     /*
 	* @param owner table's owner'
 	* @param tableName eg: "test1"
 	* @param raw eg: ""
     */
-    function get(address owner, string tableName, string raw) public view returns(uint256) {
-        return owner.get(tableName, raw);
+    function get(address owner, string tableName, string raw) public view returns(string) {
+        uint256 handle = owner.get(tableName, raw);
+        uint row = db.getRowSize(handle);
+        uint col = db.getColSize(handle);
+        string memory xxx;
+        for(uint i=0; i<row; i++)
+        {
+            for(uint j=0; j<col; j++)
+            {
+                string memory y = (db.getValueByIndex(handle, i, j));
+                xxx = concat(xxx, y);
+                xxx = concat(xxx, ", ");
+            }
+            xxx = concat(xxx, ";\n");
+        }
+        return xxx;
     }
-    
-    /*
+        /*
+	* @param owner table's owner'
 	* @param tableName eg: "test1"
 	* @param raw eg: ""
+	* @param field eg: "id"
     */
-    function get(string tableName, string raw) public view returns(uint256) {
-        return msg.sender.get(tableName, raw);
+    function get(address owner, string tableName, string raw, string field) public view returns(string) {
+        uint256 handle = owner.get(tableName, raw);
+        uint row = db.getRowSize(handle);
+        string memory xxx;
+        for(uint i=0; i<row; i++)
+        {
+            string memory y = (db.getValueByKey(handle, i, field));
+            xxx = concat(xxx, y);
+            xxx = concat(xxx, ";");
+        }
+        return xxx;
     }
-	
-	function getRowSize(uint256 handle) public view returns(uint) {
-	    return db.getRowSize(handle);
-	}
-	
-	function getColSize(uint256 handle) public view returns(uint) {
-	    return db.getColSize(handle);
-	}
-	
-    /*
-	* @param handle representative the result of get
-	* @param raw eg: "0, 1, 2, ... rowSize-1"
-	* @param key eg: "id"
-    */
-	function getValueByKey(uint256 handle, uint row, string key) public view returns(string) {
-	    return db.getValueByKey(handle, row, key);
-	}
-	
-    /*
-	* @param handle representative the result of get
-	* @param raw eg: "0, 1, 2, ... rowSize-1"
-	* @param col eg: "0, 1, 2, ... colSize-1"
-    */
-	function getValueByIndex(uint256 handle, uint row, uint col) public view returns(string) {
-	    return db.getValueByIndex(handle, row, col);
-	}
+    
+    function concat(string _base, string _value) internal pure returns (string) {
+        bytes memory _baseBytes = bytes(_base);
+        bytes memory _valueBytes = bytes(_value);
+
+        string memory _tmpValue = new string(_baseBytes.length + _valueBytes.length);
+        bytes memory _newValue = bytes(_tmpValue);
+        
+        uint j = 0;
+        for(uint i=0; i<_baseBytes.length; i++) {
+            _newValue[j++] = _baseBytes[i];
+        }
+
+        for(uint i=0; i<_valueBytes.length; i++) {
+            _newValue[j++] = _valueBytes[i];
+        }
+
+        return string(_newValue);
+    }
 }
