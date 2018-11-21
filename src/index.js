@@ -777,13 +777,22 @@ ChainsqlAPI.prototype.signFor = function (json, secret, option) {
 	return signed;
 }
 
-ChainsqlAPI.prototype.encrypt = function (plainText, listPublic) {
+// ChainsqlAPI.prototype.encrypt = function (plainText, listPublic) {
 
+// }
+
+// ChainsqlAPI.prototype.decrypt = function (cipher, secret) {
+
+// }
+
+ChainsqlAPI.prototype.getAccountTables = function(address){
+	var connection = this.api ? this.api.connection : this.connect.api.connection;
+	return connection.request({
+		command: 'g_accountTables',
+		account: address
+	});
 }
 
-ChainsqlAPI.prototype.decrypt = function (cipher, secret) {
-
-}
 
 ChainsqlAPI.prototype.submit = function (cb) {
 	var that = this;
