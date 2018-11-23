@@ -12,10 +12,10 @@ var user = {
 	publicKey: "cBRmXRujuiBPuK46AGpMM5EcJuDtxpxJ8J2mCmgkZnPC1u8wqkUn"
 }
 
-// var owner = {
-// 	secret: "xnoPBzXtMeMyMHUVTgbuqAfg1SUTb",
-// 	address: "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh"	
-// }
+var owner = {
+ 	secret: "xnoPBzXtMeMyMHUVTgbuqAfg1SUTb",
+ 	address: "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh"	
+ }
 
 var issuer = {
 	secret: "xxEiFWFxpUARr9tq1XfvkykyR97iK",
@@ -26,7 +26,7 @@ var issuer = {
 // }
 
 
-var sTableName = "aac";
+var sTableName = "aag";
 var sTableName2 = "boy1234";
 var sReName = "boy1234";
 var sTableName3 = "hijack12";
@@ -35,12 +35,12 @@ main();
 
 async function main(){
 	try {
-		await c.connect('ws://127.0.0.1:6007');
+		await c.connect('ws://127.0.0.1:6009');
 		//await c.connect('ws://192.168.0.16:6006');
 
 		console.log('连接成功')
 
-		// c.as(owner);
+		 c.as(owner);
 
 		// c.setRestrict(true);
 		//激活user账户
@@ -48,9 +48,9 @@ async function main(){
 
 		//await testSubscribe();
 
-		await testRippleAPI();
+		//await testRippleAPI();
 		// await testAccount();
-		// await testChainsql();
+		 await testChainsql();
 
 		//await c.disconnect();
 		console.log('运行结束')
@@ -138,7 +138,7 @@ async function testAccount(){
 }
 
 async function testChainsql(){
-	// await testCreateTable();
+	 await testCreateTable();
 
 	// // //创建另一张表，用来测试rename,drop
 	// await testCreateTable1();
@@ -148,7 +148,7 @@ async function testChainsql(){
 	// await testRename();
 	// await testGet();
 	// await testDrop();
-	await testGrant();
+	//await testGrant();
 	// await testTxs();
 	// await insertAfterGrant();
 	// await testOperationRule();	
@@ -184,8 +184,8 @@ function unsubTable(tb, owner) {
 //创建一个加密的表,table为要创建的表,confidential为是否要加密
 var testCreateTable = async function() {
 	var raw = [
-		{'field':'id','type':'int','length':11,'PK':1,'NN':1,'UQ':1,'AI':1},
-		{'field':'name','type':'varchar','length':50,'default':null},
+		{'field':'id','type':'int','length':11,'PK':1,'NN':1,'UQ':1},
+		{'field':'name','type':'char','length':50,'default':null},
 		{'field':'age','type':'int'}
 	]
 	var option = {
@@ -213,9 +213,9 @@ var testCreateTable1 = async function() {
 //重复插入的情况下报异常
 var testInsert = async function() {
 	var raw = [
-		{'age': 333,'name':'hello'},
-		{'age': 444,'name':'sss'},
-		{'age': 555,'name':'rrr'}
+		{'id':1,'age': 333,'name':'hello'},
+		{'id':2,'age': 444,'name':'sss'},
+		{'id':3,'age': 555,'name':'rrr'}
 	]
 	var rs = await c.table(sTableName).insert(raw).submit({expect:'db_success'});
 	console.log("testInsert",rs);
