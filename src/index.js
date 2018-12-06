@@ -84,6 +84,9 @@ ChainsqlAPI.prototype.disconnect = function (cb) {
 	}
 }
 ChainsqlAPI.prototype.as = function (account) {
+	if(!account.secret || !account.address){
+		throw Error("c.as parameter invalid,must contain 'secret' and 'address'"); 
+	}
 	this.connect.as(account);
 }
 ChainsqlAPI.prototype.use = function (address) {
