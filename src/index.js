@@ -210,9 +210,9 @@ ChainsqlAPI.prototype.trustSet = function (amount) {
 	return ripple.trustSet(amount);
 }
 
-ChainsqlAPI.prototype.escrowCreate = function (sDestAddr, amount, dateFormatTMFinish, dateFormatTMCancel) {
+ChainsqlAPI.prototype.escrowCreate = function (sDestAddr, amount, opt) {
 	let ripple = new Ripple(this);
-	return ripple.escrowCreate(sDestAddr, amount, dateFormatTMFinish, dateFormatTMCancel);
+	return ripple.escrowCreate(sDestAddr, amount, opt);
 }
 
 ChainsqlAPI.prototype.escrowExecute = function (sOwnerAddr, nCreateEscrowSeq) {

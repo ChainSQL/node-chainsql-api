@@ -132,7 +132,11 @@ var testEscrow = async function () {
     let nSeq = 11;
     if (bCreate) {
         c.as(user);
-        res = await c.escrowCreate(user1.address, amount, "2018-10-26 15:49:00", "2018-10-26 15:50:00").submit({ expect: 'validate_success' });
+        var opt = {
+            dateFormatTMFinish:"2018-10-26 15:49:00",
+            dateFormatTMCancel:"2018-10-26 15:50:00"
+        }
+        res = await c.escrowCreate(user1.address, amount, opt).submit({ expect: 'validate_success' });
         console.log("\n   escrowCreate :", res)
         let res1 = await c.getTransaction(res.tx_hash);
         console.log("\n   txDetail", res.tx_hash, ":", res1,"\nseq:",res1.sequence)

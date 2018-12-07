@@ -239,7 +239,7 @@ Ripple.prototype.trustSet = function (amount) {
     return this;
 }
 
-Ripple.prototype.escrowCreate = function (sDestAddr, amount, dateFormatTMFinish, dateFormatTMCancel) {
+Ripple.prototype.escrowCreate = function (sDestAddr, amount, opt) {
     var _amount = { value: 0 }
     var type = typeof(amount);
     if (type == "number" || type == "string") { _amount.value = amount; }
@@ -248,7 +248,7 @@ Ripple.prototype.escrowCreate = function (sDestAddr, amount, dateFormatTMFinish,
         throw new Error('error amount, amount must be object type or number type')
     }
 
-    if(util.isMeaningless(dateFormatTMFinish) && util.isMeaningless(dateFormatTMCancel)) {
+    if(util.isMeaningless(opt.dateFormatTMFinish) && util.isMeaningless(opt.dateFormatTMCancel)) {
         throw new Error('temBAD_EXPIRATION, Malformed: Bad expiration');
     }
     //
@@ -259,13 +259,13 @@ Ripple.prototype.escrowCreate = function (sDestAddr, amount, dateFormatTMFinish,
             currency: 'ZXC'
         }
     };
-    if(util.isMeaningful(dateFormatTMFinish)){
-        let dateFinish = new Date(dateFormatTMFinish);
+    if(util.isMeaningful(opt.dateFormatTMFinish)){
+        let dateFinish = new Date(opt.dateFormatTMFinish);
         let tmExec = dateFinish.toISOString();
         escrowCreation.allowExecuteAfter = tmExec;
     }
-    if(util.isMeaningful(dateFormatTMCancel)){
-        let dateCancel = new Date(dateFormatTMCancel);
+    if(util.isMeaningful(opt.dateFormatTMCancel)){
+        let dateCancel = new Date(opt.dateFormatTMCancel);
         let tmCancel = dateCancel.toISOString();
         escrowCreation.allowCancelAfter = tmCancel;
     }
