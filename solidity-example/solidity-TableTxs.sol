@@ -5,8 +5,9 @@ contract DBTest {
     * @param tableName eg: "test1"
     * @param raw eg: "[{\"field\":\"id\", \"type\" : \"int\", \"length\" : 11, \"PK\" : 1, \"NN\" : 1, \"UQ\" : 1}, { \"field\":\"account\", \"type\" : \"varchar\" }, { \"field\":\"age\", \"type\" : \"int\" }]"
     */
-	function create(string tableName, string raw) public returns(bool) {
-		return msg.sender.create(tableName, raw);
+	function create(string tableName, string raw) public{
+		bool ret = msg.sender.create(tableName, raw);
+		require(ret,"create table failed");
 	}
 	/*
 	* @param tableName eg: "test1"
