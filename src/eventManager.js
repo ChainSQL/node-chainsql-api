@@ -191,7 +191,8 @@ function _isChainsqlType(data){
 	var type = data.transaction.TransactionType;
 	if(type === "TableListSet" || 
     type == "SQLStatement" ||
-    type == "SQLTransaction"){
+	type == "SQLTransaction"||
+	type == "Contract"){
 		return true;
 	}else{
 		return false;

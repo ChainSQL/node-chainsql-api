@@ -662,7 +662,7 @@ Contract.prototype._executeMethod = function _executeMethod(){
 			txCallbackProperty.callbackFunc = args.callback;
 			txCallbackProperty.callbackExpect = "send_success";
 			if(args.options.hasOwnProperty("expect")){
-				if(args.options.expect === "send_success" || args.options.expect === "validate_success"){
+				if(args.options.expect === "send_success" || args.options.expect === "validate_success" || args.options.expect === "db_success"){
 					txCallbackProperty.callbackExpect = args.options.expect;
 				}
 				else{
