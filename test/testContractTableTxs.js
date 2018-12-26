@@ -16,7 +16,7 @@ var user = {
     address: "zKQwdkkzpUQC9haHFEe2EwUsKHvvwwPHsv",
     secret: "xnJn5J5uYz3qnYX72jXkAPVB3ZsER"
 }
-var userOperation = owner;
+var userOperation = user;
 
 var user1 = {
     address: "zhd8rfb9dyoq7b8vMBqSm3dbzJpUNFNtRt",
@@ -26,7 +26,7 @@ var user1 = {
 var grantAddr = "zzzzzzzzzzzzzzzzzzzzBZbvji";
 var flag = "{\"insert\":true,\"update\":true,\"delete\":true,\"select\":true}";
 
-var sTableName = "table";
+var sTableName = "table12345";
 var sTableNameNew = "table_new"
 var rawTable = "[ \
     { \"field\": \"id\", \"type\": \"int\" }, \
@@ -70,7 +70,7 @@ async function main() {
     /**************************************/
     // userOperation = user;
     const contractAddr = "z97GFzn3pLPPq9iFFda2mMmB94LZrZmZfp";
-    let nStep = tagStep.table_get;
+    let nStep = tagStep.table_update;
     // sTableName = sTableNameNew;
     //
     if (nStep != tagStep.active && nStep != tagStep.deployContract) {
@@ -133,7 +133,7 @@ var table_create = async function () {
     try {
         myContract.methods.create(sTableName, rawTable).submit({
             Gas: 500000,
-            expect: "validate_success"
+            expect: "db_success"
         }, (err, res) => {
             err ? console.log("    CreateTable res:", err) : console.log("    CreateTable res:", res);
         });
@@ -219,7 +219,7 @@ var table_insert = async function () {
         if (userOperation.address != owner.address) {
             myContract.methods.insert(owner.address, sTableName, rawInsert/*, "txHash"*/).submit({ //no support autoFillField
                 Gas: 500000,
-                expect: "validate_success"
+                expect: "db_success"
             }, (err, res) => {
                 err ? console.log("    insert res:", err) : console.log("    dropTable res:", res);
             });
@@ -227,7 +227,7 @@ var table_insert = async function () {
         else {
             myContract.methods.insert(sTableName, rawInsert/*, "txHash"*/).submit({ //no support autoFillField
                 Gas: 500000,
-                expect: "validate_success"
+                expect: "db_success"
             }, (err, res) => {
                 err ? console.log("    insert res:", err) : console.log("    dropTable res:", res);
             });
@@ -307,7 +307,7 @@ function tableUpdate(i) {
             if (userOperation.address != owner.address) {
                 myContract.methods.update(owner.address, sTableName, rawUpdate, rawGet).submit({
                     Gas: 500000,
-                    expect: "validate_success"
+                    expect: "db_success"
                 }, (err, res) => {
                     if (err) {
                         console.log("    update", i, err);
