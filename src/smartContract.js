@@ -4,6 +4,7 @@ const _ = require('lodash');
 const path = require('path');
 var chainsqlUtils = require('chainsql-lib').ChainsqlLibUtil;
 const addressCodec = require('chainsql-address-codec');
+const keypairs = require('chainsql-keypairs');
 var abi = require('web3-eth-abi');
 var utils = require('web3-utils');
 var formatters = require('web3-core-helpers').formatters;
@@ -886,21 +887,45 @@ function unsubscribeTx(expectValue, chainsql, signedVal, errFunc){
 function getNewDeployCtrAddr(chainSQL, txHash){
 	return new Promise(function(resolve, reject){
 		chainSQL.api.getTransaction(txHash).then(txDetail => {
+			let isMatch = false;
+			let calCtrAddr = calculateCtrAddr(txDetail.address, txDetail.sequence);
 			let affectedNodes = txDetail.specification.meta.AffectedNodes;
-			let contractAddr = "";
+			let suspectCtrAddr = "";
 			for (let node of affectedNodes) {
-				if (node.hasOwnProperty("CreatedNode")) {
+				if (node.hasOwnProperty("CreatedNode") && node.CreatedNode.NewFields.hasOwnProperty("ContractCode")) {
 					let createdNodeObj = node.CreatedNode;
-					contractAddr = createdNodeObj.NewFields.Account;
-					break;
+					suspectCtrAddr = createdNodeObj.NewFields.Account;
+					if(calCtrAddr === suspectCtrAddr){
+						isMatch = true;
+						break;
+					}
 				}
-				else continue;
+				// else continue;
 			}
-			resolve(contractAddr);
+			if(isMatch){
+				resolve(calCtrAddr);
+			}
+			else reject("Can not find Contract Address");
 		}).catch(err => {
 			reject(err);
 		});
 	});
+}
+
+function calculateCtrAddr(ctrOwnerAddr, sequence){
+	let hexAddrStr = decodeChainsqlAddr(ctrOwnerAddr);
+	let hexSeqStr = dec2FixLenHex(sequence + 1, 2*4);
+	let hexFinalStr = hexAddrStr + hexSeqStr;
+	return keypairs.deriveAddress(hexFinalStr);
+}
+
+function dec2FixLenHex(decVal, fixedLen){
+	let hexStr = decVal.toString(16);
+	let paddingLen = fixedLen - hexStr.length;
+	for(let i = 0; i < paddingLen; i++){
+		hexStr = '0' + hexStr;
+	}
+	return hexStr;
 }
 
 function encodeChainsqlAddrParam(types, result){
@@ -922,7 +947,7 @@ function decodeChainsqlAddrParam(types, args){
 }
 
 function encodeChainsqlAddr(hexStr){
-	let hexArray = new Buffer(hexStr,'hex');
+	let hexArray = Buffer.from(hexStr,'hex');
 	let encodeRes = addressCodec.encodeAddress(hexArray);
 	return encodeRes;
 }
@@ -930,7 +955,7 @@ function encodeChainsqlAddr(hexStr){
 function decodeChainsqlAddr(addrStr){
 	let decodeRes = addressCodec.decodeAddress(addrStr);
 	//decodeRes is decimal, format to hex
-	let hexAddrStr = new Buffer(decodeRes).toString('hex').toUpperCase();
+	let hexAddrStr = Buffer.from(decodeRes).toString('hex').toUpperCase();
 	return hexAddrStr;
 }
 
