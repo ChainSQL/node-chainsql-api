@@ -62,7 +62,7 @@ var tagStep = {
 
 main();
 async function main() {
-    let res = await c.connect('ws://127.0.0.1:6008');
+    let res = await c.connect('ws://127.0.0.1:6007');
     console.log("    connect successfully.")
     c.setRestrict(true);
 
@@ -70,7 +70,7 @@ async function main() {
     /**************************************/
     // userOperation = user;
     const contractAddr = "z97GFzn3pLPPq9iFFda2mMmB94LZrZmZfp";
-    let nStep = tagStep.table_update;
+    let nStep = tagStep.deployContract;
     // sTableName = sTableNameNew;
     //
     if (nStep != tagStep.active && nStep != tagStep.deployContract) {

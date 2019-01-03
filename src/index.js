@@ -788,11 +788,12 @@ ChainsqlAPI.prototype.signFor = function (json, secret, option) {
 
 // }
 
-ChainsqlAPI.prototype.getAccountTables = function(address){
+ChainsqlAPI.prototype.getAccountTables = function(address, bGetDetailInfo=false){
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
 	return connection.request({
 		command: 'g_accountTables',
-		account: address
+		account: address,
+		detail: bGetDetailInfo
 	});
 }
 

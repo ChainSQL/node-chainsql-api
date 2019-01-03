@@ -12,10 +12,10 @@ var user = {
 	publicKey: "cBRmXRujuiBPuK46AGpMM5EcJuDtxpxJ8J2mCmgkZnPC1u8wqkUn"
 }
 
-// var owner = {
-// 	secret: "xnoPBzXtMeMyMHUVTgbuqAfg1SUTb",
-// 	address: "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh"	
-// }
+ var owner = {
+ 	secret: "xnoPBzXtMeMyMHUVTgbuqAfg1SUTb",
+ 	address: "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh"	
+ }
 
 var issuer = {
 	secret: "xxEiFWFxpUARr9tq1XfvkykyR97iK",
@@ -26,8 +26,8 @@ var issuer = {
 // }
 
 
-var sTableName = "aac";
-var sTableName2 = "boy1234";
+var sTableName = "a2";
+var sTableName2 = "b1";
 var sReName = "boy1234";
 var sTableName3 = "hijack12";
 
@@ -40,15 +40,15 @@ async function main(){
 
 		console.log('连接成功')
 
-		// c.as(owner);
+		c.as(owner);
 
 		// c.setRestrict(true);
 		//激活user账户
-		// await activateAccount(user.address);
+		 await activateAccount(user.address);
 
 		//await testSubscribe();
 
-		await testRippleAPI();
+		//await testRippleAPI();
 		// await testAccount();
 		// await testChainsql();
 
@@ -148,10 +148,11 @@ async function testChainsql(){
 	// await testRename();
 	// await testGet();
 	// await testDrop();
-	await testGrant();
+	//await testGrant();
 	// await testTxs();
 	// await insertAfterGrant();
-	// await testOperationRule();	
+	// await testOperationRule();
+	await testAccountTables();
 
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
@@ -184,7 +185,7 @@ function unsubTable(tb, owner) {
 //创建一个加密的表,table为要创建的表,confidential为是否要加密
 var testCreateTable = async function() {
 	var raw = [
-		{'field':'id','type':'int','length':11,'PK':1,'NN':1,'UQ':1,'AI':1},
+		{'field':'id','type':'int','length':11,'PK':1,'NN':1},
 		{'field':'name','type':'varchar','length':50,'default':null},
 		{'field':'age','type':'int'}
 	]
@@ -198,7 +199,7 @@ var testCreateTable = async function() {
 
 var testCreateTable1 = async function() {
 	var raw = [
-		{'field':'id','type':'int','length':11,'PK':1,'NN':1,'UQ':1,'AI':1,'default':''},
+		{'field':'id','type':'int','length':11,'PK':1,'NN':1,'default':''},
 		{'field':'name','type':'varchar','length':50,'default':null},
 		{'field':'age','type':'int'}
 	]
@@ -330,7 +331,7 @@ var generateAccount = async function(){
 	return c.generateAddress();
 }
 var activateAccount = async function(account){
-	let rs = await c.pay(account,200);
+	let rs = await c.pay(account,2000).submit({expect:'validate_success'});
 	console.log(rs);
 }
 
@@ -429,4 +430,90 @@ function callback(err,data){
 	}else{
 		console.log(JSON.stringify(data));
 	}
+}
+
+function testAccountTables()
+{
+	let retRequest = c.getAccountTables(owner.address,false)
+	console.log(retRequest)
+}
+async function testDateTime()
+{
+	//var account = await generateAccount();
+	//console.log("new account:",account);
+	
+	var accountMain = {
+		secret: "xhuw4WDjwy85rpoJVd8kcj5SRBXmn",
+		address: "zPrcbkv779Hb94TJL35gF87owkQpHzJc4d"	
+	}
+	/*
+	var accountMain = {
+		secret: "xnoPBzXtMeMyMHUVTgbuqAfg1SUTb",
+		address: "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh"	
+	}*/
+/*
+	c.as({
+		secret: "xxCosoAJMADiy6kQFVgq1Nz8QewkU",
+		address: "zPcimjPjkhQk7a7uFHLKEv6fyGHwFGQjHa"	
+	})
+
+	let retPay = await c.pay("zPrcbkv779Hb94TJL35gF87owkQpHzJc4d",200).submit()
+	console.log(retPay);
+
+	let info = await c.api.getAccountInfo("zPrcbkv779Hb94TJL35gF87owkQpHzJc4d");
+	console.log(info);
+*/
+
+	c.as(accountMain)
+	/*
+	var raw = [		
+		{'field':'name','type':'varchar','length':50,'default':null},
+		{'field':'creatTM','type':'datetime'}
+	]
+	var option = {
+		confidential: false
+	}
+	// 创建表
+	let rs = await c.createTable("testDateTime", raw, option).submit({expect:'db_success'});
+	console.log("testCreateTable" , rs)
+	*/
+
+	/*
+	
+	var dateNew = new Date();
+	var sDate = dateNew.toString();
+	var sData2 = dateNew.toLocaleString()
+	//console.log(sData2)
+	var raw = [
+		{'name':'hello2','creatTM':dateNew }
+	]
+	console.log(dateNew)
+	
+	
+	var rs = await c.table("testDateTime").insert(raw).submit({expect:'db_success'});
+	console.log("testInsert",rs);
+	*/
+
+	/*
+	var dateNew = new Date();
+	var sDate = dateNew.toString();
+	var sDateLocale1 = dateNew.toLocaleString()
+	console.log(sDate)
+	console.log(sDateLocale1)
+	
+
+	var data2 = new Date(sDateLocale1)
+	var sDataLoca2 = data2.toLocaleString()
+	var hour2 = data2.getHours()
+	console.log(sDataLoca2)
+	console.log(hour2)
+	*/
+
+
+	
+
+	var rs = await c.table("testDateTime").get().limit({index:0,total:20}).withFields([]).submit();
+	// var rs = await c.table(sTableName).get().withFields(["COUNT(*)"]).submit();
+	console.log("testGet",rs.lines);
+	
 }
