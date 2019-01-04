@@ -365,7 +365,7 @@ Contract.prototype._encodeMethodABI = function _encodeMethodABI() {
 			throw new Error('The contract has no contract data option set. This is necessary to append the constructor parameters.');
 
 		return this._deployData + paramsABI;
-		// return method
+	// return method
 	} else {
 		var returnValue = (signature) ? signature + paramsABI : paramsABI;
 
@@ -415,29 +415,28 @@ Contract.prototype._decodeMethodReturn = function (outputs, returnValues) {
  */
 Contract.prototype.deploy = function(options, callback){
 	this.isDeploy = true;
-	let connect = this.connect;
-	let contractData = options.ContractData.length >= 2 ? options.ContractData.slice(2) : options.ContractData;
-	let deployPayment = {
-		TransactionType : "Contract",
-		ContractOpType  : 1,
-		Account : connect.address,
-		ContractValue :options.ContractValue,
-		Gas : options.Gas,
-		ContractData : contractData.toUpperCase()
-	};
+	options = options || {};
 
-	let txCallbackProperty = {};
-	txCallbackProperty.callbackFunc = callback;
-	txCallbackProperty.callbackExpect = "validate_success";
-	if ((typeof callback) != 'function') {
-		let this_ = this;
-		return new Promise(function(resolve, reject){
-			handleContractPayment(this_, deployPayment, txCallbackProperty, resolve, reject);
-		});
+	options.arguments = options.arguments || [];
+	options = this._getOrSetDefaultOptions(options);
+
+
+	// return error, if no "data" is specified
+	if(!options.ContractData) {
+		throw new Error('No "ContractData" specified in neither the given options, nor the default options.');
 	}
-	else{
-		handleContractPayment(this, deployPayment, txCallbackProperty, null, null);
-	}
+	options.data = options.ContractData;
+
+	var constructor = _.find(this.options.jsonInterface, function (method) {
+		return (method.type === 'constructor');
+	}) || {};
+	constructor.signature = 'constructor';
+
+	return this._createTxObject.apply({
+		method: constructor,
+		parent: this,
+		deployData: options.data,
+	}, options.arguments);
 };
 
 /**
@@ -652,25 +651,34 @@ Contract.prototype._executeMethod = function _executeMethod(){
 			}
 			let sendTxPayment = {
 				TransactionType : "Contract",
-				ContractOpType : 2,
 				Account : this._parent.connect.address,
 				ContractAddress : args.options.to,
 				Gas : args.options.Gas,
 				ContractValue : contractValue,
 				ContractData : contractData.toUpperCase()
 			};
+
+			
 			let txCallbackProperty = {};
 			txCallbackProperty.callbackFunc = args.callback;
 			txCallbackProperty.callbackExpect = "send_success";
-			if(args.options.hasOwnProperty("expect")){
-				if(args.options.expect === "send_success" || args.options.expect === "validate_success" || args.options.expect === "db_success"){
-					txCallbackProperty.callbackExpect = args.options.expect;
-				}
-				else{
-					errorMsg = "Unknown 'expect' value, please check!";
-					return errFuncGlobal(errorMsg, args.callback);
+			if(args.options.isDeploy) {
+				sendTxPayment.ContractOpType = 1;
+				txCallbackProperty.callbackExpect = "validate_success";
+			}
+			else {
+				sendTxPayment.ContractOpType = 2;
+				if(args.options.hasOwnProperty("expect")) {
+					if(args.options.expect === "send_success" || args.options.expect === "validate_success" || args.options.expect === "db_success") {
+						txCallbackProperty.callbackExpect = args.options.expect;
+					}
+					else {
+						errorMsg = "Unknown 'expect' value, please check!";
+						return errFuncGlobal(errorMsg, args.callback);
+					}
 				}
 			}
+			
 			if ((typeof args.callback) != 'function') {
 				let contractObj = this._parent;
 				return new Promise(function (resolve, reject) {
@@ -914,7 +922,7 @@ function getNewDeployCtrAddr(chainSQL, txHash){
 
 function calculateCtrAddr(ctrOwnerAddr, sequence){
 	let hexAddrStr = decodeChainsqlAddr(ctrOwnerAddr);
-	let hexSeqStr = dec2FixLenHex(sequence + 1, 2*4);
+	let hexSeqStr = dec2FixLenHex(sequence, 2*4);
 	let hexFinalStr = hexAddrStr + hexSeqStr;
 	return keypairs.deriveAddress(hexFinalStr);
 }
@@ -1005,8 +1013,13 @@ Contract.prototype._processExecuteArguments = function _processExecuteArguments(
 	if(!this._deployData && !this._parent.options.address)
 		throw new Error('This contract object doesn\'t have address set yet, please set an address first.');
 
-	if(!this._deployData)
+	if(!this._deployData) {
 		processedArgs.options.to = this._parent.options.address;
+		processedArgs.options.isDeploy = false;
+	}
+	else {
+		processedArgs.options.isDeploy = true;
+	}
 
 	// return error, if no "data" is specified
 	//if(!processedArgs.options.data)

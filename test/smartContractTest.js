@@ -9,9 +9,10 @@ const RootUser = {
 	secret: "xnoPBzXtMeMyMHUVTgbuqAfg1SUTb",
 	address: "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh"
 };
-const abi = '[{"constant":false,"inputs":[],"name":"getTxOrigin","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"a","type":"uint256"}],"name":"multiply","outputs":[{"name":"d","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[],"name":"returnMixType","outputs":[{"name":"","type":"uint256"},{"name":"","type":"string"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"newMem","type":"uint256"}],"name":"setMem","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"amount","type":"uint256"}],"name":"transferToUser","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"name":"to","type":"address"}],"name":"userTransferUser","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"inputs":[],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"result","type":"uint256"}],"name":"multiplyRes","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"sender","type":"address"},{"indexed":false,"name":"number","type":"string"},{"indexed":false,"name":"result","type":"uint256"}],"name":"multiplylog","type":"event"},{"constant":true,"inputs":[{"name":"user","type":"address"}],"name":"getBalance","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getMem","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getMsgSender","outputs":[{"name":"","type":"address"},{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"a","type":"uint256"},{"name":"b","type":"uint256"}],"name":"multiply","outputs":[{"name":"c","type":"uint256"}],"payable":false,"stateMutability":"pure","type":"function"},{"constant":true,"inputs":[],"name":"returnString","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"pure","type":"function"}]';
-const deployBytecode = "0x608060405261059e806100136000396000f3006080604052600436106100ae5763ffffffff7c0100000000000000000000000000000000000000000000000000000000600035041663165c4a1681146100b35780635f7807a4146100e0578063645c9ac8146100f95780636606873b1461018d5780636cf43347146101a55780637a6ce2e11461022f578063b8077e2814610267578063c6888fa114610298578063e8b3891e146102b0578063f0591308146102c4578063f8b2cb4f146102d9575b600080fd5b3480156100bf57600080fd5b506100ce6004356024356102fa565b60408051918252519081900360200190f35b6100f7600160a060020a03600435166024356102fe565b005b34801561010557600080fd5b5061010e610339565b6040518083815260200180602001828103825283818151815260200191508051906020019080838360005b83811015610151578181015183820152602001610139565b50505050905090810190601f16801561017e5780820380516001836020036101000a031916815260200191505b50935050505060405180910390f35b34801561019957600080fd5b506100f7600435610373565b3480156101b157600080fd5b506101ba610378565b6040805160208082528351818301528351919283929083019185019080838360005b838110156101f45781810151838201526020016101dc565b50505050905090810190601f1680156102215780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b34801561023b57600080fd5b506102446103d7565b60408051600160a060020a03909316835260208301919091528051918290030190f35b34801561027357600080fd5b5061027c6103de565b60408051600160a060020a039092168252519081900360200190f35b3480156102a457600080fd5b506100ce6004356103e2565b6100f7600160a060020a0360043516610526565b3480156102d057600080fd5b506100ce61055f565b3480156102e557600080fd5b506100ce600160a060020a0360043516610565565b0290565b604051600160a060020a0383169082156108fc029083906000818181858888f19350505050158015610334573d6000803e3d6000fd5b505050565b60408051808201909152601b81527f737472696e675465737432666f724d69785479706552657475726e0000000000602082015261029a91565b600055565b60408051606081018252602981527f737472696e675465737431666f72616c6f6e67537472696e674d6f726574686160208201527f6e333242797465343100000000000000000000000000000000000000000000009181019190915290565b3360069091565b3290565b6000806001831161047a57604080517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152602260248201527f6d75737420696e7075742061206269676765722076616c7565207468616e206f60448201527f6e65000000000000000000000000000000000000000000000000000000000000606482015290519081900360840190fd5b506040805133815260078402818301819052606060208301819052600c908301527f48656c6c6f2c7465737465720000000000000000000000000000000000000000608083015291517feb39c5b4befb33e60857fbb33988a6455c10a52a2cf814fb3da1120c731440f39181900360a00190a16040805182815290517f08772fbab8abc67e72c30c4f15c461920cd7692db0a2498a7225bac55e4fc7da9181900360200190a192915050565b604051600160a060020a038216903480156108fc02916000818181858888f1935050505015801561055b573d6000803e3d6000fd5b5050565b60005490565b600160a060020a031631905600a165627a7a7230582090911bed65a0110b38b1adcebc939dd95df465135e6a3a35f0d0626b802b931c0029";
-const contractAddr = "zffPph792Rp3z1QgvYkz9ptdkHAoLxUAQH";
+const abi = '[{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"amount","type":"uint256"}],"name":"transferToUser","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":true,"inputs":[],"name":"returnMixType","outputs":[{"name":"","type":"uint256"},{"name":"","type":"string"}],"payable":false,"stateMutability":"pure","type":"function"},{"constant":false,"inputs":[{"name":"newMem","type":"uint256"}],"name":"setMem","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"returnString","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"pure","type":"function"},{"constant":true,"inputs":[],"name":"getMsgSender","outputs":[{"name":"","type":"address"},{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getTxOrigin","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"a","type":"uint256"}],"name":"multiply","outputs":[{"name":"d","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"to","type":"address"}],"name":"userTransferUser","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":true,"inputs":[],"name":"getMem","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"user","type":"address"}],"name":"getBalance","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[{"name":"memIn","type":"uint256"}],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"sender","type":"address"},{"indexed":true,"name":"number","type":"uint256"},{"indexed":false,"name":"result","type":"uint256"}],"name":"multiplylog","type":"event"}]';
+const deployBytecode = "0x60806040526040516020806107558339810180604052602081101561002357600080fd5b8101908080519060200190929190505050806000819055505061070a8061004b6000396000f3006080604052600436106100a4576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680635f7807a4146100a9578063645c9ac8146100f75780636606873b1461018e5780636cf43347146101c95780637a6ce2e114610259578063b8077e28146102b7578063c6888fa11461030e578063e8b3891e1461035d578063f0591308146103a1578063f8b2cb4f146103cc575b600080fd5b6100f5600480360360408110156100bf57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050610431565b005b34801561010357600080fd5b5061010c61047c565b6040518083815260200180602001828103825283818151815260200191508051906020019080838360005b83811015610152578082015181840152602081019050610137565b50505050905090810190601f16801561017f5780820380516001836020036101000a031916815260200191505b50935050505060405180910390f35b34801561019a57600080fd5b506101c7600480360360208110156101b157600080fd5b81019080803590602001909291905050506104c7565b005b3480156101d557600080fd5b506101de6104d1565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561021e578082015181840152602081019050610203565b50505050905090810190601f16801561024b5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b34801561026557600080fd5b5061026e610534565b604051808373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018281526020019250505060405180910390f35b3480156102c357600080fd5b506102cc610545565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b34801561031a57600080fd5b506103476004803603602081101561033157600080fd5b810190808035906020019092919050505061054d565b6040518082815260200191505060405180910390f35b61039f6004803603602081101561037357600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919050505061066a565b005b3480156103ad57600080fd5b506103b66106b4565b6040518082815260200191505060405180910390f35b3480156103d857600080fd5b5061041b600480360360208110156103ef57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff1690602001909291905050506106bd565b6040518082815260200191505060405180910390f35b8173ffffffffffffffffffffffffffffffffffffffff166108fc829081150290604051600060405180830381858888f19350505050158015610477573d6000803e3d6000fd5b505050565b60006060600061029a9050806040805190810160405280601b81526020017f737472696e675465737432666f724d69785479706552657475726e000000000081525092509250509091565b8060008190555050565b60608060405190810160405280602981526020017f737472696e675465737431666f72616c6f6e67537472696e674d6f726574686181526020017f6e33324279746534310000000000000000000000000000000000000000000000815250905090565b600080336006809050915091509091565b600032905090565b60006001821115156105ed576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260228152602001807f6d75737420696e7075742061206269676765722076616c7565207468616e206f81526020017f6e6500000000000000000000000000000000000000000000000000000000000081525060400191505060405180910390fd5b6000600783029050827f414b7ab3d46ecc8ab359636c133f9a1b88ffc8c08e9560da2b3ef7949edf8ca33383604051808373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018281526020019250505060405180910390a280915050919050565b8073ffffffffffffffffffffffffffffffffffffffff166108fc349081150290604051600060405180830381858888f193505050501580156106b0573d6000803e3d6000fd5b5050565b60008054905090565b60008173ffffffffffffffffffffffffffffffffffffffff163190509190505600a165627a7a72305820288a980bb8d7b5f466283b4a83659b2b9349076686e0f1a62cc002b092cc426e0029";
+const contractAddr = "zLRYNQd9Jy8K32qWRsuRzyLcfXvTfmpFVm";
+
 
 main();
 
@@ -31,11 +32,10 @@ async function main(){
 		// 	abi = compileResult.contracts[contractName].interface;
 		// }
 
-	
 		//deployContractAwait();
-		//deployContract();
+		deployContract();
 
-		callContract();
+		// callContract();
 	} catch (error) {
 		console.log(error);
 	}
@@ -64,16 +64,6 @@ function callContract(){
 	}, (err, res) => {
 		err ? console.log(err) : console.log(res);
 	});
-	
-	/*methods.function.auto*/
-	// myContract.methods.setMem(16).auto({
-	// 	Gas: 500000
-	// }, (err, res) => {
-	// 	err ? console.log(err) : console.log(res);
-	// });
-	// myContract.methods.getMem().auto(function (err, res) {
-	// 	err ? console.log(err) : console.log(res);
-	// });
 }
 function callContractWithMsgValue(contractObj){
 	contractObj.methods.userTransferUser("zU8gAWTXZgLmaF1XVR8briCdnWXJsT8njM").submit({
@@ -101,9 +91,11 @@ function getContractValue(contractObj){
 function deployContract(){
 	const myContract = chainsql.contract(JSON.parse(abi));
 	myContract.deploy({
+		ContractData : deployBytecode,
+		arguments : [666]
+	}).submit({
 		ContractValue : "10000000",
-		Gas : 400000,
-		ContractData : deployBytecode
+		Gas : 400000
 	}, function (err, res) {
 		err ? console.log(err) : console.log(res);
 
@@ -119,10 +111,13 @@ async function deployContractAwait(){
 	const myContract = chainsql.contract(JSON.parse(abi));
 	try {
 		let deployRes = await myContract.deploy({
+			ContractData : deployBytecode,
+			arguments : [666]
+		}).submit({
 			ContractValue : "10000000",
-			Gas : 400000,
-			ContractData : deployBytecode
+			Gas : 400000
 		});
+
 		console.log(deployRes);
 		myContract.methods.setMem(16).send({
 			Gas:500000
