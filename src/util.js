@@ -199,6 +199,29 @@ function checkUserMatchPublicKey(user,publicKey){
   return user == address;
 }
 
+/**
+ * 20 bytes hex string to base58 chainsql address
+ * @param {string} : hexStr
+ * @returns {string} : base58 address string
+ */
+function encodeChainsqlAddr(hexStr){
+	let hexArray = Buffer.from(hexStr,'hex');
+	let encodeRes = addressCodec.encodeAddress(hexArray);
+	return encodeRes;
+}
+
+/**
+ * base58 chainsql address to 20 bytes hex string
+ * @param {string} : base58 address string
+ * @returns {string} : hexStr
+ */
+function decodeChainsqlAddr(addrStr){
+	let decodeRes = addressCodec.decodeAddress(addrStr);
+	//decodeRes is decimal, format to hex
+	let hexAddrStr = Buffer.from(decodeRes).toString('hex');
+	return hexAddrStr;
+}
+
 module.exports = {
   getFee: getFee,
   getSequence: getSequence,
@@ -213,5 +236,7 @@ module.exports = {
   decodeToken: decodeToken,
   calcFee : calcFee,
   isSqlStatementTx: isSqlStatementTx,
-  checkUserMatchPublicKey: checkUserMatchPublicKey
+  checkUserMatchPublicKey: checkUserMatchPublicKey,
+  encodeChainsqlAddr: encodeChainsqlAddr,
+  decodeChainsqlAddr: decodeChainsqlAddr
 }
