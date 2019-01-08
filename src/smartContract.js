@@ -301,7 +301,7 @@ Contract.prototype._decodeEventABI = function (currentEvent, data) {
 	if(_.isArray(event.inputs)){
 		event.inputs.map(function (input, index) {
 			if(input.type === "address"){
-				result.returnValues[index] = encodeChainsqlAddr(result.returnValues[index].slice(2));
+				result.returnValues[index] = chainsqlUtils.encodeChainsqlAddr(result.returnValues[index].slice(2));
 				result.returnValues[input.name] = result.returnValues[index];
 			}
 		});

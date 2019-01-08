@@ -157,9 +157,9 @@ function _onMessage(that) {
 				});
 				let output = contractObj._decodeEventABI(currentEvent, data);
 				that.cache[key](null, output);
-				delete that.cache[key];
-				let keyIndex = contractObj.registeredEvent.indexOf(key);
-				contractObj.registeredEvent.splice(keyIndex,1);
+				// delete that.cache[key];
+				// let keyIndex = contractObj.registeredEvent.indexOf(key);
+				// contractObj.registeredEvent.splice(keyIndex,1);
 			}
 		}
 	});
