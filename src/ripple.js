@@ -148,9 +148,11 @@ Ripple.prototype.accountSet = function (opt) {
             throw new Error('opt.min or opt.max cannot be less than 0')
         }
         if (opt.min == opt.max) {
-            if (opt.rate && opt.rate != 1.0) {
-                throw new Error('Cannot set transferRate if set fixed fee');
-            } else {
+            if (opt.min > 0) {
+                if(opt.rate && opt.rate != 1.0 && opt.rate != 0){
+                    throw new Error('Cannot set transferRate if set fixed fee');
+                }                
+            } else if(!opt.rate) {
                 setting.transferRate = 1.0
             }
         } else if (!opt.rate) {
