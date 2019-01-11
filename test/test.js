@@ -35,8 +35,7 @@ main();
 
 async function main(){
 	try {
-		await c.connect('ws://127.0.0.1:6007');
-		//await c.connect('ws://192.168.0.16:6006');
+		await c.connect('ws://127.0.0.1:6008');
 
 		console.log('连接成功')
 
@@ -44,11 +43,11 @@ async function main(){
 
 		// c.setRestrict(true);
 		//激活user账户
-		 await activateAccount(user.address);
+		//  await activateAccount(user.address);
 
 		//await testSubscribe();
 
-		//await testRippleAPI();
+		// await testRippleAPI();
 		// await testAccount();
 		// await testChainsql();
 
@@ -153,6 +152,7 @@ async function testChainsql(){
 	// await insertAfterGrant();
 	// await testOperationRule();
 	await testAccountTables();
+	await testTableAuth();
 
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
@@ -368,7 +368,7 @@ async function testGetTransaction(){
 	// let rs = await c.getTransaction('3E02AA296A348F10C1F54D2EF0CBBDA9A6D389F66EFFBA936F1842506FACD4EA');
 	// console.log(rs);
 
-	c.getTransaction('3DD9408D358077015F3ED8D25F88D9EC0D8DA4B54047EF2A6E2DE8593F0B4F30',callback);
+	c.getTransaction('B4FB648883D73D4EB2D3A9E6059F1D0CF97105445F06B763A9DAB9FA66AA2EFC',callback);
 	// var rs = await callback2Promise(c.api.getTransaction,opt);
 	// console.log(rs);
 }
@@ -432,11 +432,17 @@ function callback(err,data){
 	}
 }
 
-function testAccountTables()
+async function testAccountTables()
 {
-	let retRequest = c.getAccountTables(owner.address,false)
+	let retRequest = await c.getAccountTables(owner.address,true)
 	console.log(retRequest)
 }
+
+async function testTableAuth(){
+	let retRequest = await c.getTableAuth(owner.address,"D13");
+	console.log(retRequest)
+}
+
 async function testDateTime()
 {
 	//var account = await generateAccount();
