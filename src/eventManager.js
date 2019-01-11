@@ -7,6 +7,7 @@ function EventManager(chainsql) {
 	this.connect = chainsql.connect.api.connection;
 	this.chainsql = chainsql;
 	this.cache = {};
+	this.onConnect = false;
 	this.onMessage = false;
 	this.cachePass = {};
 };
@@ -122,21 +123,42 @@ EventManager.prototype.unsubscribeCtrAddr = function(contractObj){
 };
 
 function _onMessage(that) {
-	that.connect._ws.on('message', function(dataRes) {
-		var data = JSON.parse(dataRes);
-		if (data.type === 'table' || data.type === 'singleTransaction') {
-			var key;
-			if (data.type === 'table') {
-				key = data.tablename + data.owner;
-				_onChainsqlMessage(that,key,data,data.owner,data.tablename);
-			}
-			if (data.type === 'singleTransaction') {
-				key = data.transaction.hash;
-				if (that.cache[key]) {
-					that.cache[key](null, data);
-					if (_isChainsqlType(data) && data.status != 'validate_success' || !_isChainsqlType(data)) {
-						delete that.cache[key];
-					}
+	that.connect.on('disconnected',function(code){
+		if (code !== 1000) {
+		  console.log('Connection is closed due to error.');
+		} else {
+		  console.log('Connection is closed normally.');
+		}
+	
+		if(!that.onConnect){
+		  that.onConnect = true;
+		  that.connect.on('connected',function(){
+			console.log('Connection is open now.');
+			that.connect._ws.on('message', function(data) {
+			  onMessage(that,data);
+			});
+		  });
+		}
+	  });
+	that.connect._ws.on('message', function(data) {
+		onMessage(that,data);
+	});
+}
+
+function onMessage(that,dataRes){
+	var data = JSON.parse(dataRes);
+	if (data.type === 'table' || data.type === 'singleTransaction') {
+		var key;
+		if (data.type === 'table') {
+			key = data.tablename + data.owner;
+			_onChainsqlMessage(that,key,data,data.owner,data.tablename);
+		}
+		if (data.type === 'singleTransaction') {
+			key = data.transaction.hash;
+			if (that.cache[key]) {
+				that.cache[key](null, data);
+				if (_isChainsqlType(data) && data.status != 'validate_success' || !_isChainsqlType(data)) {
+					delete that.cache[key];
 				}
 			}
 		}
@@ -162,14 +184,15 @@ function _onMessage(that) {
 				// contractObj.registeredEvent.splice(keyIndex,1);
 			}
 		}
-	});
+	}
 }
 
 function _isChainsqlType(data){
 	var type = data.transaction.TransactionType;
 	if(type === "TableListSet" || 
     type == "SQLStatement" ||
-    type == "SQLTransaction"){
+	type == "SQLTransaction"||
+	type == "Contract"){
 		return true;
 	}else{
 		return false;

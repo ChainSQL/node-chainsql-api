@@ -43,12 +43,12 @@ contract test {
         return "stringTest1foralongStringMorethan32Byte41";
     }
     
-    function returnMixType() returns(uint, string){
+    function returnMixType() public view returns(uint, string){
         uint a3 = 666;
         return (a3,"stringTest2forMixTypeReturn");
     }
     
-    function getTxOrigin() returns(address){
+    function getTxOrigin() public view returns(address){
         return tx.origin;
     }
 }

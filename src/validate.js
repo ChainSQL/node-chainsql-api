@@ -37,7 +37,11 @@ function create(obj) {
 
 		}else{
            throw new Error('invalid type '+obj[i].type)
-        }	
+		}	
+		
+		if(obj[i].AI){
+			throw new Error('"AI" is deprecated, auto increment not supported now!');
+		}
 		// if (obj[i].PK) {
 		// 	if (isHavePk) {
 		// 		throw new Error('the table only have a PK');

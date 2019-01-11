@@ -668,7 +668,7 @@ Contract.prototype._executeMethod = function _executeMethod(){
 			else {
 				sendTxPayment.ContractOpType = 2;
 				if(args.options.hasOwnProperty("expect")) {
-					if(args.options.expect === "send_success" || args.options.expect === "validate_success") {
+					if(args.options.expect === "send_success" || args.options.expect === "validate_success" || args.options.expect === "db_success") {
 						txCallbackProperty.callbackExpect = args.options.expect;
 					}
 					else {

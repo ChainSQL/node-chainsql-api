@@ -199,6 +199,13 @@ function checkUserMatchPublicKey(user,publicKey){
   return user == address;
 }
 
+function isMeaningful(variable){
+  return (variable != "" && variable != undefined && variable != null);
+}
+
+function isMeaningless(variable){
+  return (variable == "" || variable == undefined || variable == null);
+}
 /**
  * 20 bytes hex string to base58 chainsql address
  * @param {string} : hexStr
@@ -237,6 +244,8 @@ module.exports = {
   calcFee : calcFee,
   isSqlStatementTx: isSqlStatementTx,
   checkUserMatchPublicKey: checkUserMatchPublicKey,
+  isMeaningful: isMeaningful,
+  isMeaningless: isMeaningless,
   encodeChainsqlAddr: encodeChainsqlAddr,
   decodeChainsqlAddr: decodeChainsqlAddr
 }
