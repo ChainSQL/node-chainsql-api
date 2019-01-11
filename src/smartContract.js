@@ -1,10 +1,9 @@
 "use strict";
 
 const _ = require('lodash');
-const path = require('path');
-var chainsqlUtils = require('chainsql-lib').ChainsqlLibUtil;
-const addressCodec = require('chainsql-address-codec');
+var chainsqlLibUtils = require('chainsql-lib').ChainsqlLibUtil;
 const keypairs = require('chainsql-keypairs');
+const chainsqlUtils = require('./util');
 var abi = require('web3-eth-abi');
 var utils = require('web3-utils');
 var formatters = require('web3-core-helpers').formatters;
@@ -302,7 +301,7 @@ Contract.prototype._decodeEventABI = function (currentEvent, data) {
 	if(_.isArray(event.inputs)){
 		event.inputs.map(function (input, index) {
 			if(input.type === "address"){
-				result.returnValues[index] = encodeChainsqlAddr(result.returnValues[index].slice(2));
+				result.returnValues[index] = chainsqlUtils.encodeChainsqlAddr(result.returnValues[index].slice(2));
 				result.returnValues[input.name] = result.returnValues[index];
 			}
 		});
@@ -764,7 +763,7 @@ function handleContractPayment(contractObj, contractPaymet, callbackProperty, re
 function prepareContractPayment(chainSQL, contractPayment){
 	var instructions = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 	const txJSON = createContractPayment(contractPayment);
-	return chainsqlUtils.prepareTransaction(txJSON, chainSQL.api, instructions);
+	return chainsqlLibUtils.prepareTransaction(txJSON, chainSQL.api, instructions);
 }
 function createContractPayment(contractPayment){
 	var newContractPayment = _.cloneDeep(contractPayment);
@@ -921,7 +920,7 @@ function getNewDeployCtrAddr(chainSQL, txHash){
 }
 
 function calculateCtrAddr(ctrOwnerAddr, sequence){
-	let hexAddrStr = decodeChainsqlAddr(ctrOwnerAddr);
+	let hexAddrStr = chainsqlUtils.decodeChainsqlAddr(ctrOwnerAddr).toUpperCase();
 	let hexSeqStr = dec2FixLenHex(sequence, 2*4);
 	let hexFinalStr = hexAddrStr + hexSeqStr;
 	return keypairs.deriveAddress(hexFinalStr);
@@ -939,7 +938,7 @@ function dec2FixLenHex(decVal, fixedLen){
 function encodeChainsqlAddrParam(types, result){
 	types.map(function(item, index) {
 		if(item === "address"){
-			result[index] = encodeChainsqlAddr(result[index].slice(2));
+			result[index] = chainsqlUtils.encodeChainsqlAddr(result[index].slice(2));
 		}
 	});
 }
@@ -947,24 +946,11 @@ function encodeChainsqlAddrParam(types, result){
 function decodeChainsqlAddrParam(types, args){
 	let newArgs = args.map(function(item, index) { 
 		if(types[index] === "address"){
-			item = decodeChainsqlAddr(item);
+			item = chainsqlUtils.decodeChainsqlAddr(item).toUpperCase();
 		}
 		return item;
 	});
 	return newArgs;
-}
-
-function encodeChainsqlAddr(hexStr){
-	let hexArray = Buffer.from(hexStr,'hex');
-	let encodeRes = addressCodec.encodeAddress(hexArray);
-	return encodeRes;
-}
-
-function decodeChainsqlAddr(addrStr){
-	let decodeRes = addressCodec.decodeAddress(addrStr);
-	//decodeRes is decimal, format to hex
-	let hexAddrStr = Buffer.from(decodeRes).toString('hex').toUpperCase();
-	return hexAddrStr;
 }
 
 /**

@@ -162,12 +162,27 @@ function onMessage(that,dataRes){
 				}
 			}
 		}
-	}
-	else if(data.type === "contract_event" && that.cache[data.ContractAddress] !== undefined){
-		if(data.hasOwnProperty("ContractEventTopics")){
-			data.ContractEventTopics.map(function(topic,index){
-				data.ContractEventTopics[index] = "0x" + data.ContractEventTopics[index].toLowerCase();
-			});
+		else if(data.type === "contract_event" && that.cache[data.ContractAddress] !== undefined){
+			if(data.hasOwnProperty("ContractEventTopics")){
+				data.ContractEventTopics.map(function(topic,index){
+					data.ContractEventTopics[index] = "0x" + data.ContractEventTopics[index].toLowerCase();
+				});
+			}
+			if(data.hasOwnProperty("ContractEventInfo") && data.ContractEventInfo !== ""){
+				data.ContractEventInfo = "0x" + data.ContractEventInfo;
+			}
+			let key = data.ContractEventTopics[0];
+			if(that.cache[key]){
+				let contractObj = that.cache[data.ContractAddress];
+				let currentEvent = contractObj.options.jsonInterface.find(function (json) {
+					return (json.type === 'event' && json.signature === '0x'+ key.replace('0x',''));
+				});
+				let output = contractObj._decodeEventABI(currentEvent, data);
+				that.cache[key](null, output);
+				// delete that.cache[key];
+				// let keyIndex = contractObj.registeredEvent.indexOf(key);
+				// contractObj.registeredEvent.splice(keyIndex,1);
+			}
 		}
 		if(data.hasOwnProperty("ContractEventInfo") && data.ContractEventInfo !== ""){
 			data.ContractEventInfo = "0x" + data.ContractEventInfo;
