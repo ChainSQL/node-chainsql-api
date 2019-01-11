@@ -205,6 +205,7 @@ function isMeaningful(variable){
 
 function isMeaningless(variable){
   return (variable == "" || variable == undefined || variable == null);
+}
 /**
  * 20 bytes hex string to base58 chainsql address
  * @param {string} : hexStr

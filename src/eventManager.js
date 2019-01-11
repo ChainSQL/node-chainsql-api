@@ -184,21 +184,6 @@ function onMessage(that,dataRes){
 				// contractObj.registeredEvent.splice(keyIndex,1);
 			}
 		}
-		if(data.hasOwnProperty("ContractEventInfo") && data.ContractEventInfo !== ""){
-			data.ContractEventInfo = "0x" + data.ContractEventInfo;
-		}
-		let key = data.ContractEventTopics[0];
-		if(that.cache[key]){
-			let contractObj = that.cache[data.ContractAddress];
-			let currentEvent = contractObj.options.jsonInterface.find(function (json) {
-				return (json.type === 'event' && json.signature === '0x'+ key.replace('0x',''));
-			});
-			let output = contractObj._decodeEventABI(currentEvent, data);
-			that.cache[key](null, output);
-			delete that.cache[key];
-			let keyIndex = contractObj.registeredEvent.indexOf(key);
-			contractObj.registeredEvent.splice(keyIndex,1);
-		}
 	}
 }
 
