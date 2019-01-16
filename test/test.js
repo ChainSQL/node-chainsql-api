@@ -26,7 +26,7 @@ var issuer = {
 // }
 
 
-var sTableName = "a2";
+var sTableName = "a5";
 var sTableName2 = "b1";
 var sReName = "boy1234";
 var sTableName3 = "hijack12";
@@ -43,13 +43,17 @@ async function main(){
 
 		// c.setRestrict(true);
 		//激活user账户
+<<<<<<< Updated upstream
 		//  await activateAccount(user.address);
+=======
+		// await activateAccount(user.address);
+>>>>>>> Stashed changes
 
 		//await testSubscribe();
 
 		// await testRippleAPI();
 		// await testAccount();
-		// await testChainsql();
+		 await testChainsql();
 
 		//await c.disconnect();
 		console.log('运行结束')
@@ -137,7 +141,7 @@ async function testAccount(){
 }
 
 async function testChainsql(){
-	// await testCreateTable();
+	 await testCreateTable();
 
 	// // //创建另一张表，用来测试rename,drop
 	// await testCreateTable1();
@@ -151,8 +155,12 @@ async function testChainsql(){
 	// await testTxs();
 	// await insertAfterGrant();
 	// await testOperationRule();
+<<<<<<< Updated upstream
 	await testAccountTables();
 	await testTableAuth();
+=======
+	//await testAccountTables();
+>>>>>>> Stashed changes
 
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
@@ -186,7 +194,7 @@ function unsubTable(tb, owner) {
 var testCreateTable = async function() {
 	var raw = [
 		{'field':'id','type':'int','length':11,'PK':1,'NN':1},
-		{'field':'name','type':'varchar','length':50,'default':null},
+		{'field':'name','type':'varchar','length':50,'default':""},
 		{'field':'age','type':'int'}
 	]
 	var option = {

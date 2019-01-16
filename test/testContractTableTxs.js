@@ -69,8 +69,8 @@ async function main() {
 
     /**************************************/
     // userOperation = user;
-    const contractAddr = "z97GFzn3pLPPq9iFFda2mMmB94LZrZmZfp";
-    let nStep = tagStep.deployContract;
+    const contractAddr = "zccYXdYmuk78c9iNQdayvsevhosQjkWBJG";
+    let nStep = tagStep.table_insert;
     // sTableName = sTableNameNew;
     //
     if (nStep != tagStep.active && nStep != tagStep.deployContract) {
