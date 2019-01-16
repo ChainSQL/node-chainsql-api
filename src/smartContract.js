@@ -920,11 +920,7 @@ function getNewDeployCtrAddr(chainSQL, txHash){
 }
 
 function calculateCtrAddr(ctrOwnerAddr, sequence){
-<<<<<<< Updated upstream
-	let hexAddrStr = chainsqlUtils.decodeChainsqlAddr(ctrOwnerAddr).toUpperCase();
-=======
 	let hexAddrStr = decodeChainsqlAddr(ctrOwnerAddr);
->>>>>>> Stashed changes
 	let hexSeqStr = dec2FixLenHex(sequence, 2*4);
 	let hexFinalStr = hexAddrStr + hexSeqStr;
 	return keypairs.deriveAddress(hexFinalStr);

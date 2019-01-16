@@ -43,11 +43,7 @@ async function main(){
 
 		// c.setRestrict(true);
 		//激活user账户
-<<<<<<< Updated upstream
-		//  await activateAccount(user.address);
-=======
 		// await activateAccount(user.address);
->>>>>>> Stashed changes
 
 		//await testSubscribe();
 
@@ -155,12 +151,8 @@ async function testChainsql(){
 	// await testTxs();
 	// await insertAfterGrant();
 	// await testOperationRule();
-<<<<<<< Updated upstream
 	await testAccountTables();
 	await testTableAuth();
-=======
-	//await testAccountTables();
->>>>>>> Stashed changes
 
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
