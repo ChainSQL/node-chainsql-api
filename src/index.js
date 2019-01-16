@@ -226,7 +226,7 @@ ChainsqlAPI.prototype.escrowCancel = function (sOwnerAddr, nCreateEscrowSeq) {
 }
 
 ChainsqlAPI.prototype.createTable = function (name, raw, opt) {
-	validate.create(raw);
+	validate.create(name,raw);
 	var opt = opt ? opt : {};
 	let that = this;
 	var confidential = false;

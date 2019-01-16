@@ -2,7 +2,10 @@
 
 const permission = require('./config').permission;
 
-function create(obj) {
+function create(name,obj) {
+	if(name == undefined || name.length > 64 || name.length == 0){
+		throw new Error("tabla name not valid");
+	}
 	let result = [];
 	if (!isArrayFn(obj)) {
 		throw new Error('raw must be an Array');
