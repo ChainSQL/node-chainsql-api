@@ -64,9 +64,16 @@ function createPaymentTransaction(paymentArgument) {
   return txJSON;
 }
 
+function checkTablePayment(payment)
+{
+  if(payment.address === undefined)  return "account is null, please use the function 'as' first.";
+  return "";
+}
 function prepareTablePayment(payment) {
   var instructions = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
   //validate.preparePayment({ address: address, payment: payment, instructions: instructions });
+  let err = checkTablePayment(payment)
+  if( err != "")  return Promise.reject(err);
   var txJSON = createPaymentTransaction(payment);
   return utils.prepareTransaction(txJSON, this, instructions);
 }

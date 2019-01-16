@@ -35,7 +35,7 @@ main();
 
 async function main(){
 	try {
-		await c.connect('ws://127.0.0.1:6008');
+		await c.connect('ws://101.201.40.124:5006');
 
 		console.log('连接成功')
 
