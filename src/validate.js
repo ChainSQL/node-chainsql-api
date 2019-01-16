@@ -12,38 +12,28 @@ function create(name,obj) {
 	}
 	// let isHavePk = false;
 	for (let i = 0; i < obj.length; i++) {
-		let node = {};
 		if (!obj[i].field || !obj[i].type) {
 			throw new Error('Raw must have  field and type');
 		}
-        if(obj[i].type === 'int'){
-
-        }else if(obj[i].type === 'int'){
-
-        }else if(obj[i].type === 'float'){
-
-        }else if(obj[i].type === 'double'){
-
-        }else if(obj[i].type === 'decimal'){
-
-        }else if(obj[i].type === 'varchar'){
-           if(!obj[i].length){
-           	throw new Error('The type varchar must have length');
-           }
-        }else if(obj[i].type === 'blob'){
-
-        }else if(obj[i].type === 'text'){
-
-        }else if(obj[i].type === 'datetime'){
-
-        }else if(obj[i].type === 'date'){
-
-		}else{
-           throw new Error('invalid type '+obj[i].type)
-		}	
-		
-		if(obj[i].AI){
-			throw new Error('"AI" is deprecated, auto increment not supported now!');
+		switch(obj[i].type)
+		{
+			case "int":
+			case "float":
+			case "double":
+			case "decimal":
+			case "blob":
+			case "text":
+			case "datetime":
+			case "date":
+			break;
+			case "varchar":
+			case "char":
+			if(!obj[i].length){
+				throw new Error('The type varchar must have length');
+			}
+			break;
+			default:
+			throw new Error('invalid type '+obj[i].type);
 		}
 		// if (obj[i].PK) {
 		// 	if (isHavePk) {
