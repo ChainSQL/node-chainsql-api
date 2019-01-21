@@ -797,12 +797,13 @@ ChainsqlAPI.prototype.getAccountTables = function(address, bGetDetailInfo=false)
 	});
 }
 
-ChainsqlAPI.prototype.getTableAuth = function(owner,tableName){
+ChainsqlAPI.prototype.getTableAuth = function(owner,tableName,accounts){
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
 	return connection.request({
 		command: 'table_auth',
 		owner: owner,
-		tablename:tableName
+		tablename:tableName,
+		accounts:accounts
 	});
 }
 
