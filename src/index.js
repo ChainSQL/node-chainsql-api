@@ -391,9 +391,7 @@ ChainsqlAPI.prototype.grant = function (name, user, flags, publicKey) {
 
 ChainsqlAPI.prototype.getTransactions = function (address, opts, cb) {
 	if (!opts) {
-		opts = {
-			
-		}
+		opts = {}
 	};
 	if ((typeof cb) != 'function') {
 		return this.api.getTransactions(address, opts)
