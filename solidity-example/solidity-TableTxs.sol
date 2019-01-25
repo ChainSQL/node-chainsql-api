@@ -111,7 +111,8 @@ contract DBTest {
             {
                 string memory y = (db.getValueByIndex(handle, i, j));
                 xxx = concat(xxx, y);
-                xxx = concat(xxx, ", ");
+				if(j != col - 1)
+                	xxx = concat(xxx, ", ");
             }
             xxx = concat(xxx, ";\n");
         }
