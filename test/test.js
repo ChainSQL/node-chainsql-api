@@ -37,7 +37,7 @@ async function main(){
 	try {
 		await c.connect('ws://101.201.40.124:5006');
 
-		console.log('连接成功')
+		console.log('连接成功');
 
 		c.as(owner);
 

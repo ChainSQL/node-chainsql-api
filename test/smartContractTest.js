@@ -47,7 +47,7 @@ function callContract(){
 	//callContractWithMsgValue(myContract);
 
 	/*get function encodeABI*/
-	//getFuncEncodeABI(myContract);
+	// getFuncEncodeABI(myContract);
 
 	/*get contract value*/
 	//getContractValue(myContract);
@@ -99,7 +99,7 @@ function deployContract(){
 	}, function (err, res) {
 		err ? console.log(err) : console.log(res);
 
-		// myContract.methods.setMem(16).send({
+		// myContract.methods.setMem(16).submit({
 		// 	Gas: 500000
 		// }, (err, res) => {
 		// 	err ? console.log(err) : console.log(res);
@@ -119,7 +119,7 @@ async function deployContractAwait(){
 		});
 
 		console.log(deployRes);
-		myContract.methods.setMem(16).send({
+		myContract.methods.setMem(16).submit({
 			Gas:500000
 		}, (err, res) => {
 			err ? console.log(err) : console.log(res);
