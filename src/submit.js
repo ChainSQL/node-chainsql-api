@@ -50,7 +50,6 @@ Submit.prototype.handleSignedTx = function (ChainSQL, signed, object, resolve, r
 			return reject(errMsg);
 		}
 	}
-		
 
 	var errFunc = function (error) {
 		if (isFunction) {
