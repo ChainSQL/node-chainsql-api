@@ -413,7 +413,6 @@ Contract.prototype._decodeMethodReturn = function (outputs, returnValues) {
  * @return {Object} EventEmitter possible events are "error", "transactionHash" and "receipt"
  */
 Contract.prototype.deploy = function(options, callback){
-	this.isDeploy = true;
 	options = options || {};
 
 	options.arguments = options.arguments || [];
@@ -678,13 +677,14 @@ Contract.prototype._executeMethod = function _executeMethod(){
 				}
 			}
 			
+			let contractObj = this._parent;
+			contractObj.options.isDeploy = args.options.isDeploy;
 			if ((typeof args.callback) != 'function') {
-				let contractObj = this._parent;
 				return new Promise(function (resolve, reject) {
 					handleContractPayment(contractObj, sendTxPayment, txCallbackProperty, resolve, reject);
 				});
 			} else {
-				handleContractPayment(this._parent, sendTxPayment, txCallbackProperty, null, null);
+				handleContractPayment(contractObj, sendTxPayment, txCallbackProperty, null, null);
 			}
 			break;
 		}
@@ -822,8 +822,7 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 				resultObj.tx_hash = data.transaction.hash;
 
 				if (callbackProperty.callbackExpect === data.status && data.type === 'singleTransaction') {
-					if (contractObj.isDeploy) {
-						contractObj.isDeploy = false;
+					if(contractObj.options.isDeploy) {
 						return getNewDeployCtrAddr(chainSQL, data.transaction.hash).then(contractAddr => {
 							if (contractAddr === "") {
 								resultObj.contractAddress = "Can not find CreateNode";
