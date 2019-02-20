@@ -44,9 +44,16 @@ Submit.prototype.handleSignedTx = function (ChainSQL, signed, object, resolve, r
 	if (type == 'function') {
 		isFunction = true;
 	}
-	else if (type == "object" && object.hasOwnProperty("expect")) {
-		if(object.expect !== "send_success" && object.expect !== "validate_success" && object.expect !== "db_success") {
-			let errMsg = "Unknown 'expect' value, please check!";
+	else if (type === "object") {
+		let errMsg;
+		if(Object.getOwnPropertyNames(object).length === 1 && object.hasOwnProperty("expect")) {
+			if(object.expect !== "send_success" && object.expect !== "validate_success" && object.expect !== "db_success") {
+				errMsg = "Unknown 'expect' value, please check!";
+				return reject(errMsg);
+			}
+		}
+		else {
+			errMsg = "submit option is wrong, please check!";
 			return reject(errMsg);
 		}
 	}

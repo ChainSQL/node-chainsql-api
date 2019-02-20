@@ -8,6 +8,7 @@ var abi = require('web3-eth-abi');
 var utils = require('web3-utils');
 var formatters = require('web3-core-helpers').formatters;
 
+const preDefOptions = ["ContractData", "arguments", "ContractValue", "Gas", "expect"];
 /**
  * Contract constructor for creating new contract instance
  *
@@ -183,6 +184,12 @@ var Contract = function Contract(chainsql, jsonInterface, address, options) {
  * @return {Object} the options with gaps filled by defaults
  */
 Contract.prototype._getOrSetDefaultOptions = function getOrSetDefaultOptions(options) {
+	for(let key in options) {
+		if( preDefOptions.indexOf(key) === -1 ) {
+			let errMsg = "Find a unexpected key in options: " + key;
+			throw new Error(errMsg);
+		}
+	}
 	var gasPrice = options.gasPrice ? String(options.gasPrice): null;
 	var from = options.from ? utils.toChecksumAddress(formatters.inputAddressFormatter(options.from)) : null;
 
@@ -795,13 +802,6 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 			reject(error);
 		}
 	};
-	// var exceptFunc = function(exception){
-	// 	if (isFunction) {
-	// 		object(exception, null);
-	// 	} else {
-	// 		reject(exception);
-	// 	}
-	// }
 	var sucFunc = function(data){
 		if(isFunction){
 			callBack(null,data);
