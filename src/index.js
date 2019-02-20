@@ -616,8 +616,10 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 				var txJson = JSON.parse(data.txJSON);
 				txJson.Fee = util.calcFee(txJson);
 				data.txJSON = JSON.stringify(txJson);
-				let signedRet = ChainSQL.api.sign(data.txJSON, ChainSQL.connect.secret);
-				handleSignedTx(ChainSQL, signedRet, object, resolve, reject);
+               
+				that.payment_json = data.txJSON
+				// let signedRet = ChainSQL.api.sign(data.txJSON, ChainSQL.connect.secret);
+				// handleSignedTx(ChainSQL, signedRet, object, resolve, reject);
 			}).catch(function (error) {
 				cb(error, null);
 			});
@@ -625,7 +627,90 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 	});
 }
 
+function handlePrepareCommit(ChainSQL, object, resolve, reject) {
+	var isFunction = false;
+
+	if ((typeof object) == 'function')
+		isFunction = true;
+
+	var cb = function (error, data) {
+		if (isFunction) {
+			if (object == null)
+				object = callback;
+			object(error, data)
+		} else {
+			if (error) {
+				reject(error);
+			} else {
+				resolve(data);
+			}
+		}
+	}
+	var cache = ChainSQL.cache;
+	var payment = {
+		"TransactionType": "SQLTransaction",
+		"Account": ChainSQL.connect.address,
+		"Statements": [],
+		"StrictMode": ChainSQL.strictMode,
+		"NeedVerify": ChainSQL.needVerify
+	};
+
+	for (var i = 0; i < cache.length; i++) {
+		var tableName = cache[i].TableName;
+		cache[i].Tables = [{
+			Table: {
+				TableName: tableName
+			}
+		}];
+		payment.Statements.push(cache[i]);
+	}
+
+	getTxJson(ChainSQL, payment).then(function (data) {
+		if (data.status == 'error') {
+			ChainSQL.transaction = false;
+			throw new Error('getTxJson error');
+		}
+
+		var payment = data.tx_json;
+
+		ChainSQL.api.prepareTx(payment).then(function (data) {
+			var txJson = JSON.parse(data.txJSON);
+			txJson.Fee = util.calcFee(txJson);
+			data.txJSON = JSON.stringify(txJson);
+
+			ChainSQL.payment_json = data.txJSON;
+			cb(null, data.txJSON)
+		}).catch(function (error) {
+			cb(error, null);
+		});
+	});
+};
+
 ChainsqlAPI.prototype.commit = function (cb) {
+	var that = this;
+
+	if ((typeof cb) != 'function') {
+		return new Promise(function (resolve, reject) {
+			handleCommit(that, cb, resolve, reject);
+		});
+	} else {
+		handleCommit(that, cb, null, null);
+	}
+};
+
+ChainsqlAPI.prototype.prepareCommit = function (cb) {
+	var that = this
+
+	if ((typeof cb) != 'function') {
+		return new Promise(function (resolve, reject) {
+			handlePrepareCommit(that, cb, resolve, reject);
+		});
+	} else {
+		handlePrepareCommit(that, cb, null, null);
+	}
+}
+
+ChainsqlAPI.prototype.prepare = function (cb) {
 	var that = this;
 
 	if ((typeof cb) != 'function') {
