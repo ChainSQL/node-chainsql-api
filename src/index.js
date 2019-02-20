@@ -520,7 +520,7 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 
 	var ary = [];
 	var secretMap = {};
-	var cache = ChainSQL.cache;
+	var cache = JSON.parse(ChainSQL.payment_json).Statements;
 	for (var i = 0; i < cache.length; i++) {
 		var noRaw = [2, 3, 5, 7];
 		if (noRaw.indexOf(cache[i].OpType) != -1) {
@@ -617,9 +617,8 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 				txJson.Fee = util.calcFee(txJson);
 				data.txJSON = JSON.stringify(txJson);
                
-				that.payment_json = data.txJSON
-				// let signedRet = ChainSQL.api.sign(data.txJSON, ChainSQL.connect.secret);
-				// handleSignedTx(ChainSQL, signedRet, object, resolve, reject);
+				let signedRet = ChainSQL.api.sign(data.txJSON, ChainSQL.connect.secret);
+				handleSignedTx(ChainSQL, signedRet, object, resolve, reject);
 			}).catch(function (error) {
 				cb(error, null);
 			});
