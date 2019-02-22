@@ -959,7 +959,7 @@ ChainsqlAPI.prototype.submit = function (cb) {
 					var token = generateToken(that.connect.secret);
 					var secret = decodeToken(that, token);
 					tx_json.Raw = crypto.aesEncrypt(secret, tx_json.Raw).toUpperCase();
-					tx_json.token = token.toUpperCase();
+					tx_json.Token = token.toUpperCase();
 				} else {
 					tx_json.Raw = convertStringToHex(tx_json.Raw)
 				};
