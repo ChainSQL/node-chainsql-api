@@ -797,12 +797,15 @@ ChainsqlAPI.prototype.getAccountTables = function(address, bGetDetailInfo=false)
 
 ChainsqlAPI.prototype.getTableAuth = function(owner,tableName,accounts){
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
-	return connection.request({
+	var req = {
 		command: 'table_auth',
 		owner: owner,
-		tablename:tableName,
-		accounts:accounts
-	});
+		tablename:tableName
+	}
+	if(accounts && accounts.length > 0){
+		req.accounts = accounts;
+	}
+	return connection.request(req);
 }
 
 ChainsqlAPI.prototype.getTableNameInDB = function(owner,tableName){
