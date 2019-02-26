@@ -40,8 +40,23 @@ Submit.prototype.setMaxLedgerVersionOffset = function (maxLedgerVersionOffset) {
 
 Submit.prototype.handleSignedTx = function (ChainSQL, signed, object, resolve, reject) {
 	var isFunction = false;
-	if ((typeof object) == 'function')
+	var type = typeof( object );
+	if (type == 'function') {
 		isFunction = true;
+	}
+	else if (type === "object") {
+		let errMsg;
+		if(Object.getOwnPropertyNames(object).length === 1 && object.hasOwnProperty("expect")) {
+			if(object.expect !== "send_success" && object.expect !== "validate_success" && object.expect !== "db_success") {
+				errMsg = "Unknown 'expect' value, please check!";
+				return reject(errMsg);
+			}
+		}
+		else {
+			errMsg = "submit option is wrong, please check!";
+			return reject(errMsg);
+		}
+	}
 
 	var errFunc = function (error) {
 		if (isFunction) {

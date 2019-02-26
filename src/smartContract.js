@@ -8,6 +8,7 @@ var abi = require('web3-eth-abi');
 var utils = require('web3-utils');
 var formatters = require('web3-core-helpers').formatters;
 
+const preDefOptions = ["ContractData", "arguments", "ContractValue", "Gas", "expect"];
 /**
  * Contract constructor for creating new contract instance
  *
@@ -183,6 +184,12 @@ var Contract = function Contract(chainsql, jsonInterface, address, options) {
  * @return {Object} the options with gaps filled by defaults
  */
 Contract.prototype._getOrSetDefaultOptions = function getOrSetDefaultOptions(options) {
+	for(let key in options) {
+		if( preDefOptions.indexOf(key) === -1 ) {
+			let errMsg = "Find a unexpected key in options: " + key;
+			throw new Error(errMsg);
+		}
+	}
 	var gasPrice = options.gasPrice ? String(options.gasPrice): null;
 	var from = options.from ? utils.toChecksumAddress(formatters.inputAddressFormatter(options.from)) : null;
 
@@ -413,7 +420,6 @@ Contract.prototype._decodeMethodReturn = function (outputs, returnValues) {
  * @return {Object} EventEmitter possible events are "error", "transactionHash" and "receipt"
  */
 Contract.prototype.deploy = function(options, callback){
-	this.isDeploy = true;
 	options = options || {};
 
 	options.arguments = options.arguments || [];
@@ -678,13 +684,14 @@ Contract.prototype._executeMethod = function _executeMethod(){
 				}
 			}
 			
+			let contractObj = this._parent;
+			contractObj.options.isDeploy = args.options.isDeploy;
 			if ((typeof args.callback) != 'function') {
-				let contractObj = this._parent;
 				return new Promise(function (resolve, reject) {
 					handleContractPayment(contractObj, sendTxPayment, txCallbackProperty, resolve, reject);
 				});
 			} else {
-				handleContractPayment(this._parent, sendTxPayment, txCallbackProperty, null, null);
+				handleContractPayment(contractObj, sendTxPayment, txCallbackProperty, null, null);
 			}
 			break;
 		}
@@ -795,13 +802,6 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 			reject(error);
 		}
 	};
-	// var exceptFunc = function(exception){
-	// 	if (isFunction) {
-	// 		object(exception, null);
-	// 	} else {
-	// 		reject(exception);
-	// 	}
-	// }
 	var sucFunc = function(data){
 		if(isFunction){
 			callBack(null,data);
@@ -822,8 +822,7 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 				resultObj.tx_hash = data.transaction.hash;
 
 				if (callbackProperty.callbackExpect === data.status && data.type === 'singleTransaction') {
-					if (contractObj.isDeploy) {
-						contractObj.isDeploy = false;
+					if(contractObj.options.isDeploy) {
 						return getNewDeployCtrAddr(chainSQL, data.transaction.hash).then(contractAddr => {
 							if (contractAddr === "") {
 								resultObj.contractAddress = "Can not find CreateNode";
@@ -843,10 +842,12 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 					}
 				}
 				// failure
-				if (data.status === 'db_error'
-					|| data.status === 'db_timeout'
-					|| data.status === 'validate_timeout') {
-					resultObj.error_message = data.error_message;
+				if (data.status === 'db_error' || 
+					data.status === 'db_timeout' || 
+					data.status === 'validate_timeout') {
+					if (data.hasOwnProperty("error_message")) {
+						resultObj.error_message = data.error_message;
+					}
 					return errFunc(resultObj);
 				}
 			}
