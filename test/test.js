@@ -35,7 +35,7 @@ main();
 
 async function main(){
 	try {
-		await c.connect('ws://101.201.40.124:5006');
+		await c.connect('ws://127.0.0.1:6008');
 
 		console.log('连接成功');
 
@@ -137,7 +137,7 @@ async function testAccount(){
 }
 
 async function testChainsql(){
-	 await testCreateTable();
+	//  await testCreateTable();
 
 	// // //创建另一张表，用来测试rename,drop
 	// await testCreateTable1();
@@ -146,13 +146,14 @@ async function testChainsql(){
 	// await testDelete();
 	// await testRename();
 	// await testGet();
+	await testGetBySql();
 	// await testDrop();
 	//await testGrant();
 	// await testTxs();
 	// await insertAfterGrant();
 	// await testOperationRule();
-	await testAccountTables();
-	await testTableAuth();
+	// await testAccountTables();
+	// await testTableAuth();
 
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
@@ -248,6 +249,14 @@ var testGet = async function(){
 	// var rs = await c.table(sTableName).get().withFields(["COUNT(*)"]).submit();
 	console.log("testGet",rs.lines);
 }
+
+var testGetBySql = async function(){
+	var tableNameInDB = await c.getTableNameInDB(owner.address,"wiki");
+	var tableName = "t_" + tableNameInDB;
+	var rs = await c.getBySql("select * from " + tableName);
+	console.log(rs);
+}
+
 var testDrop = async function(){
 	var rs = await c.dropTable(sReName).submit({expect:'db_success'});
 	console.log("testDrop",rs);

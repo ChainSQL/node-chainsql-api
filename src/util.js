@@ -65,11 +65,11 @@ function getTxJson(that, tx_json) {
 }
 
 
-function getTableName(that, name) {
+function getTableName(that,owner, name) {
   return that.api.connection.request({
     command: 'g_dbname',
     tx_json: {
-      Account: that.connect.address,
+      Account: owner,
       TableName: name
     }
   }).then(function(data) {

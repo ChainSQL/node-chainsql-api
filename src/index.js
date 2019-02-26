@@ -805,6 +805,18 @@ ChainsqlAPI.prototype.getTableAuth = function(owner,tableName,accounts){
 	});
 }
 
+ChainsqlAPI.prototype.getTableNameInDB = function(owner,tableName){
+	return util.getTableName(this,owner,tableName);
+}
+
+ChainsqlAPI.prototype.getBySql = function(sql){
+	var connection = this.api ? this.api.connection : this.connect.api.connection;
+	return connection.request({
+		command: 'r_get_sql_admin',
+		sql:sql
+	});
+}
+
 
 ChainsqlAPI.prototype.submit = function (cb) {
 	var that = this;
