@@ -64,14 +64,21 @@ function getTxJson(that, tx_json) {
   })
 }
 
+function signData(message,secret){
+  const keypair = keypairs.deriveKeypair(secret);
+  var arrayBuffer = toArrayBuffer(Buffer.from(message, 'utf8'));
+  var sig = {
+    publicKey: keypair.publicKey,
+    signature:keypairs.signBytes(arrayBuffer, keypair.privateKey)
+  }
+  return sig;
+}
 
 function getTableName(that,owner, name) {
   return that.api.connection.request({
     command: 'g_dbname',
-    tx_json: {
-      Account: owner,
-      TableName: name
-    }
+    account: owner,
+    tablename: name
   }).then(function(data) {
     return data.nameInDB;
   })
@@ -107,6 +114,23 @@ function getTableSequence(that, name) {
   }).then(function(data) {
     return data.tableLedgerSequence;
   })
+}
+
+function getValidatedLedgerIndex(that){
+  return that.api.connection.request({
+    command: 'ledger_current'
+  }).then(function(data) {
+    return data.ledger_current_index - 1;
+  })
+}
+
+function toArrayBuffer(buf) {
+  var ab = new ArrayBuffer(buf.length);
+  var view = new Uint8Array(ab);
+  for (var i = 0; i < buf.length; ++i) {
+      view[i] = buf[i];
+  }
+  return view;
 }
 
 function convertStringToHex(string) {
@@ -199,6 +223,19 @@ function checkUserMatchPublicKey(user,publicKey){
   return user == address;
 }
 
+function checkSubError(data){
+  if (data.status == 'db_error'
+      || data.status == 'db_timeout'
+      || data.status == 'validate_timeout'
+      || data.status == 'db_noDbConfig'
+      || data.status == 'db_noSyncConfig'
+      || data.status == 'db_noAutoSync'){
+        return true;
+      }else{
+        return false;
+      }
+}
+
 function isMeaningful(variable){
   return (variable != "" && variable != undefined && variable != null);
 }
@@ -239,6 +276,7 @@ module.exports = {
   getUserToken: getUserToken,
   getTableName: getTableName,
   getTxJson: getTxJson,
+  getValidatedLedgerIndex:getValidatedLedgerIndex,
   generateToken: generateToken,
   decodeToken: decodeToken,
   calcFee : calcFee,
@@ -247,5 +285,7 @@ module.exports = {
   isMeaningful: isMeaningful,
   isMeaningless: isMeaningless,
   encodeChainsqlAddr: encodeChainsqlAddr,
-  decodeChainsqlAddr: decodeChainsqlAddr
+  decodeChainsqlAddr: decodeChainsqlAddr,
+  signData:signData,
+  checkSubError:checkSubError
 }

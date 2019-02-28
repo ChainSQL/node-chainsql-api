@@ -663,10 +663,7 @@ function handleSignedTx(ChainSQL, signed, object, resolve, reject) {
 			}
 
 			// failure
-			if (data.status == 'db_error'
-				|| data.status == 'db_timeout'
-				|| data.status == 'validate_timeout') {
-
+			if (util.checkSubError(data)) {
 				errFunc({
 					status: data.status,
 					tx_hash: signed.id,
@@ -812,7 +809,7 @@ ChainsqlAPI.prototype.getTableNameInDB = function(owner,tableName){
 	return util.getTableName(this,owner,tableName);
 }
 
-ChainsqlAPI.prototype.getBySql = function(sql){
+ChainsqlAPI.prototype.getBySqlAdmin = function(sql){
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
 	return connection.request({
 		command: 'r_get_sql_admin',
@@ -820,6 +817,33 @@ ChainsqlAPI.prototype.getBySql = function(sql){
 	});
 }
 
+ChainsqlAPI.prototype.getBySqlUser = function(sql){
+	var connect = this.connect;
+	var json = {
+		Account:connect.address,
+		Sql:sql
+	}
+	return new Promise(function(resolve, reject){
+		util.getValidatedLedgerIndex(connect).then(function(ledgerVersion){
+			json.LedgerIndex = ledgerVersion;
+			return util.signData(JSON.stringify(json), connect.secret);
+		}).then(function(signed){
+			return connect.api.connection.request({
+					command: 'r_get_sql_user',
+					publicKey:signed.publicKey,
+					signature:signed.signature,
+					signingData:JSON.stringify(json),
+					tx_json:json
+				})
+		}).then(function(data){
+			resolve(data);
+		}).catch(function(err) {
+			reject(err, null);
+		});
+	})
+	
+	
+}
 
 ChainsqlAPI.prototype.submit = function (cb) {
 	var that = this;

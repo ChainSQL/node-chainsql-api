@@ -26,7 +26,7 @@ var issuer = {
 // }
 
 
-var sTableName = "a5";
+var sTableName = "fasefa";
 var sTableName2 = "b1";
 var sReName = "boy1234";
 var sTableName3 = "hijack12";
@@ -36,7 +36,7 @@ main();
 async function main(){
 	try {
 		await c.connect('ws://127.0.0.1:6008');
-
+		// await c.connect('ws://101.201.40.124:5006');
 		console.log('连接成功');
 
 		c.as(owner);
@@ -147,6 +147,7 @@ async function testChainsql(){
 	// await testRename();
 	// await testGet();
 	await testGetBySql();
+	await testGetBySqlUser();
 	// await testDrop();
 	//await testGrant();
 	// await testTxs();
@@ -242,18 +243,27 @@ var testGet = async function(){
 	var raw = []
 	//求和
 	// var rs = await c.table(sTableName).get(raw).withFields(["SUM(id)"]).submit();
-	// var rs = await c.table(sTableName).get(raw).withFields([]).submit();
+	var rs = await c.table(sTableName).get(raw).withFields([]).submit().catch(function(err){
+		console.error(err);
+	});
 
 	// var raw = {id:1}
-	var rs = await c.table(sTableName).get({name:'sss'}).order({id:-1}).limit({index:0,total:1}).withFields([]).submit();
+	// var rs = await c.table(sTableName).get({name:'wifi'}).order({id:-1}).limit({index:0,total:1}).withFields([]).submit();
 	// var rs = await c.table(sTableName).get().withFields(["COUNT(*)"]).submit();
-	console.log("testGet",rs.lines);
+	console.log("testGet",rs);
 }
 
 var testGetBySql = async function(){
 	var tableNameInDB = await c.getTableNameInDB(owner.address,"wiki");
 	var tableName = "t_" + tableNameInDB;
-	var rs = await c.getBySql("select * from " + tableName);
+	var rs = await c.getBySqlAdmin("select * from " + tableName);
+	console.log(rs);
+}
+
+var testGetBySqlUser = async function(){
+	var tableNameInDB = await c.getTableNameInDB(owner.address,"wiki");
+	var tableName = "t_" + tableNameInDB;
+	var rs = await c.getBySqlUser("select * from " + tableName);
 	console.log(rs);
 }
 
@@ -443,12 +453,12 @@ function callback(err,data){
 
 async function testAccountTables()
 {
-	let retRequest = await c.getAccountTables(owner.address,true)
+	let retRequest = await c.getAccountTables("z4ypskpHPpMDtHsZvFHg8eDEdTjQrYYYV6",true)
 	console.log(retRequest)
 }
 
 async function testTableAuth(){
-	let retRequest = await c.getTableAuth(owner.address,"D13");
+	let retRequest = await c.getTableAuth(owner.address,"wiki",[]);
 	console.log(retRequest)
 }
 

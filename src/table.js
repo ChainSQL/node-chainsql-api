@@ -396,9 +396,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
                 }
 
 						// failure
-						if (data.status == 'db_error' 
-							|| data.status == 'db_timeout' 
-							|| data.status == 'validate_timeout') {
+						if (util.checkSubError(data)) {
                 cb(null,{
                   status: data.status,
                   tx_hash: signedRet.id,
@@ -466,21 +464,29 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
 	}
 	
 	var connect = ChainSQL.connect;
-	//console.log('select \n\t', JSON.stringify(ChainSQL.query));
-	connect.api.connection.request({
-		command: 'r_get',
-		tx_json: {
-      Account:connect.address,
+  //console.log('select \n\t', JSON.stringify(ChainSQL.query));
+  var json = {
+    Account:connect.address,
 			Owner: connect.scope,
 			Tables: [{
 				Table: {
 					TableName: ChainSQL.tab
 				}
 			}],
-			Raw: JSON.stringify(ChainSQL.query),
-			opType: opType[ChainSQL.exec]
-		}
-	}).then(function(data) {
+			Raw: JSON.stringify(ChainSQL.query)
+  }
+  util.getValidatedLedgerIndex(connect).then(function(ledgerVersion){
+    json.LedgerIndex = ledgerVersion;
+    return util.signData(JSON.stringify(json), ChainSQL.connect.secret);
+  }).then(function(signed){
+    return connect.api.connection.request({
+      command: 'r_get',
+      publicKey:signed.publicKey,
+      signature:signed.signature,
+      signingData:JSON.stringify(json),
+      tx_json:json
+    })
+  }).then(function(data) {
 		if (data.status != 'success'){
 			cb(new Error(data), null);
     }
@@ -505,8 +511,8 @@ Table.prototype.submit = function(cb) {
     
     if ((typeof cb) != 'function') {
       return new Promise(function(resolve, reject) {
-		  handleGetRecord(that, cb, resolve, reject);
-	  });
+        handleGetRecord(that, cb, resolve, reject);
+      });
     } else {
 		  handleGetRecord(that, cb, null, null);
     }

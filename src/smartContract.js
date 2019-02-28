@@ -842,9 +842,7 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 					}
 				}
 				// failure
-				if (data.status === 'db_error' || 
-					data.status === 'db_timeout' || 
-					data.status === 'validate_timeout') {
+				if (util.checkSubError(data)) {
 					if (data.hasOwnProperty("error_message")) {
 						resultObj.error_message = data.error_message;
 					}

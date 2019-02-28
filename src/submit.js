@@ -104,10 +104,7 @@ Submit.prototype.handleSignedTx = function (ChainSQL, signed, object, resolve, r
 			}
 
 			// failure
-			if (data.status == 'db_error'
-				|| data.status == 'db_timeout'
-				|| data.status == 'validate_timeout') {
-
+			if (util.checkSubError(data)){
 				errFunc({
 					status: data.status,
 					tx_hash: signed.id,
