@@ -25,7 +25,6 @@ const getSequence = util.getSequence;
 const convertStringToHex = util.convertStringToHex;
 const getTableSequence = util.getTableSequence;
 const getUserToken = util.getUserToken;
-const getTableName = util.getTableName;
 const getTxJson = util.getTxJson;
 const generateToken = util.generateToken;
 const decodeToken = util.decodeToken;
@@ -785,11 +784,17 @@ ChainsqlAPI.prototype.signFor = function (json, secret, option) {
 
 ChainsqlAPI.prototype.getAccountTables = function(address, bGetDetailInfo=false){
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
-	return connection.request({
-		command: 'g_accountTables',
-		account: address,
-		detail: bGetDetailInfo
-	});
+	return new Promise(function(resolve, reject){
+		connection.request({
+			command: 'g_accountTables',
+			account: address,
+			detail: bGetDetailInfo
+		}).then(function(data){
+			dealWithRet(data,resolve,reject);
+		}).catch(function(err){
+			reject(err);
+		})
+	})
 }
 
 ChainsqlAPI.prototype.getTableAuth = function(owner,tableName,accounts){
@@ -802,19 +807,49 @@ ChainsqlAPI.prototype.getTableAuth = function(owner,tableName,accounts){
 	if(accounts && accounts.length > 0){
 		req.accounts = accounts;
 	}
-	return connection.request(req);
+	return new Promise(function(resolve, reject){
+		connection.request(req).then(function(data){
+			dealWithRet(data,resolve,reject);
+		}).catch(function(err){
+			reject(err);
+		})
+	})
 }
 
+function dealWithRet(data,resolve,reject){
+	if(data.status == 'success'){
+		resolve(data);
+	}else{
+		reject(data);
+	}
+}
 ChainsqlAPI.prototype.getTableNameInDB = function(owner,tableName){
-	return util.getTableName(this,owner,tableName);
+	var that = this;
+	return new Promise(function(resolve, reject){
+		util.getTableName(that,owner,tableName).then(function(data){
+			if(data.status == 'success'){
+				resolve(data.nameInDB);
+			}else{
+				reject(data);
+			}
+		}).catch(function(err){
+			reject(err);
+		})
+	})
 }
 
 ChainsqlAPI.prototype.getBySqlAdmin = function(sql){
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
-	return connection.request({
-		command: 'r_get_sql_admin',
-		sql:sql
-	});
+	return new Promise(function(resolve, reject){
+		connection.request({
+			command: 'r_get_sql_admin',
+			sql:sql
+		}).then(function(data){
+			dealWithRet(data,resolve,reject);
+		}).catch(function(err){
+			reject(err);
+		})
+	})
 }
 
 ChainsqlAPI.prototype.getBySqlUser = function(sql){
@@ -836,9 +871,9 @@ ChainsqlAPI.prototype.getBySqlUser = function(sql){
 					tx_json:json
 				})
 		}).then(function(data){
-			resolve(data);
+			dealWithRet(data,resolve,reject);
 		}).catch(function(err) {
-			reject(err, null);
+			reject(err);
 		});
 	})
 	

@@ -79,9 +79,7 @@ function getTableName(that,owner, name) {
     command: 'g_dbname',
     account: owner,
     tablename: name
-  }).then(function(data) {
-    return data.nameInDB;
-  })
+  });
 }
 
 function getUserToken(connection,owner,user,name) {

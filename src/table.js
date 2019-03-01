@@ -12,7 +12,6 @@ const util = require('./util');
 const convertStringToHex = util.convertStringToHex;
 const getTableSequence = util.getTableSequence;
 const getUserToken = util.getUserToken;
-const getTableName = util.getTableName;
 const getTxJson = util.getTxJson;
 const generateToken = util.generateToken;
 const decodeToken = util.decodeToken;
@@ -456,7 +455,7 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
 			object(error, data)
 		} else {
 			if (error) {
-				resolve(error);
+				reject(error);
 			} else {
 				resolve(data);
 			}
@@ -488,9 +487,10 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
     })
   }).then(function(data) {
 		if (data.status != 'success'){
-			cb(new Error(data), null);
-    }
-		cb(null, {diff:data.diff,lines:data.lines});
+			cb(data, null);
+    }else{
+      cb(null, data);
+    }		
 	}).catch(function(err) {
 		cb(err, null);
 	})
