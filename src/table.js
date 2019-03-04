@@ -396,11 +396,14 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 
 						// failure
 						if (util.checkSubError(data)) {
-                cb(null,{
-                  status: data.status,
-                  tx_hash: signedRet.id,
-                  error_message:data.error_message
-                });
+              var error = {
+                status: data.status,
+                tx_hash: signedRet.id
+              }
+              if (data.hasOwnProperty("error_message")) {
+                error.error_message = data.error_message;
+              }
+              cb(null,error);
 						}
 					}
 				}).then(function(data) {

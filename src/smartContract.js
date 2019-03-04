@@ -7,7 +7,7 @@ const chainsqlUtils = require('./util');
 var abi = require('web3-eth-abi');
 var utils = require('web3-utils');
 var formatters = require('web3-core-helpers').formatters;
-
+const util = require('./util');
 const preDefOptions = ["ContractData", "arguments", "ContractValue", "Gas", "expect"];
 /**
  * Contract constructor for creating new contract instance

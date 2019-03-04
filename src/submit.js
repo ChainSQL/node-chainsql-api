@@ -105,11 +105,14 @@ Submit.prototype.handleSignedTx = function (ChainSQL, signed, object, resolve, r
 
 			// failure
 			if (util.checkSubError(data)){
-				errFunc({
+				var error = {
 					status: data.status,
-					tx_hash: signed.id,
-					error_message: data.error_message
-				});
+					tx_hash: signed.id
+				}
+				if (data.hasOwnProperty("error_message")) {
+					error.error_message = data.error_message;
+				}
+				errFunc(error);
 			}
 		}
 	}).then(function (data) {

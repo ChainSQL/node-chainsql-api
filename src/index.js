@@ -663,11 +663,14 @@ function handleSignedTx(ChainSQL, signed, object, resolve, reject) {
 
 			// failure
 			if (util.checkSubError(data)) {
-				errFunc({
+				var error = {
 					status: data.status,
-					tx_hash: signed.id,
-					error_message: data.error_message
-				});
+					tx_hash: signed.id
+				}
+				if (data.hasOwnProperty("error_message")) {
+					error.error_message = data.error_message;
+				}
+				errFunc(error);
 			}
 		}
 	}).then(function (data) {
@@ -713,6 +716,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 		}
 	};
 	ChainSQL.api.prepareTable(payment).then(function (tx_json) {
+		console.log(tx_json);
 		getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function (data) {
 			if (data.status == 'error') {
 				if (data.error_message)
