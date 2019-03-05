@@ -1,5 +1,5 @@
 'use strict'
-var util = require('util');
+var util = require('./util');
 const RippleAPI = require('chainsql-lib').ChainsqlLibAPI;
 const Connection = require('./connect');
 
@@ -85,16 +85,7 @@ Submit.prototype.handleSignedTx = function (ChainSQL, signed, object, resolve, r
 			errFunc(err);
 		} else {
 			// success
-			if (object === undefined) {
-				// if 'submit()' called without param, default is validate_success
-				if ((data.status == 'validate_success' || data.status == 'db_success')
-					&& data.type === 'singleTransaction') {
-					sucFunc({
-						status: data.status,
-						tx_hash: signed.id
-					});
-				}
-			} else if (object != undefined
+			if (object != undefined
 				&& object.expect == data.status
 				&& data.type === 'singleTransaction') {
 				sucFunc({
@@ -126,18 +117,13 @@ Submit.prototype.handleSignedTx = function (ChainSQL, signed, object, resolve, r
 	ChainSQL.api.submit(signed.signedTransaction).then(function (result) {
 		//console.log('submit ', JSON.stringify(result));
 		if (result.resultCode != 'tesSUCCESS') {
-			ChainSQL.event.unsubscribeTx(signed.id).then(function (data) {
-				// unsubscribeTx success
-			}).catch(function (error) {
-				// unsubscribeTx failure
-				errFunc('unsubscribeTx failure.' + error);
-			});
-
+			ChainSQL.event.unsubscribeTx(signed.id);
 			//return error message
 			errFunc(result);
 		} else {
 			// submit successfully
-			if (isFunction == false && object != undefined && object.expect == 'send_success') {
+			if ((isFunction == false && object != undefined && object.expect == 'send_success') || object == undefined){
+				ChainSQL.event.unsubscribeTx(signed.id);
 				sucFunc({
 					status: 'send_success',
 					tx_hash: signed.id

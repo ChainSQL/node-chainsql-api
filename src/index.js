@@ -643,16 +643,7 @@ function handleSignedTx(ChainSQL, signed, object, resolve, reject) {
 			errFunc(err);
 		} else {
 			// success
-			if (object === undefined) {
-				// if 'submit()' called without param, default is validate_success
-				if ((data.status == 'validate_success' || data.status == 'db_success')
-					&& data.type === 'singleTransaction') {
-					sucFunc({
-						status: data.status,
-						tx_hash: signed.id
-					});
-				}
-			} else if (object != undefined
+			if (object != undefined
 				&& object.expect == data.status
 				&& data.type === 'singleTransaction') {
 				sucFunc({
@@ -684,18 +675,13 @@ function handleSignedTx(ChainSQL, signed, object, resolve, reject) {
 	ChainSQL.api.submit(signed.signedTransaction).then(function (result) {
 		//console.log('submit ', JSON.stringify(result));
 		if (result.resultCode != 'tesSUCCESS') {
-			ChainSQL.event.unsubscribeTx(signed.id).then(function (data) {
-				// unsubscribeTx success
-			}).catch(function (error) {
-				// unsubscribeTx failure
-				errFunc('unsubscribeTx failure.' + error);
-			});
-
+			ChainSQL.event.unsubscribeTx(signed.id);
 			//return error message
 			errFunc(result);
 		} else {
 			// submit successfully
-			if (isFunction == false && object != undefined && object.expect == 'send_success') {
+			if ((isFunction == false && object != undefined && object.expect == 'send_success') || object == undefined) {
+				ChainSQL.event.unsubscribeTx(signed.id);
 				sucFunc({
 					status: 'send_success',
 					tx_hash: signed.id
@@ -716,7 +702,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 		}
 	};
 	ChainSQL.api.prepareTable(payment).then(function (tx_json) {
-		console.log(tx_json);
+		// console.log(tx_json);
 		getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function (data) {
 			if (data.status == 'error') {
 				if (data.error_message)

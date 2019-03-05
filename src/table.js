@@ -376,23 +376,12 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 						cb(err, null);
 					} else {
 						// success
-                if (object === undefined ) {
-								    // compatible with old version
-                    //console.log('subscribe \n\t', JSON.stringify(data));
-                    if ((data.status == 'validate_success' || data.status == 'db_success') 
-                    && data.type === 'singleTransaction') {
-                        cb(null, {
-                            status: data.status,
-                            tx_hash: signedRet.id
-                        });
-                    }
-                
-                } else if (object.expect == data.status && data.type === 'singleTransaction') {
-                    cb(null, {
-                      status: object.expect,
-                      tx_hash: signedRet.id
-                  });
-                }
+            if (object.expect == data.status && data.type === 'singleTransaction') {
+                cb(null, {
+                  status: object.expect,
+                  tx_hash: signedRet.id
+              });
+            }
 
 						// failure
 						if (util.checkSubError(data)) {
@@ -417,23 +406,18 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 				connect.api.submit(signedRet.signedTransaction).then(function(result) {
 					//console.log('submit ', JSON.stringify(result));
 					if (result.resultCode != 'tesSUCCESS') {
-						ChainSQL.event.unsubscribeTx(signedRet.id)
-						.then(function(data) {
-							// unsubscribeTx success
-						}).catch(function(error) {
-							// unsubscribeTx failure
-							reject('unsubscribeTx failure.' + error);
-            });
+						ChainSQL.event.unsubscribeTx(signedRet.id);
     
 						cb(null, result);
 					} else {
                         //console.log('submit result:\n\t', JSON.stringify(result));
 						// submit successfully
-						if (isFunction == false && object != undefined && object.expect == 'send_success') {
+						if ((isFunction == false && object != undefined && object.expect == 'send_success') || object == undefined) {
 							resolve(null, {
 								status: 'send_success',
 								tx_hash: signedRet.id
-							});
+              });
+              ChainSQL.event.unsubscribeTx(signedRet.id);
 						}
 					}
 				}).catch(function(error) {
@@ -469,13 +453,13 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
   //console.log('select \n\t', JSON.stringify(ChainSQL.query));
   var json = {
     Account:connect.address,
-			Owner: connect.scope,
-			Tables: [{
-				Table: {
-					TableName: ChainSQL.tab
-				}
-			}],
-			Raw: JSON.stringify(ChainSQL.query)
+    Owner: connect.scope,
+    Tables: [{
+      Table: {
+        TableName: ChainSQL.tab
+      }
+    }],
+    Raw: JSON.stringify(ChainSQL.query)
   }
   util.getValidatedLedgerIndex(connect).then(function(ledgerVersion){
     json.LedgerIndex = ledgerVersion;
