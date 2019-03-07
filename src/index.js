@@ -224,9 +224,9 @@ ChainsqlAPI.prototype.escrowCancel = function (sOwnerAddr, nCreateEscrowSeq) {
 	return ripple.escrowCancel(sOwnerAddr, nCreateEscrowSeq);
 }
 
-ChainsqlAPI.prototype.createTable = function (name, raw, opt) {
+ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
 	validate.create(name,raw);
-	var opt = opt ? opt : {};
+	var opt = inputOpt ? inputOpt : {};
 	let that = this;
 	var confidential = false;
 	if (opt.confidential) {
@@ -264,8 +264,9 @@ ChainsqlAPI.prototype.createTable = function (name, raw, opt) {
 			payment.raw = crypto.aesEncrypt(secret, payment.raw).toUpperCase();
 			payment.token = token.toUpperCase();
 		} else {
-			payment.raw = convertStringToHex(payment.raw)
-		};
+			payment.raw = convertStringToHex(payment.raw);
+		}
+
 		if (payment.operationRule) {
 			payment.operationRule = convertStringToHex(payment.operationRule);
 		}
@@ -613,8 +614,17 @@ ChainsqlAPI.prototype.getLedgerVersion = function (cb) {
 
 function handleSignedTx(ChainSQL, signed, object, resolve, reject) {
 	var isFunction = false;
-	if ((typeof object) == 'function')
-		isFunction = true;
+	let expectOpt = {expect:"send_success"};
+	let cbCheckRet = util.checkCbOpt(object);
+	if(cbCheckRet.status === "success") {
+		if(cbCheckRet.type === "function") {
+			isFunction = cbCheckRet.isFunction;
+		} else {
+			expectOpt.expect = cbCheckRet.expect;
+		}
+	} else {
+		return reject(cbCheckRet.errMsg);
+	}
 
 	var errFunc = function (error) {
 		if (isFunction) {
@@ -636,52 +646,56 @@ function handleSignedTx(ChainSQL, signed, object, resolve, reject) {
 		} else {
 			resolve(data);
 		}
-	}
+	};
 	// subscribe event
-	ChainSQL.event.subscribeTx(signed.id, isFunction ? object : function (err, data) {
-		if (err) {
-			errFunc(err);
-		} else {
-			// success
-			if (object != undefined
-				&& object.expect == data.status
-				&& data.type === 'singleTransaction') {
-				sucFunc({
-					status: object.expect,
-					tx_hash: signed.id
-				});
-			}
-
-			// failure
-			if (util.checkSubError(data)) {
-				var error = {
-					status: data.status,
-					tx_hash: signed.id
+	if(expectOpt.expect !== "send_success") {
+		ChainSQL.event.subscribeTx(signed.id, isFunction ? object : function (err, data) {
+			if (err) {
+				errFunc(err);
+			} else {
+				// success
+				if (expectOpt.expect === data.status
+					&& data.type === 'singleTransaction') {
+					sucFunc({
+						status: expectOpt.expect,
+						tx_hash: signed.id
+					});
 				}
-				if (data.hasOwnProperty("error_message")) {
-					error.error_message = data.error_message;
+	
+				// failure
+				if (util.checkSubError(data)) {
+					var error = {
+						status: data.status,
+						tx_hash: signed.id
+					};
+					if (data.hasOwnProperty("error_message")) {
+						error.error_message = data.error_message;
+					}
+					errFunc(error);
 				}
-				errFunc(error);
 			}
-		}
-	}).then(function (data) {
-		// subscribeTx success
-	}).catch(function (error) {
-		// subscribeTx failure
-		errFunc('subscribeTx exception.' + error);
-	});
+		}).then(function (data) {
+			// subscribeTx success
+		}).catch(function (error) {
+			// subscribeTx failure
+			errFunc('subscribeTx exception.' + error);
+		});
+	}
+	
 
 	// submit transaction
 	ChainSQL.api.submit(signed.signedTransaction).then(function (result) {
 		//console.log('submit ', JSON.stringify(result));
 		if (result.resultCode != 'tesSUCCESS') {
-			ChainSQL.event.unsubscribeTx(signed.id);
+			if(expectOpt.expect !== "send_success") {
+				ChainSQL.event.unsubscribeTx(signed.id);
+			}
 			//return error message
 			errFunc(result);
 		} else {
 			// submit successfully
-			if ((isFunction == false && object != undefined && object.expect == 'send_success') || object == undefined) {
-				ChainSQL.event.unsubscribeTx(signed.id);
+			if (expectOpt.expect === "send_success") {
+				// ChainSQL.event.unsubscribeTx(signed.id);
 				sucFunc({
 					status: 'send_success',
 					tx_hash: signed.id
@@ -873,7 +887,7 @@ ChainsqlAPI.prototype.getBySqlUser = function(sql){
 ChainsqlAPI.prototype.submit = function (cb) {
 	var that = this;
 	if (that.transaction) {
-		throw new Error('you are now in transaction,can not be submit')
+		throw new Error('you are now in transaction,can not be submit');
 	} else {
 
 		//if (cb === undefined || cb === null) {

@@ -7,7 +7,7 @@ const chainsqlUtils = require('./util');
 var abi = require('web3-eth-abi');
 var utils = require('web3-utils');
 var formatters = require('web3-core-helpers').formatters;
-const util = require('./util');
+
 const preDefOptions = ["ContractData", "arguments", "ContractValue", "Gas", "expect"];
 /**
  * Contract constructor for creating new contract instance
@@ -674,7 +674,7 @@ Contract.prototype._executeMethod = function _executeMethod(){
 			else {
 				sendTxPayment.ContractOpType = 2;
 				if(args.options.hasOwnProperty("expect")) {
-					if(args.options.expect === "send_success" || args.options.expect === "validate_success" || args.options.expect === "db_success") {
+					if(chainsqlUtils.checkExpect(args.options)) {
 						txCallbackProperty.callbackExpect = args.options.expect;
 					}
 					else {
@@ -842,7 +842,7 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 					}
 				}
 				// failure
-				if (util.checkSubError(data)) {
+				if (chainsqlUtils.checkSubError(data)) {
 					if (data.hasOwnProperty("error_message")) {
 						resultObj.error_message = data.error_message;
 					}
@@ -861,7 +861,9 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 	chainSQL.api.submit(signedVal.signedTransaction).then(function(result) {
 		//console.log('submit ', JSON.stringify(result));
 		if (result.resultCode !== 'tesSUCCESS') {
-			unsubscribeTx(callbackProperty.callbackExpect, chainSQL, signedVal, errFunc);
+			if(callbackProperty.callbackExpect !== "send_success"){
+				unsubscribeTx(callbackProperty.callbackExpect, chainSQL, signedVal, errFunc);
+			}
 			//return error message
 			errFunc(result);
 		} else {

@@ -221,6 +221,46 @@ function checkUserMatchPublicKey(user,publicKey){
   return user == address;
 }
 
+function checkCbOpt(cbOpt) {
+	let retObj = {status:"failure"};
+
+	let type = typeof( cbOpt );
+	retObj.type = type;
+	if (type === "function") {
+		retObj.status = "success";
+		retObj.isFunction = true;
+	} else if (type === "object") {
+		if(Object.getOwnPropertyNames(cbOpt).length === 1 && cbOpt.hasOwnProperty("expect")) {
+			if(checkExpect(cbOpt)) {
+				retObj.status = "success";
+				retObj.expect = cbOpt.expect;
+			} else {
+				retObj.errMsg = "Unknown 'expect' value, please check!";
+			}
+		}
+		else {
+			retObj.errMsg = "submit option is wrong, please check!";
+		}
+	} else if (type === "undefined") {
+		retObj.status = "success";
+		retObj.expect = "send_success";
+	} else {
+		retObj.errMsg = "submit option is wrong, please check!";
+	}
+
+	return retObj;
+}
+
+function checkExpect(opt) {
+	if (opt.expect === "send_success" ||
+		opt.expect === "validate_success" ||
+		opt.expect === "db_success") {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 function checkSubError(data){
   if (data.status == 'db_error'
       || data.status == 'db_timeout'
@@ -285,5 +325,7 @@ module.exports = {
   encodeChainsqlAddr: encodeChainsqlAddr,
   decodeChainsqlAddr: decodeChainsqlAddr,
   signData:signData,
+  checkCbOpt:checkCbOpt,
+  checkExpect:checkExpect,
   checkSubError:checkSubError
 }

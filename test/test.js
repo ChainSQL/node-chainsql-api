@@ -49,10 +49,10 @@ async function main(){
 
 		// await testRippleAPI();
 		// await testAccount();
-		 await testChainsql();
+		await testChainsql();
 
 		//await c.disconnect();
-		console.log('运行结束')
+		console.log('运行结束');
 	}catch(e){
 		console.error(e);
 	}
@@ -137,7 +137,7 @@ async function testAccount(){
 }
 
 async function testChainsql(){
-	//  await testCreateTable();
+	// await testCreateTable();
 
 	// // //创建另一张表，用来测试rename,drop
 	// await testCreateTable1();

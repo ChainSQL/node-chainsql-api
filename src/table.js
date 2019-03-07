@@ -337,13 +337,21 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 	
 	var connect = ChainSQL.connect;
 	var isFunction = false;
-	
-	if ((typeof object) == 'function')
-		isFunction = true;
+	let expectOpt = {expect:"send_success"};
+	let cbCheckRet = util.checkCbOpt(object);
+	if(cbCheckRet.status === "success") {
+		if(cbCheckRet.type === "function") {
+			isFunction = cbCheckRet.isFunction;
+		} else {
+			expectOpt.expect = cbCheckRet.expect;
+		}
+	} else {
+		return reject(cbCheckRet.errMsg);
+	}
 	
 	var cb = function(error, data) {
 		if (isFunction) {
-			object(error, data)
+			object(error, data);
 		} else {
 			if (error) {
 				reject(error);
@@ -356,78 +364,81 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 	getUserToken(ChainSQL.connect.api.connection, ChainSQL.connect.scope,ChainSQL.connect.address, ChainSQL.tab).then(function(token) {
 		token = token[ ChainSQL.connect.scope + ChainSQL.tab];
 		if (token && token != '') {
-		var secret = decodeToken(ChainSQL, token);
+			var secret = decodeToken(ChainSQL, token);
 			payment.raw = crypto.aesEncrypt(secret, payment.raw).toUpperCase();
 		} else {
 			payment.raw = convertStringToHex(payment.raw);
-		};
+		}
 		
 		connect.api.prepareTable(payment).then(function(tx_json) {
 			getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function(data) {
 				if (data.status == 'error') {
 					throw new Error('getTxJson error');
-        }
-        data.tx_json.Fee = util.calcFee(data.tx_json);
+				}
+				data.tx_json.Fee = util.calcFee(data.tx_json);
 				//var payment = data.tx_json;
-				var signedRet = connect.api.sign(JSON.stringify(data.tx_json), ChainSQL.connect.secret);				
+				var signedRet = connect.api.sign(JSON.stringify(data.tx_json), ChainSQL.connect.secret);
 				// subscribe event
-				ChainSQL.event.subscribeTx(signedRet.id, isFunction ? object : function(err, data) {
-					if (err) {
-						cb(err, null);
-					} else {
-						// success
-            if (object.expect == data.status && data.type === 'singleTransaction') {
-                cb(null, {
-                  status: object.expect,
-                  tx_hash: signedRet.id
-              });
-            }
+				if (expectOpt.expect !== "send_success") {
+					ChainSQL.event.subscribeTx(signedRet.id, isFunction ? object : function (err, data) {
+						if (err) {
+							cb(err, null);
+						} else {
+							// success
+							if (expectOpt.expect == data.status && data.type === 'singleTransaction') {
+								cb(null, {
+									status: expectOpt.expect,
+									tx_hash: signedRet.id
+								});
+							}
 
-						// failure
-						if (util.checkSubError(data)) {
-              var error = {
-                status: data.status,
-                tx_hash: signedRet.id
-              }
-              if (data.hasOwnProperty("error_message")) {
-                error.error_message = data.error_message;
-              }
-              cb(null,error);
+							// failure
+							if (util.checkSubError(data)) {
+								var error = {
+									status: data.status,
+									tx_hash: signedRet.id
+								};
+								if (data.hasOwnProperty("error_message")) {
+									error.error_message = data.error_message;
+								}
+								cb(null, error);
+							}
 						}
-					}
-				}).then(function(data) {
-					// subscribeTx success
-				}).catch(function(error) {
-					// subscribeTx failure
-					reject('subscribeTx failure.' + error);
-				});
-				
-        // submit transaction
-				connect.api.submit(signedRet.signedTransaction).then(function(result) {
+					}).then(function (data) {
+						// subscribeTx success
+					}).catch(function (error) {
+						// subscribeTx failure
+						reject('subscribeTx failure.' + error);
+					});
+				}
+
+				// submit transaction
+				connect.api.submit(signedRet.signedTransaction).then(function (result) {
 					//console.log('submit ', JSON.stringify(result));
 					if (result.resultCode != 'tesSUCCESS') {
-						ChainSQL.event.unsubscribeTx(signedRet.id);
-    
+						if(expectOpt.expect !== "send_success") {
+							ChainSQL.event.unsubscribeTx(signedRet.id);
+						}
+
 						cb(null, result);
 					} else {
-                        //console.log('submit result:\n\t', JSON.stringify(result));
 						// submit successfully
-						if ((isFunction == false && object != undefined && object.expect == 'send_success') || object == undefined) {
-							resolve(null, {
+						if (expectOpt.expect == 'send_success') {
+							cb(null, {
 								status: 'send_success',
 								tx_hash: signedRet.id
-              });
-              ChainSQL.event.unsubscribeTx(signedRet.id);
+							});
+							// ChainSQL.event.unsubscribeTx(signedRet.id);
 						}
 					}
-				}).catch(function(error) {
+				}).catch(function (error) {
 					throw new Error(error);
 				});
 			});
-		}).catch(function(error) {
+		}).catch(function (error) {
 			cb(error, null);
-		});		
-		
+		});
+
 	});
 }
 
