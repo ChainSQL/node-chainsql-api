@@ -50,18 +50,22 @@ function decodeToken(that, token) {
 
 
 function getTxJson(that, tx_json) {
-  var connection = that.api;
-  if (!connection) {
-    connection = that.connect.api.connection;
-  } else {
-    connection = that.api.connection;
-  }
-  return connection.request({
-    command: 't_prepare',
-    tx_json: tx_json
-  }).then(function(data) {
-    return data;
-  })
+	var connection = that.api;
+	if (!connection) {
+		connection = that.connect.api.connection;
+	} else {
+		connection = that.api.connection;
+	}
+	return new Promise(function (resolve, reject) {
+		connection.request({
+			command: 't_prepare',
+			tx_json: tx_json
+		}).then(function (data) {
+			resolve(data);
+		}).catch(function (err) {
+			reject(err);
+		});
+	});
 }
 
 function signData(message,secret){
@@ -92,13 +96,13 @@ function getUserToken(connection,owner,user,name) {
     }
 
   }).then(function(data) {
-    if(data.status == 'error') throw new Error(data.error_message);
     var json = {};
     json[owner + name] = data.token;
     return json;
   }).catch(function(err){
-    console.error(err);
-    return {'status':'error'};
+	// console.error(err);
+	// return {'status':'error'};
+	throw new Error(err);
   })
 }
 

@@ -372,9 +372,6 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 		
 		connect.api.prepareTable(payment).then(function(tx_json) {
 			getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function(data) {
-				if (data.status == 'error') {
-					throw new Error('getTxJson error');
-				}
 				data.tx_json.Fee = util.calcFee(data.tx_json);
 				//var payment = data.tx_json;
 				var signedRet = connect.api.sign(JSON.stringify(data.tx_json), ChainSQL.connect.secret);
@@ -434,6 +431,8 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 				}).catch(function (error) {
 					throw new Error(error);
 				});
+			}).catch(function(error) {
+				cb(error, null);
 			});
 		}).catch(function (error) {
 			cb(error, null);
@@ -446,11 +445,11 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
 	
 	var isFunction = false;
 	if ((typeof object) === 'function') 
-		isFunction = true
+		isFunction = true;
 	
 	var cb = function(error, data) {
 		if (isFunction) {
-			object(error, data)
+			object(error, data);
 		} else {
 			if (error) {
 				reject(error);
@@ -458,41 +457,36 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
 				resolve(data);
 			}
 		}
-	}
+	};
 	
 	var connect = ChainSQL.connect;
-  //console.log('select \n\t', JSON.stringify(ChainSQL.query));
-  var json = {
-    Account:connect.address,
-    Owner: connect.scope,
-    Tables: [{
-      Table: {
-        TableName: ChainSQL.tab
-      }
-    }],
-    Raw: JSON.stringify(ChainSQL.query)
-  }
-  util.getValidatedLedgerIndex(connect).then(function(ledgerVersion){
-    json.LedgerIndex = ledgerVersion;
-    return util.signData(JSON.stringify(json), ChainSQL.connect.secret);
-  }).then(function(signed){
-    return connect.api.connection.request({
-      command: 'r_get',
-      publicKey:signed.publicKey,
-      signature:signed.signature,
-      signingData:JSON.stringify(json),
-      tx_json:json
-    })
-  }).then(function(data) {
-		if (data.status != 'success'){
-			cb(data, null);
-    }else{
-      cb(null, data);
-    }		
-	}).catch(function(err) {
+	//console.log('select \n\t', JSON.stringify(ChainSQL.query));
+	var json = {
+		Account: connect.address,
+		Owner: connect.scope,
+		Tables: [{
+			Table: {
+				TableName: ChainSQL.tab
+			}
+		}],
+		Raw: JSON.stringify(ChainSQL.query)
+	};
+	util.getValidatedLedgerIndex(connect).then(function (ledgerVersion) {
+		json.LedgerIndex = ledgerVersion;
+		return util.signData(JSON.stringify(json), ChainSQL.connect.secret);
+	}).then(function (signed) {
+		return connect.api.connection.request({
+			command: 'r_get',
+			publicKey: signed.publicKey,
+			signature: signed.signature,
+			signingData: JSON.stringify(json),
+			tx_json: json
+		});
+	}).then(function (data) {
+		cb(null, data);
+	}).catch(function (err) {
 		cb(err, null);
-	})
-	
+	});
 }
 
 Table.prototype.submit = function(cb) {

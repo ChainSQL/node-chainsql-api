@@ -209,8 +209,12 @@ var testCreateTable1 = async function() {
 		confidential: false
 	}
 	// 创建表
-	let rs = await c.createTable(sTableName2, raw, option).submit({expect:'db_success'});
-	console.log("testCreateTable1" , rs)
+	try {
+		let rs = await c.createTable(sTableName2, raw, option).submit({expect:'db_success'});
+		console.log("testCreateTable1" , rs)	
+	} catch (error) {
+		console.log(error);
+	}
 };
 
 //重复插入的情况下报异常
@@ -453,8 +457,13 @@ function callback(err,data){
 
 async function testAccountTables()
 {
-	let retRequest = await c.getAccountTables("z4ypskpHPpMDtHsZvFHg8eDEdTjQrYYYV6",true)
-	console.log(retRequest)
+	try {
+		let retRequest = await c.getAccountTables("zn4X2eXBBaWtkJkxvXLBczQ1mRdpUCfXH3",true);
+		console.log(retRequest);	
+	} catch (error) {
+		console.error(error);
+	}
+	
 }
 
 async function testTableAuth(){

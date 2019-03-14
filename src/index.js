@@ -549,18 +549,13 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 			delete cache[i].TableName;
 			delete cache[i].confidential;
 			payment.Statements.push(cache[i]);
-		};
+		}
 
 		//clear transactin status
 		ChainSQL.transaction = false;
 		ChainSQL.cache = [];
 
 		getTxJson(ChainSQL, payment).then(function (data) {
-			if (data.status == 'error') {
-				ChainSQL.transaction = false;
-				throw new Error('getTxJson error');
-			}
-
 			var payment = data.tx_json;
 			payment.Statements = convertStringToHex(JSON.stringify(payment.Statements));
 			ChainSQL.api.prepareTx(payment).then(function (data) {
@@ -573,6 +568,12 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 			}).catch(function (error) {
 				cb(error, null);
 			});
+		}).catch(function (error) {
+			ChainSQL.transaction = false;
+			if (error.error_message)
+				throw new Error(error.error_message);
+			else
+				throw new Error('getTxJson error');
 		});
 	});
 }
@@ -718,16 +719,15 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 	ChainSQL.api.prepareTable(payment).then(function (tx_json) {
 		// console.log(tx_json);
 		getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function (data) {
-			if (data.status == 'error') {
-				if (data.error_message)
-					errFunc(new Error(data.error_message));
-				else
-					errFunc(new Error('getTxJson error'));
-			}
 			data.tx_json.Fee = util.calcFee(data.tx_json);
 			var payment = data.tx_json;
 			let signedRet = ChainSQL.api.sign(JSON.stringify(data.tx_json), ChainSQL.connect.secret);
 			handleSignedTx(ChainSQL, signedRet, object, resolve, reject);
+		}).catch(function (error) {
+			if (error.error_message)
+				errFunc(new Error(error.error_message));
+			else
+				errFunc(new Error('getTxJson error'));
 		});
 	}).catch(function (error) {
 		errFunc(error);
@@ -794,12 +794,12 @@ ChainsqlAPI.prototype.getAccountTables = function(address, bGetDetailInfo=false)
 			account: address,
 			detail: bGetDetailInfo
 		}).then(function(data){
-			dealWithRet(data,resolve,reject);
+			resolve(data);
 		}).catch(function(err){
 			reject(err);
-		})
-	})
-}
+		});
+	});
+};
 
 ChainsqlAPI.prototype.getTableAuth = function(owner,tableName,accounts){
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
@@ -807,40 +807,29 @@ ChainsqlAPI.prototype.getTableAuth = function(owner,tableName,accounts){
 		command: 'table_auth',
 		owner: owner,
 		tablename:tableName
-	}
+	};
 	if(accounts && accounts.length > 0){
 		req.accounts = accounts;
 	}
 	return new Promise(function(resolve, reject){
 		connection.request(req).then(function(data){
-			dealWithRet(data,resolve,reject);
+			resolve(data);
 		}).catch(function(err){
 			reject(err);
-		})
-	})
-}
+		});
+	});
+};
 
-function dealWithRet(data,resolve,reject){
-	if(data.status == 'success'){
-		resolve(data);
-	}else{
-		reject(data);
-	}
-}
 ChainsqlAPI.prototype.getTableNameInDB = function(owner,tableName){
 	var that = this;
 	return new Promise(function(resolve, reject){
 		util.getTableName(that,owner,tableName).then(function(data){
-			if(data.status == 'success'){
-				resolve(data.nameInDB);
-			}else{
-				reject(data);
-			}
+			resolve(data.nameInDB);
 		}).catch(function(err){
 			reject(err);
-		})
-	})
-}
+		});
+	});
+};
 
 ChainsqlAPI.prototype.getBySqlAdmin = function(sql){
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
@@ -849,19 +838,19 @@ ChainsqlAPI.prototype.getBySqlAdmin = function(sql){
 			command: 'r_get_sql_admin',
 			sql:sql
 		}).then(function(data){
-			dealWithRet(data,resolve,reject);
+			resolve(data);
 		}).catch(function(err){
 			reject(err);
-		})
-	})
-}
+		});
+	});
+};
 
 ChainsqlAPI.prototype.getBySqlUser = function(sql){
 	var connect = this.connect;
 	var json = {
 		Account:connect.address,
 		Sql:sql
-	}
+	};
 	return new Promise(function(resolve, reject){
 		util.getValidatedLedgerIndex(connect).then(function(ledgerVersion){
 			json.LedgerIndex = ledgerVersion;
@@ -875,14 +864,12 @@ ChainsqlAPI.prototype.getBySqlUser = function(sql){
 					tx_json:json
 				})
 		}).then(function(data){
-			dealWithRet(data,resolve,reject);
+			resolve(data);
 		}).catch(function(err) {
 			reject(err);
 		});
-	})
-	
-	
-}
+	});
+};
 
 ChainsqlAPI.prototype.submit = function (cb) {
 	var that = this;
