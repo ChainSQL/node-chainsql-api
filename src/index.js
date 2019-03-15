@@ -48,6 +48,7 @@ class ChainsqlAPI extends Submit {
 		this.cache = [];
 		this.strictMode = false;
 		this.needVerify = 1;
+		this.confidential = false
 	}
 }
 
@@ -83,8 +84,8 @@ ChainsqlAPI.prototype.disconnect = function (cb) {
 	}
 }
 ChainsqlAPI.prototype.as = function (account) {
-	if(!account.secret || !account.address){
-		throw Error("c.as parameter invalid,must contain 'secret' and 'address'"); 
+	if (!account.secret || !account.address) {
+		throw Error("c.as parameter invalid,must contain 'secret' and 'address'");
 	}
 	this.connect.as(account);
 }
@@ -105,15 +106,15 @@ ChainsqlAPI.prototype.table = function (name) {
 	return this.tab;
 }
 
-ChainsqlAPI.prototype.contract = function(jsonInterface, address, options) {
-  this.contractObj = new Contract(this, jsonInterface, address, options);
-  // if (this.transaction) {
-  //   this.tab.transaction = this.transaction;
-  //   this.tab.cache = this.cache;
-  // }
-  // this.tab.strictMode = this.strictMode;
-  // this.tab.event = this.event;
-  return this.contractObj;
+ChainsqlAPI.prototype.contract = function (jsonInterface, address, options) {
+	this.contractObj = new Contract(this, jsonInterface, address, options);
+	// if (this.transaction) {
+	//   this.tab.transaction = this.transaction;
+	//   this.tab.cache = this.cache;
+	// }
+	// this.tab.strictMode = this.strictMode;
+	// this.tab.event = this.event;
+	return this.contractObj;
 }
 
 ChainsqlAPI.prototype.generateAddress = function () {
@@ -225,7 +226,7 @@ ChainsqlAPI.prototype.escrowCancel = function (sOwnerAddr, nCreateEscrowSeq) {
 }
 
 ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
-	validate.create(name,raw);
+	validate.create(name, raw);
 	var opt = inputOpt ? inputOpt : {};
 	let that = this;
 	var confidential = false;
@@ -246,30 +247,19 @@ ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
 		return;
 	} else {
 		let payment = {
-			address: that.connect.address,
-			opType: opType['t_create'],
-			tables: [{
+			TransactionType: 'TableListSet',
+			Account: that.connect.address,
+			OpType: opType['t_create'],
+			Tables: [{
 				Table: {
-					TableName: convertStringToHex(name)
+					TableName: name
 				}
 			}],
-			raw: JSON.stringify(raw),
-			tsType: 'TableListSet',
-			operationRule: opt.operationRule ? JSON.stringify(opt.operationRule) : undefined
+			Raw: raw,
+			OperationRule: opt.operationRule ? opt.operationRule : undefined
 		};
 
-		if (confidential) {
-			var token = generateToken(that.connect.secret);
-			var secret = decodeToken(that, token);
-			payment.raw = crypto.aesEncrypt(secret, payment.raw).toUpperCase();
-			payment.token = token.toUpperCase();
-		} else {
-			payment.raw = convertStringToHex(payment.raw);
-		}
-
-		if (payment.operationRule) {
-			payment.operationRule = convertStringToHex(payment.operationRule);
-		}
+		this.confidential = confidential
 		this.payment = payment;
 		return this;
 	}
@@ -287,14 +277,14 @@ ChainsqlAPI.prototype.recreateTable = function (name) {
 		return;
 	} else {
 		let payment = {
-			address: that.connect.address,
-			opType: opType['t_recreate'],
-			tables: [{
+			TransactionType: 'TableListSet',
+			Account: that.connect.address,
+			OpType: opType['t_recreate'],
+			Tables: [{
 				Table: {
-					TableName: convertStringToHex(name)
+					TableName: name
 				}
 			}],
-			tsType: 'TableListSet'
 		};
 		this.payment = payment;
 		return this;
@@ -311,14 +301,14 @@ ChainsqlAPI.prototype.dropTable = function (name) {
 		return;
 	} else {
 		let payment = {
-			address: that.connect.address,
-			opType: opType['t_drop'],
-			tables: [{
+			TransactionType: 'TableListSet',
+			Account: that.connect.address,
+			OpType: opType['t_drop'],
+			Tables: [{
 				Table: {
-					TableName: convertStringToHex(name)
+					TableName: name
 				}
 			}],
-			tsType: 'TableListSet'
 		};
 		this.payment = payment;
 		return this;
@@ -338,15 +328,15 @@ ChainsqlAPI.prototype.renameTable = function (oldName, newName) {
 		return;
 	} else {
 		let payment = {
-			address: that.connect.address,
-			opType: opType['t_rename'],
-			tables: [{
+			TransactionType: 'TableListSet',
+			Account: that.connect.address,
+			OpType: opType['t_rename'],
+			Tables: [{
 				Table: {
-					TableName: convertStringToHex(oldName),
-					TableNewName: convertStringToHex(newName)
+					TableName: oldName,
+					TableNewName: newName
 				}
 			}],
-			tsType: 'TableListSet'
 		}
 
 		this.payment = payment;
@@ -371,16 +361,16 @@ ChainsqlAPI.prototype.grant = function (name, user, flags, publicKey) {
 		return;
 	} else {
 		let payment = {
-			address: that.connect.address,
-			opType: opType['t_grant'],
-			tables: [{
+			TransactionType: 'TableListSet',
+			Account: that.connect.address,
+			OpType: opType['t_grant'],
+			Tables: [{
 				Table: {
-					TableName: convertStringToHex(name)
+					TableName: name
 				}
 			}],
-			raw: convertStringToHex(JSON.stringify([flags])),
-			user: user,
-			tsType: 'TableListSet',
+			Raw: [flags],
+			User: user,
 			name: name,
 			publicKey: publicKey
 		};
@@ -615,10 +605,10 @@ ChainsqlAPI.prototype.getLedgerVersion = function (cb) {
 
 function handleSignedTx(ChainSQL, signed, object, resolve, reject) {
 	var isFunction = false;
-	let expectOpt = {expect:"send_success"};
+	let expectOpt = { expect: "send_success" };
 	let cbCheckRet = util.checkCbOpt(object);
-	if(cbCheckRet.status === "success") {
-		if(cbCheckRet.type === "function") {
+	if (cbCheckRet.status === "success") {
+		if (cbCheckRet.type === "function") {
 			isFunction = cbCheckRet.isFunction;
 		} else {
 			expectOpt.expect = cbCheckRet.expect;
@@ -649,7 +639,7 @@ function handleSignedTx(ChainSQL, signed, object, resolve, reject) {
 		}
 	};
 	// subscribe event
-	if(expectOpt.expect !== "send_success") {
+	if (expectOpt.expect !== "send_success") {
 		ChainSQL.event.subscribeTx(signed.id, isFunction ? object : function (err, data) {
 			if (err) {
 				errFunc(err);
@@ -662,7 +652,7 @@ function handleSignedTx(ChainSQL, signed, object, resolve, reject) {
 						tx_hash: signed.id
 					});
 				}
-	
+
 				// failure
 				if (util.checkSubError(data)) {
 					var error = {
@@ -682,13 +672,13 @@ function handleSignedTx(ChainSQL, signed, object, resolve, reject) {
 			errFunc('subscribeTx exception.' + error);
 		});
 	}
-	
+
 
 	// submit transaction
 	ChainSQL.api.submit(signed.signedTransaction).then(function (result) {
 		//console.log('submit ', JSON.stringify(result));
 		if (result.resultCode != 'tesSUCCESS') {
-			if(expectOpt.expect !== "send_success") {
+			if (expectOpt.expect !== "send_success") {
 				ChainSQL.event.unsubscribeTx(signed.id);
 			}
 			//return error message
@@ -719,10 +709,17 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 	ChainSQL.api.prepareTable(payment).then(function (tx_json) {
 		// console.log(tx_json);
 		getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function (data) {
-			data.tx_json.Fee = util.calcFee(data.tx_json);
-			var payment = data.tx_json;
-			let signedRet = ChainSQL.api.sign(JSON.stringify(data.tx_json), ChainSQL.connect.secret);
-			handleSignedTx(ChainSQL, signedRet, object, resolve, reject);
+			if (data.status == 'error') {
+				if (data.error_message)
+					errFunc(new Error(data.error_message));
+				else
+					errFunc(new Error('getTxJson error'));
+			} else {
+				data.tx_json.Fee = util.calcFee(data.tx_json);
+				var payment = data.tx_json;
+				let signedRet = ChainSQL.api.sign(JSON.stringify(data.tx_json), ChainSQL.connect.secret);
+				handleSignedTx(ChainSQL, signedRet, object, resolve, reject);
+			}
 		}).catch(function (error) {
 			if (error.error_message)
 				errFunc(new Error(error.error_message));
@@ -735,7 +732,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 }
 
 function handleGrantPayment(ChainSQL, object, resolve, reject) {
-	if (ChainSQL.payment.opType != opType['t_grant'])
+	if (ChainSQL.payment.OpType != opType['t_grant'])
 		throw new ('Type of payment must be t_grant');
 
 	var payment = ChainSQL.payment;
@@ -786,111 +783,230 @@ ChainsqlAPI.prototype.signFor = function (json, secret, option) {
 
 // }
 
-ChainsqlAPI.prototype.getAccountTables = function(address, bGetDetailInfo=false){
+ChainsqlAPI.prototype.getAccountTables = function (address, bGetDetailInfo = false) {
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
-	return new Promise(function(resolve, reject){
+	return new Promise(function (resolve, reject) {
 		connection.request({
 			command: 'g_accountTables',
 			account: address,
 			detail: bGetDetailInfo
-		}).then(function(data){
+		}).then(function (data) {
 			resolve(data);
-		}).catch(function(err){
+		}).catch(function (err) {
 			reject(err);
 		});
 	});
 };
 
-ChainsqlAPI.prototype.getTableAuth = function(owner,tableName,accounts){
+ChainsqlAPI.prototype.getTableAuth = function (owner, tableName, accounts) {
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
 	var req = {
 		command: 'table_auth',
 		owner: owner,
-		tablename:tableName
+		tablename: tableName
 	};
-	if(accounts && accounts.length > 0){
+	if (accounts && accounts.length > 0) {
 		req.accounts = accounts;
 	}
-	return new Promise(function(resolve, reject){
-		connection.request(req).then(function(data){
+	return new Promise(function (resolve, reject) {
+		connection.request(req).then(function (data) {
 			resolve(data);
-		}).catch(function(err){
+		}).catch(function (err) {
 			reject(err);
 		});
 	});
 };
 
-ChainsqlAPI.prototype.getTableNameInDB = function(owner,tableName){
+ChainsqlAPI.prototype.getTableNameInDB = function (owner, tableName) {
 	var that = this;
-	return new Promise(function(resolve, reject){
-		util.getTableName(that,owner,tableName).then(function(data){
+	return new Promise(function (resolve, reject) {
+		util.getTableName(that, owner, tableName).then(function (data) {
 			resolve(data.nameInDB);
-		}).catch(function(err){
+		}).catch(function (err) {
 			reject(err);
 		});
 	});
 };
 
-ChainsqlAPI.prototype.getBySqlAdmin = function(sql){
+ChainsqlAPI.prototype.getBySqlAdmin = function (sql) {
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
-	return new Promise(function(resolve, reject){
+	return new Promise(function (resolve, reject) {
 		connection.request({
 			command: 'r_get_sql_admin',
-			sql:sql
-		}).then(function(data){
+			sql: sql
+		}).then(function (data) {
 			resolve(data);
-		}).catch(function(err){
+		}).catch(function (err) {
 			reject(err);
 		});
 	});
 };
 
-ChainsqlAPI.prototype.getBySqlUser = function(sql){
+ChainsqlAPI.prototype.getBySqlUser = function (sql) {
 	var connect = this.connect;
 	var json = {
-		Account:connect.address,
-		Sql:sql
+		Account: connect.address,
+		Sql: sql
 	};
-	return new Promise(function(resolve, reject){
-		util.getValidatedLedgerIndex(connect).then(function(ledgerVersion){
+	return new Promise(function (resolve, reject) {
+		util.getValidatedLedgerIndex(connect).then(function (ledgerVersion) {
 			json.LedgerIndex = ledgerVersion;
 			return util.signData(JSON.stringify(json), connect.secret);
-		}).then(function(signed){
+		}).then(function (signed) {
 			return connect.api.connection.request({
-					command: 'r_get_sql_user',
-					publicKey:signed.publicKey,
-					signature:signed.signature,
-					signingData:JSON.stringify(json),
-					tx_json:json
-				})
-		}).then(function(data){
+				command: 'r_get_sql_user',
+				publicKey: signed.publicKey,
+				signature: signed.signature,
+				signingData: JSON.stringify(json),
+				tx_json: json
+			})
+		}).then(function (data) {
 			resolve(data);
-		}).catch(function(err) {
+		}).catch(function (err) {
 			reject(err);
 		});
 	});
 };
+
+ChainsqlAPI.prototype.audit = function (owner, sql, target_path) {
+	var connect = this.connect;
+	var json = {
+		command: 't_audit',
+		tx_json: [owner, sql, target_path]
+	}
+
+	return new Promise(function (resolve, reject) {
+		connect.api.connection.request(json).then(function (res) {
+			resolve(res)
+		}).catch(function (err) {
+			reject(err)
+		})
+	})
+}
+
+ChainsqlAPI.prototype.stopAudit = function (nick_name) {
+	var connect = this.connect;
+	var json = {
+		command: 't_auditstop',
+		tx_json: [nick_name]
+	}
+
+	return new Promise(function (resolve, reject) {
+		connect.api.connection.request(json).then(function (res) {
+			resolve(res)
+		}).catch(function (err) {
+			reject(err)
+		})
+	})
+}
+
+ChainsqlAPI.prototype.dump = function (owner, target_path) {
+	var connect = this.connect;
+	var json = {
+		command: "t_dump",
+		"tx_json": [owner, target_path]
+	}
+
+	return new Promise(function (resolve, reject) {
+		connect.api.connection.request(json).then(function (res) {
+			resolve(res)
+		}).catch(function (err) {
+			reject(err)
+		})
+	})
+}
+
+ChainsqlAPI.prototype.stopDump = function (owner, table) {
+	var connect = this.connect
+	var json = {
+		command: "t_dumpstop",
+		tx_json: [owner, table]
+	}
+
+	return new Promise(function (resolve, reject) {
+		connect.api.connection.request(json).then(function (res) {
+			resolve(res)
+		}).catch(function (err) {
+			reject(err)
+		})
+	})
+}
+
+ChainsqlAPI.prototype.checkAdminAuth = function () {
+	var connect = this.connect
+	var json = {
+		id: 2,
+		command: "peers"
+	}
+
+	return new Promise(function (resolve, reject) {
+		connect.api.connection.request(json).then(function (res) {
+			resolve(res)
+		}).catch(function (err) {
+			reject(err)
+		})
+	})
+}
 
 ChainsqlAPI.prototype.submit = function (cb) {
 	var that = this;
 	if (that.transaction) {
 		throw new Error('you are now in transaction,can not be submit');
 	} else {
+		var payment = that.payment;
+		switch (payment.OpType) {
+			case opType['t_create']:
 
-		//if (cb === undefined || cb === null) {
-		//    cb = {expect:'send_success'};
-		//}
+				if (that.confidential) {
+					var token = generateToken(that.connect.secret);
+					var secret = decodeToken(that, token);
+					payment.Raw = crypto.aesEncrypt(secret, JSON.stringify(payment.Raw)).toUpperCase();
+					payment.Token = token.toUpperCase();
+				} else {
+					payment.Raw = convertStringToHex(JSON.stringify(payment.Raw))
+				};
+
+				if (payment.OperationRule) {
+					payment.OperationRule = convertStringToHex(JSON.stringify(payment.OperationRule));
+				}
+
+				payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
+				break;
+
+			case opType['t_recreate']:
+
+				payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
+				break
+			case opType['t_drop']:
+
+				payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
+				break
+
+			case opType['t_rename']:
+
+				payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
+				payment.Tables[0].Table.TableNewName = convertStringToHex(payment.Tables[0].Table.TableNewName)
+				break
+			case opType['t_grant']:
+
+				payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
+				payment.Raw = convertStringToHex(JSON.stringify(payment.Raw))
+				break
+
+			default:
+				break;
+		}
 
 		if ((typeof cb) != 'function') {
 			return new Promise(function (resolve, reject) {
-				if (that.payment.opType == opType['t_grant']) {
+				if (that.payment.OpType == opType['t_grant']) {
 					handleGrantPayment(that, cb, resolve, reject);
 				} else {
 					prepareTable(that, that.payment, cb, resolve, reject);
 				}
 			});
 		} else {
-			if (that.payment.opType == opType['t_grant']) {
+			if (that.payment.OpType == opType['t_grant']) {
 				handleGrantPayment(that, cb, null, null);
 			} else {
 				prepareTable(that, that.payment, cb, null, null);

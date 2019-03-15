@@ -47,26 +47,26 @@ function createPaymentTransaction(paymentArgument) {
   var payment = _.cloneDeep(paymentArgument);
 
   var txJSON = {
-    TransactionType: payment.tsType,
-    Tables: payment.tables,
-    TableNewName: payment.tableNewName,
-    OpType: payment.opType,
-    Raw: payment.raw,
-    Account: payment.address,
-    Owner: payment.owner,
-    Flags: payment.flags,
-    User:payment.user,
-    AutoFillField:payment.autoFillField,
-    Token:payment.token,
-    StrictMode: payment.strictMode,
-    OperationRule: payment.operationRule
+    TransactionType: payment.TransactionType,
+    Tables: payment.Tables,
+    TableNewName: payment.TableNewName,
+    OpType: payment.OpType,
+    Raw: payment.Raw,
+    Account: payment.Account,
+    Owner: payment.Owner,
+    Flags: payment.Flags,
+    User: payment.User,
+    AutoFillField: payment.AutoFillField,
+    Token: payment.Token,
+    StrictMode: payment.StrictMode,
+    OperationRule: payment.OperationRule
   }
   return txJSON;
 }
 
 function checkTablePayment(payment)
 {
-  if(payment.address === undefined)  return "account is null, please use the function 'as' first.";
+  if (payment.Account === undefined)  return "account is null, please use the function 'as' first.";
   return "";
 }
 function prepareTablePayment(payment) {

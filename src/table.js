@@ -7,6 +7,7 @@ const Table = function(name, connect) {
   this.field = null;
   this.connect = connect;
   this.cache = [];
+  this.payment = "";
 };
 const util = require('./util');
 const convertStringToHex = util.convertStringToHex;
@@ -35,6 +36,22 @@ Table.prototype.insert = function(raw, field) {
     throw new Error('Insert too much value,the total value of inserted must not over 512KB')
   }
   this.exec = 'r_insert';
+  let payment = {
+    TransactionType: 'SQLStatement',
+    Account: that.connect.address,
+    Owner: that.connect.scope,
+    Tables: [{
+      Table: {
+        TableName: that.tab,
+      }
+    }],
+    StrictMode: that.strictMode,
+    Raw: that.query,
+    OpType: opType[that.exec],
+  };
+
+  this.payment = payment
+
   if (this.transaction) {
     this.cache.push({
       Owner: this.connect.scope,
@@ -51,8 +68,26 @@ Table.prototype.insert = function(raw, field) {
 Table.prototype.update = function() {
   if (!this.tab) throw new Error('you must appoint the table name');
   if (this.exec !== 'r_get') throw new Error('Object can not hava function update');
+  var that = this;
   this.query.unshift(Array.prototype.slice.call(arguments)[0]);
   this.exec = 'r_update';
+
+  let payment = {
+    TransactionType: 'SQLStatement',
+    Account: that.connect.address,
+    Owner: that.connect.scope,
+    Tables: [{
+      Table: {
+        TableName: that.tab,
+      }
+    }],
+    StrictMode: that.strictMode,
+    Raw: that.query,
+    OpType: opType[that.exec],
+  };
+
+  this.payment = payment
+
   if (this.transaction) {
     this.cache.push({
       Owner: this.connect.scope,
@@ -67,8 +102,25 @@ Table.prototype.update = function() {
 }
 Table.prototype.delete = function() {
   if (!this.tab) throw new Error('you must appoint the table name');
+  var that = this;
   //if (this.exec !== 'r_get') throw new Error('Object can not hava function delete');
   this.exec = 'r_delete';
+  let payment = {
+    TransactionType: 'SQLStatement',
+    Account: that.connect.address,
+    Owner: that.connect.scope,
+    Tables: [{
+      Table: {
+        TableName: that.tab,
+      }
+    }],
+    StrictMode: that.strictMode,
+    Raw: that.query,
+    OpType: opType[that.exec],
+  };
+
+  this.payment = payment
+
   if (this.transaction) {
     this.cache.push({
       Owner: this.connect.scope,
@@ -100,17 +152,36 @@ Table.prototype.assert = function(raw) {
 Table.prototype.get = function(raw) {
   if (!this.tab) throw new Error('you must appoint the table name');
   if (this.exec !== '') throw new Error('Object can not hava function get');
+  var that = this
   if (Object.prototype.toString.call(arguments[0]) === '[object Array]') {
     this.query = arguments[0];
   } else {
     this.query = Array.prototype.slice.call(arguments);
   }
   this.exec = 'r_get';
+
+  let payment = {
+    commond: "r_get",
+    tx_json: {
+      Account: that.connect.address,
+      Owner: that.connect.scope,
+      Tables: [{
+        Table: {
+          TableName: that.tab
+        }
+      }],
+      Raw: that.query
+    }
+  }
+
+  this.payment = payment
   return this;
 }
 Table.prototype.withFields = function(field) {
   if (this.exec !== 'r_get') throw new Error('Object can not hava function filterWith');
   this.query.unshift(field);
+
+  this.payment.tx_json.Raw = this.query
   return this;
 }
 Table.prototype.assert = function(json) {
@@ -363,12 +434,12 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 	
 	getUserToken(ChainSQL.connect.api.connection, ChainSQL.connect.scope,ChainSQL.connect.address, ChainSQL.tab).then(function(token) {
 		token = token[ ChainSQL.connect.scope + ChainSQL.tab];
-		if (token && token != '') {
-			var secret = decodeToken(ChainSQL, token);
-			payment.raw = crypto.aesEncrypt(secret, payment.raw).toUpperCase();
-		} else {
-			payment.raw = convertStringToHex(payment.raw);
-		}
+    if (token && token != '') {
+      var secret = decodeToken(ChainSQL, token);
+      payment.Raw = crypto.aesEncrypt(secret, payment.Raw).toUpperCase();
+    } else {
+      payment.Raw = convertStringToHex(payment.Raw);
+    };
 		
 		connect.api.prepareTable(payment).then(function(tx_json) {
 			getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function(data) {
@@ -461,26 +532,19 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
 	
 	var connect = ChainSQL.connect;
 	//console.log('select \n\t', JSON.stringify(ChainSQL.query));
-	var json = {
-		Account: connect.address,
-		Owner: connect.scope,
-		Tables: [{
-			Table: {
-				TableName: ChainSQL.tab
-			}
-		}],
-		Raw: JSON.stringify(ChainSQL.query)
-	};
+  let json = ChainSQL.payment
+  json.tx_json.Raw = JSON.stringify(ChainSQL.query);
+
 	util.getValidatedLedgerIndex(connect).then(function (ledgerVersion) {
-		json.LedgerIndex = ledgerVersion;
-		return util.signData(JSON.stringify(json), ChainSQL.connect.secret);
+    json.tx_json.LedgerIndex = ledgerVersion;
+    return util.signData(JSON.stringify(json.tx_json), ChainSQL.connect.secret);
 	}).then(function (signed) {
 		return connect.api.connection.request({
 			command: 'r_get',
 			publicKey: signed.publicKey,
 			signature: signed.signature,
-			signingData: JSON.stringify(json),
-			tx_json: json
+      signingData: JSON.stringify(json.tx_json),
+      tx_json: json.tx_json
 		});
 	}).then(function (data) {
 		cb(null, data);
@@ -509,21 +573,13 @@ Table.prototype.submit = function(cb) {
 		  handleGetRecord(that, cb, null, null);
     }
   } else {
-    var payment = {
-      address: connect.address,
-      owner: connect.scope,
-      opType: opType[that.exec],
-      raw: JSON.stringify(that.query),
-      strictMode: that.strictMode,
-      tables: [{
-        Table: {
-          TableName: convertStringToHex(that.tab),
-        }
-      }],
-      tsType: 'SQLStatement'
-    };
+    let payment = that.payment
+    payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
+
+    payment.Raw = JSON.stringify(that.payment.Raw)
+
     if (that.exec == 'r_insert' && that.field) {
-      payment.autoFillField = convertStringToHex(that.field);
+      payment.AutoFillField = convertStringToHex(that.field);
     };
     if ((typeof cb) != 'function') {
       return new Promise(function(resolve, reject) {
