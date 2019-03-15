@@ -94,14 +94,11 @@ function getUserToken(connection,owner,user,name) {
       User: user,
       TableName: name
     }
-
   }).then(function(data) {
     var json = {};
     json[owner + name] = data.token;
     return json;
   }).catch(function(err){
-	// console.error(err);
-	// return {'status':'error'};
 	throw new Error(err);
   })
 }

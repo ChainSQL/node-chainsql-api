@@ -437,7 +437,8 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 		}).catch(function (error) {
 			cb(error, null);
 		});
-
+	}).catch(function(error) {
+		cb(error, null);
 	});
 }
 

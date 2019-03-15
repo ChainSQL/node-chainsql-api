@@ -142,7 +142,7 @@ async function testChainsql(){
 	// // //创建另一张表，用来测试rename,drop
 	// await testCreateTable1();
 	// await testInsert();
-	// await testUpdate();m
+	// await testUpdate();
 	// await testDelete();
 	// await testRename();
 	// await testGet();
@@ -220,17 +220,25 @@ var testCreateTable1 = async function() {
 //重复插入的情况下报异常
 var testInsert = async function() {
 	var raw = [
-		{'age': 333,'name':'hello'},
-		{'age': 444,'name':'sss'},
-		{'age': 555,'name':'rrr'}
-	]
-	var rs = await c.table(sTableName).insert(raw).submit({expect:'db_success'});
-	console.log("testInsert",rs);
+		{'id':1,'age': 333,'name':'hello'},
+		{'id':2,'age': 444,'name':'sss'},
+		{'id':3,'age': 555,'name':'rrr'}
+	];
+	try {
+		var rs = await c.table(sTableName).insert(raw).submit({expect:'db_success'});
+		console.log("testInsert",rs);	
+	} catch (error) {
+		console.error(error);
+	}
 }
 
 var testUpdate = async function(){
-	var rs = await c.table(sTableName).get({'id': 2}).update({'age':200}).submit({expect:'db_success'});
-	console.log("testUpdate",rs);
+	try {
+		var rs = await c.table(sTableName).get({'id': 2}).update({'age':200}).submit({expect:'db_success'});
+		console.log("testUpdate",rs);	
+	} catch (error) {
+		console.error(error);
+	}
 }
 
 var testDelete = async function(){
