@@ -748,7 +748,7 @@ function handleGrantPayment(ChainSQL, object, resolve, reject) {
 				//console.log(e)
 				throw new Error('your publicKey is not validate')
 			}
-			payment.token = token;
+			payment.Token = token;
 		}
 		delete ChainSQL.payment.name;
 		delete ChainSQL.payment.publicKey;

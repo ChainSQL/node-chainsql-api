@@ -534,7 +534,7 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
 	var connect = ChainSQL.connect;
 	//console.log('select \n\t', JSON.stringify(ChainSQL.query));
   let json = ChainSQL.payment
-  json.tx_json.Raw = JSON.stringify(ChainSQL.query);
+  json.tx_json.Raw = JSON.stringify(json.tx_json.Raw);
 
 	util.getValidatedLedgerIndex(connect).then(function (ledgerVersion) {
     json.tx_json.LedgerIndex = ledgerVersion;
