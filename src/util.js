@@ -86,21 +86,21 @@ function getTableName(that,owner, name) {
   });
 }
 
-function getUserToken(connection,owner,user,name) {
-  return connection.request({
-    command: 'g_userToken',
-    tx_json: {
-      Owner: owner,
-      User: user,
-      TableName: name
-    }
-  }).then(function(data) {
-    var json = {};
-    json[owner + name] = data.token;
-    return json;
-  }).catch(function(err){
-	throw new Error(err);
-  })
+function getUserToken(connection, owner, user, name) {
+	return connection.request({
+		command: 'g_userToken',
+		tx_json: {
+			Owner: owner,
+			User: user,
+			TableName: name
+		}
+	}).then(function (data) {
+		var json = {};
+		json[owner + name] = data.token;
+		return json;
+	}).catch(function (err) {
+		return Promise.reject(err);
+	});
 }
 
 function getTableSequence(that, name) {

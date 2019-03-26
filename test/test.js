@@ -7,9 +7,9 @@ const c = new ChainsqlAPI();
 const RippleAPI = new require('chainsql-lib').RippleAPI;
 
 var user = {
-	secret: "xhW53JaGnb6QePRHz1ysehGNodu4p",
-	address: "zMbBhnQAPu7KHgtRXWFxp4YGX4LjtMpgo1",
-	publicKey: "cBRmXRujuiBPuK46AGpMM5EcJuDtxpxJ8J2mCmgkZnPC1u8wqkUn"
+	secret: "xxeJcpbcFyGTFCxiGjeDEw1RCimFQ",
+	address: "z44fybVuUn8jZxZRHpc3pJ62KQJgSEjzjk",
+	publicKey: "cB4MLVsyn5MnoYHhApEyGtPCuEf9PAGDopmpB7yFwTbhUtzrjRRT"
 }
 
  var owner = {
@@ -204,14 +204,14 @@ var testCreateTable1 = async function() {
 		{'field':'id','type':'int','length':11,'PK':1,'NN':1,'default':''},
 		{'field':'name','type':'varchar','length':50,'default':null},
 		{'field':'age','type':'int'}
-	]
+	];
 	var option = {
 		confidential: false
-	}
+	};
 	// 创建表
 	try {
-		let rs = await c.createTable(sTableName2, raw, option).submit({expect:'db_success'});
-		console.log("testCreateTable1" , rs)	
+		let rs = await c.createTable(sTableName, raw, option).submit({expect:'db_success'});
+		console.log("testCreateTable1" , rs);	
 	} catch (error) {
 		console.log(error);
 	}
@@ -286,10 +286,15 @@ var testDrop = async function(){
 
 //重复授权可能出异常，测一下
 var testGrant = async function(){
-	var raw = {insert:false,update:false,delete:true};
-	var rs = await c.grant(sTableName, user.address, raw, user.publicKey).submit({expect:'db_success'})
-	console.log("testGrant",rs);
-}
+	try {
+		var raw = {select:true, insert:false, update:false, delete:true};
+		var rs = await c.grant(sTableName, user.address, raw, user.publicKey).submit({expect:'db_success'});
+		console.log("testGrant",rs);
+	} catch (error) {
+		console.error(error);
+	}
+};
+
 var insertAfterGrant = async function(){
 	c.as(user);
 	c.use(owner.address);
@@ -305,23 +310,16 @@ var insertAfterGrant = async function(){
 }
 
 var testTxs = async function(){
-	c.beginTran();
-	var raw = [
-		{'field':'id','type':'int','length':11,'PK':1,'NN':1,'UQ':1,'AI':1},
-		{'field':'name','type':'varchar','length':50,'default':null},
-		{'field':'age','type':'int'},
-		{'field':'account','type':'varchar','length':64}
-	]
-
-	var option = {
-		confidential: true
+	try {
+		c.beginTran();
+		c.grant(sTableName,user.address,{insert:true,update:true},user.publicKey)
+		c.table(sTableName).insert({ 'age': 333, 'name': 'hello' });
+		c.table(sTableName).get({ 'age': 333 }).update({ 'name': 'world' });
+		var rs = await c.commit({expect: 'db_success'});	
+		console.log("testTxs",rs);
+	} catch (error) {
+		console.error(error);
 	}
-	c.createTable(sTableName,raw,option);
-	c.grant(sTableName,user.address,{insert:true,update:true},user.publicKey)
-	c.table(sTableName).insert({'age': 333,'name':'hello'});
-	c.table(sTableName).get({'age':333}).update({'name':'world'});
-	var rs = await c.commit({expect: 'db_success'});
-	console.log("testTxs",rs);
 }
 
 var testOperationRule = async function(){
@@ -475,8 +473,13 @@ async function testAccountTables()
 }
 
 async function testTableAuth(){
-	let retRequest = await c.getTableAuth(owner.address,"wiki",[]);
-	console.log(retRequest)
+	try {
+		let retRequest = await c.getTableAuth(owner.address,"b1",[]);
+		console.log(retRequest);	
+	} catch (error) {
+		console.error(error);
+	}
+	
 }
 
 async function testDateTime()
