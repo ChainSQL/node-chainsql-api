@@ -1,5 +1,6 @@
 'use strict'
 const opType = require('./config').opType;
+const chainsqlError = require('./error');
 const Table = function(name, connect) {
   this.tab = name;
   this.query = [];
@@ -19,8 +20,8 @@ const decodeToken = util.decodeToken;
 const crypto = require('../lib/crypto');
 
 Table.prototype.insert = function(raw, field) {
-  if (!this.tab) throw new Error('you must appoint the table name');
-  if (this.exec !== '' && this.exec !== 'r_insert') throw new Error('Object can not hava function insert');
+  if (!this.tab) throw chainsqlError('you must appoint the table name');
+  if (this.exec !== '' && this.exec !== 'r_insert') throw chainsqlError('Object can not hava function insert');
   var that = this;
   if (field) {
     this.field = field;
@@ -33,7 +34,7 @@ Table.prototype.insert = function(raw, field) {
     this.query.push(raw);
   }
   if (JSON.stringify(raw).length > 512000) {
-    throw new Error('Insert too much value,the total value of inserted must not over 512KB')
+    throw chainsqlError('Insert too much value,the total value of inserted must not over 512KB')
   }
   this.exec = 'r_insert';
   let payment = {
@@ -66,8 +67,8 @@ Table.prototype.insert = function(raw, field) {
 }
 
 Table.prototype.update = function() {
-  if (!this.tab) throw new Error('you must appoint the table name');
-  if (this.exec !== 'r_get') throw new Error('Object can not hava function update');
+  if (!this.tab) throw chainsqlError('you must appoint the table name');
+  if (this.exec !== 'r_get') throw chainsqlError('Object can not hava function update');
   var that = this;
   this.query.unshift(Array.prototype.slice.call(arguments)[0]);
   this.exec = 'r_update';
@@ -101,7 +102,7 @@ Table.prototype.update = function() {
   }
 }
 Table.prototype.delete = function() {
-  if (!this.tab) throw new Error('you must appoint the table name');
+  if (!this.tab) throw chainsqlError('you must appoint the table name');
   var that = this;
   //if (this.exec !== 'r_get') throw new Error('Object can not hava function delete');
   this.exec = 'r_delete';
@@ -134,8 +135,8 @@ Table.prototype.delete = function() {
   }
 }
 Table.prototype.assert = function(raw) {
-  if (!this.transaction) throw new Error('you must begin the transaction first');
-  if (!this.tab) throw new Error('you must appoint the table name');
+  if (!this.transaction) throw chainsqlError('you must begin the transaction first');
+  if (!this.tab) throw chainsqlError('you must appoint the table name');
   if (this.transaction) {
     this.cache.push({
       Owner: this.connect.scope,
@@ -150,8 +151,8 @@ Table.prototype.assert = function(raw) {
   }*/
 }
 Table.prototype.get = function(raw) {
-  if (!this.tab) throw new Error('you must appoint the table name');
-  if (this.exec !== '') throw new Error('Object can not hava function get');
+  if (!this.tab) throw chainsqlError('you must appoint the table name');
+  if (this.exec !== '') throw chainsqlError('Object can not hava function get');
   var that = this
   if (Object.prototype.toString.call(arguments[0]) === '[object Array]') {
     this.query = arguments[0];
@@ -178,7 +179,7 @@ Table.prototype.get = function(raw) {
   return this;
 }
 Table.prototype.withFields = function(field) {
-  if (this.exec !== 'r_get') throw new Error('Object can not hava function filterWith');
+  if (this.exec !== 'r_get') throw chainsqlError('Object can not hava function filterWith');
   this.query.unshift(field);
 
   this.payment.tx_json.Raw = this.query
@@ -249,12 +250,12 @@ function hasExtraCond(item) {
 Table.prototype.limit = function(limit) {
   if(limit){
     if(typeof(limit.index) != 'number')
-      throw new Error('limit.index must be a number')
+      throw chainsqlError('limit.index must be a number')
     if(typeof(limit.total) != 'number')
-    throw new Error('limit.total must be a number')
+    throw chainsqlError('limit.total must be a number')
   }
   if (this.exec !== 'r_get')
-    throw new Error('Object can not hava function limit');
+    throw chainsqlError('Object can not hava function limit');
 
   var flag = 0;
   var indx = 0;
@@ -286,7 +287,7 @@ Table.prototype.limit = function(limit) {
 
 Table.prototype.order = function(orderObject) {
   if (this.exec !== 'r_get')
-    throw new Error('Object can not hava function limit');
+    throw chainsqlError('Object can not hava function limit');
 
   var index = 0;
   var flag = 0;
@@ -335,10 +336,10 @@ Table.prototype.order = function(orderObject) {
 
 Table.prototype.groupby = function(group) {
   if (this.exec !== 'r_get')
-    throw new Error('Object can not hava function groupby');
+    throw chainsqlError('Object can not hava function groupby');
 
   if (Object.prototype.toString.call(group) != '[object Array]')
-    throw new Error('Argument of groupby must be string array.');
+    throw chainsqlError('Argument of groupby must be string array.');
 
   var index = 0;
   var flag = 0;
@@ -375,10 +376,10 @@ Table.prototype.groupby = function(group) {
 Table.prototype.having = function(value) {
   console.log(this.exec)
   if (this.exec !== 'r_get')
-    throw new Error('Object can not hava function having');
+    throw chainsqlError('Object can not hava function having');
 
   if (Object.prototype.toString.call(value) != '[object Object]')
-    throw new Error('Argument of groupby must be Object.');
+    throw chainsqlError('Argument of groupby must be Object.');
 
   var flag = 0;
   var indx = 0;
@@ -500,7 +501,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 						}
 					}
 				}).catch(function (error) {
-					throw new Error(error);
+					throw chainsqlError(error);
 				});
 			}).catch(function(error) {
 				cb(error, null);

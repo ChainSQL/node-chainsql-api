@@ -8,6 +8,7 @@ const _ = require('lodash');
 const RippleAPI = require('chainsql-lib').ChainsqlLibAPI;
 const Submit = require('./submit');
 const Ripple = require('./ripple');
+const chainsqlError = require('./error');
 
 _.assign(RippleAPI.prototype, {
 	prepareTable: require('./tablePayment'),
@@ -83,8 +84,8 @@ ChainsqlAPI.prototype.disconnect = function (cb) {
 	}
 }
 ChainsqlAPI.prototype.as = function (account) {
-	if (!account.secret || !account.address) {
-		throw Error("c.as parameter invalid,must contain 'secret' and 'address'");
+	if(!account.secret || !account.address){
+		throw chainsqlError("c.as parameter invalid,must contain 'secret' and 'address'"); 
 	}
 	this.connect.as(account);
 }
@@ -315,7 +316,7 @@ ChainsqlAPI.prototype.dropTable = function (name) {
 }
 ChainsqlAPI.prototype.renameTable = function (oldName, newName) {
 	if (newName == '' || !newName) {
-		throw Error("Table new name can not be empty")
+		throw chainsqlError("Table new name can not be empty")
 	}
 	let that = this;
 	if (that.transaction) {
@@ -343,9 +344,9 @@ ChainsqlAPI.prototype.renameTable = function (oldName, newName) {
 	}
 }
 ChainsqlAPI.prototype.grant = function (name, user, flags, publicKey) {
-	if (!(name && user && flags)) throw new Error('args is not enough')
+	if (!(name && user && flags)) throw chainsqlError('args is not enough');
 	if (!util.checkUserMatchPublicKey(user, publicKey)) {
-		throw new Error('Publickey does not match User')
+		throw chainsqlError('Publickey does not match User');
 	}
 
 	let that = this;
@@ -559,11 +560,11 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 			});
 		}).catch(function (error) {
 			ChainSQL.transaction = false;
-			if (error.error_message)
-				throw new Error(error.error_message);
-			else
-				throw new Error('getTxJson error');
+			cb(error, null);
 		});
+	}).catch(error => {
+		ChainSQL.transaction = false;
+		cb(error, null);
 	});
 }
 
@@ -732,11 +733,11 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 
 function handleGrantPayment(ChainSQL, object, resolve, reject) {
 	if (ChainSQL.payment.OpType != opType['t_grant'])
-		throw new ('Type of payment must be t_grant');
+		return reject(chainsqlError('Type of payment must be t_grant'));
 
-	var payment = ChainSQL.payment;
-	var name = payment.name;
-	var publicKey = payment.publicKey;
+	// var payment = ChainSQL.payment;
+	var name = ChainSQL.payment.name;
+	var publicKey = ChainSQL.payment.publicKey;
 	getUserToken(ChainSQL.api.connection, ChainSQL.connect.address, ChainSQL.connect.address, name).then(function (data) {
 		var token = data[ChainSQL.connect.address + name];
 		if (token != '') {
@@ -744,16 +745,17 @@ function handleGrantPayment(ChainSQL, object, resolve, reject) {
 			try {
 				token = generateToken(publicKey, secret).toUpperCase();
 			} catch (e) {
-				//console.log(e)
-				throw new Error('your publicKey is not validate')
+				return reject(chainsqlError('your publicKey is not validate'));
 			}
-			payment.Token = token;
+			ChainSQL.payment.Token = token;
 		}
 		delete ChainSQL.payment.name;
 		delete ChainSQL.payment.publicKey;
 
 		prepareTable(ChainSQL, ChainSQL.payment, object, resolve, reject);
 
+	}).catch(error => {
+		reject(error);
 	});
 }
 
@@ -982,7 +984,7 @@ ChainsqlAPI.prototype.checkAdminAuth = function () {
 ChainsqlAPI.prototype.submit = function (cb) {
 	var that = this;
 	if (that.transaction) {
-		throw new Error('you are now in transaction,can not be submit');
+		throw chainsqlError('you are now in transaction,can not be submit');
 	} else {
 		var payment = that.payment;
 		switch (payment.OpType) {
