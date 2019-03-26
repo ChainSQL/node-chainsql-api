@@ -48,7 +48,6 @@ class ChainsqlAPI extends Submit {
 		this.cache = [];
 		this.strictMode = false;
 		this.needVerify = 1;
-		this.confidential = false
 	}
 }
 
@@ -256,10 +255,10 @@ ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
 				}
 			}],
 			Raw: raw,
-			OperationRule: opt.operationRule ? opt.operationRule : undefined
+			OperationRule: opt.operationRule ? opt.operationRule : undefined,
+			Confidential: confidential ? true : false,
 		};
 
-		this.confidential = confidential
 		this.payment = payment;
 		return this;
 	}
@@ -721,8 +720,8 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 				handleSignedTx(ChainSQL, signedRet, object, resolve, reject);
 			}
 		}).catch(function (error) {
-			if (error.error_message)
-				errFunc(new Error(error.error_message));
+			if (error.message)
+				errFunc(new Error(error.message));
 			else
 				errFunc(new Error('getTxJson error'));
 		});
@@ -900,6 +899,22 @@ ChainsqlAPI.prototype.stopAudit = function (nick_name) {
 	})
 }
 
+ChainsqlAPI.prototype.auditPosition = function name(nick_name) {
+	var connect = this.connect;
+	var json = {
+		command: 't_auditposition',
+		tx_json: [nick_name]
+	}
+
+	return new Promise(function (resolve, reject) {
+		connect.api.connection.request(json).then(function (res) {
+			resolve(res)
+		}).catch(function (err) {
+			reject(err)
+		})
+	})
+}
+
 ChainsqlAPI.prototype.dump = function (owner, target_path) {
 	var connect = this.connect;
 	var json = {
@@ -920,6 +935,22 @@ ChainsqlAPI.prototype.stopDump = function (owner, table) {
 	var connect = this.connect
 	var json = {
 		command: "t_dumpstop",
+		tx_json: [owner, table]
+	}
+
+	return new Promise(function (resolve, reject) {
+		connect.api.connection.request(json).then(function (res) {
+			resolve(res)
+		}).catch(function (err) {
+			reject(err)
+		})
+	})
+}
+ 
+ChainsqlAPI.prototype.dumpPosition = function name(owner, table) {
+	var connect = this.connect
+	var json = {
+		command: "t_dumpposition",
 		tx_json: [owner, table]
 	}
 
@@ -957,7 +988,7 @@ ChainsqlAPI.prototype.submit = function (cb) {
 		switch (payment.OpType) {
 			case opType['t_create']:
 
-				if (that.confidential) {
+				if (payment.Confidential) {
 					var token = generateToken(that.connect.secret);
 					var secret = decodeToken(that, token);
 					payment.Raw = crypto.aesEncrypt(secret, JSON.stringify(payment.Raw)).toUpperCase();
