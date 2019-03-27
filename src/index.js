@@ -725,10 +725,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 			let signedRet = ChainSQL.api.sign(JSON.stringify(data.tx_json), ChainSQL.connect.secret);
 			handleSignedTx(ChainSQL, signedRet, object, resolve, reject);
 		}).catch(function (error) {
-			if (error.error_message)
-				errFunc(new Error(error.error_message));
-			else
-				errFunc(new Error('getTxJson error'));
+			errFunc(error);
 		});
 	}).catch(function (error) {
 		errFunc(error);
