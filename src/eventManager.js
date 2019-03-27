@@ -218,7 +218,13 @@ function _onChainsqlMessage(that,key,data,owner,name){
 					_makeCallback(that,key,data);
 				}
 			}).catch(function(err){
-				console.error(err);
+				if(err.name === "tabUnauthorized"){
+					console.log(err.message);
+					that.cachePass[key] = null;
+					_makeCallback(that,key,data);
+				} else {
+					console.error(err);
+				}
 			});
 		}
 	}
