@@ -721,10 +721,7 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 				handleSignedTx(ChainSQL, signedRet, object, resolve, reject);
 			}
 		}).catch(function (error) {
-			if (error.message)
-				errFunc(new Error(error.message));
-			else
-				errFunc(new Error('getTxJson error'));
+			errFunc(error);
 		});
 	}).catch(function (error) {
 		errFunc(error);

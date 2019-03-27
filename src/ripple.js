@@ -224,16 +224,7 @@ Ripple.prototype.trustSet = function (amount) {
     let trustline = {
         currency: amount.currency,
         counterparty: amount.issuer,
-        limit: amount.value.toString(),
-        qualityIn: 1,
-        qualityOut: 1,
-        ripplingDisabled: true,
-        frozen: false,
-        memos: [{
-            type: 'TRUSTLINE',
-            format: '',
-            data: ''
-        }]
+        limit: amount.value.toString()
     };
     //
     this.txType = "TrustSet";
