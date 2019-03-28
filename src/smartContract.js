@@ -590,9 +590,10 @@ Contract.prototype._createTxObject =  function _createTxObject(){
  */
 Contract.prototype._executeMethod = function _executeMethod(){
 	var _this = this;
-	let callback = this._parent._getCallback(Array.prototype.slice.call(arguments));
+	let argsOrigin = Array.prototype.slice.call(arguments);
+	let callback = this._parent._getCallback(argsOrigin);
 	try {
-		var args = this._parent._processExecuteArguments.call(this, Array.prototype.slice.call(arguments)/*, defer*/);	
+		var args = this._parent._processExecuteArguments.call(this, argsOrigin/*, defer*/);	
 	} catch (error) {
 		return errFuncGlobal(error, callback);
 	}
