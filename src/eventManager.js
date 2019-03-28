@@ -203,7 +203,7 @@ function _onChainsqlMessage(that,key,data,owner,name){
 	if(that.cachePass[key]){
 		_makeCallback(that,key,data);
 	}else{
-		if(data.transaction.OpType === 2 || data.transaction.OpType === 3){
+		if(data.transaction.OpType === 2 || data.transaction.OpType === 3 || data.transaction.OpType === 11){
 			that.cachePass[key] = null;
 			_makeCallback(that,key,data);
 		} else {
