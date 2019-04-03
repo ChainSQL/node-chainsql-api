@@ -10,11 +10,23 @@ function create(name,obj) {
 	if (!isArrayFn(obj)) {
 		throw new Error('raw must be an Array');
 	}
+
+	let setFields = new Set();
+
 	// let isHavePk = false;
 	for (let i = 0; i < obj.length; i++) {
 		if (!obj[i].field || !obj[i].type) {
 			throw new Error('Raw must have  field and type');
 		}
+
+
+		// field must be unique
+		if(setFields.has(obj[i].field)){
+			throw new Error('Duplicate column name `'+obj[i].field+'`');
+		}
+		
+		setFields.add(obj[i].field);
+
 		switch(obj[i].type)
 		{
 			case "int":
