@@ -54,7 +54,7 @@ class ChainsqlAPI extends Submit {
 		if (that.transaction) {
 			throw new Error('you are now in transaction,can not be submit');
 		} else {
-			let cbResult = Table.parseCb(cb);
+			let cbResult = util.parseCb(cb);
 
 			if(cbResult.isFunction) {
 				super.submit(cbResult.expectOpt).then(result => {
@@ -69,7 +69,7 @@ class ChainsqlAPI extends Submit {
 					}).catch(error => {
 						reject(error);
 					});
-				})
+				});
 			}
 		}
 	}
@@ -471,7 +471,7 @@ ChainsqlAPI.prototype.beginTran = function () {
 function handleCommit(ChainSQL, object, resolve, reject) {
 	var isFunction = false;
 
-	let cbResult = Table.parseCb(object);
+	let cbResult = util.parseCb(object);
 	isFunction = cbResult.isFunction;
 
 	var cb = function (error, data) {

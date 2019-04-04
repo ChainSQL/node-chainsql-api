@@ -27,19 +27,19 @@ class Table extends Submit {
 		var that = this;
 		
 		if (that.exec == 'r_get') {
-		  if (Object.prototype.toString.call(this.query[0]) !== '[object Array]') {
-			this.query.unshift([]);
-		  };
-		  
-		  if ((typeof cb) != 'function') {
-			return new Promise(function(resolve, reject) {
-			  handleGetRecord(that, cb, resolve, reject);
-			});
-		  } else {
+			if (Object.prototype.toString.call(this.query[0]) !== '[object Array]') {
+				this.query.unshift([]);
+			}
+
+			if ((typeof cb) != 'function') {
+				return new Promise(function (resolve, reject) {
+					handleGetRecord(that, cb, resolve, reject);
+				});
+			} else {
 				handleGetRecord(that, cb, null, null);
-		  }
+			}
 		} else {
-			let cbResult = Table.parseCb(cb);
+			let cbResult = util.parseCb(cb);
 			if(cbResult.isFunction) {
 				super.submit(cbResult.expectOpt).then(result => {
 					cb(null, result);
@@ -53,48 +53,11 @@ class Table extends Submit {
 					}).catch(error => {
 						reject(error);
 					});
-				})
+				});
 			}
 		}
 	}
-
-	static parseCb(cb) {
-		var isFunction = false;
-		let expectOpt = {expect:"send_success"};
-		let cbCheckRet = util.checkCbOpt(cb);
-		if (cbCheckRet.status === "success") {
-			if (cbCheckRet.type === "function") {
-				isFunction = cbCheckRet.isFunction;
-			} else {
-				expectOpt.expect = cbCheckRet.expect;
-			}
-		} else {
-			throw new Error(cbCheckRet.errMsg);
-		}
-
-		// var errFunc = function (error) {
-		// 	if (isFunction) {
-		// 		cb(error, null);
-		// 	} else {
-		// 		Promise.reject(error);
-		// 	}
-		// };
-		// var sucFunc = function (data) {
-		// 	if (isFunction) {
-		// 		cb(null, data);
-		// 	} else {
-		// 		Promise.resolve(data);
-		// 	}
-		// };
-		let result = {};
-		// result.sucFunc = sucFunc;
-		// result.errFunc = errFunc;
-		result.isFunction = isFunction;
-		result.expectOpt = expectOpt;
-
-		return result;
-	}
-};
+}
 
 Table.prototype.insert = function(raw, field) {
   if (!this.tab) throw chainsqlError('you must appoint the table name');

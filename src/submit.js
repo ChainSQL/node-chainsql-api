@@ -11,7 +11,7 @@ class Submit {
 		this.instructions = { maxLedgerVersionOffset: 8 };
 	}
   
-	prepareJson() { };
+	prepareJson() {}
 }
 
 Submit.prototype.submit = function (expectOpt) {
@@ -19,25 +19,25 @@ Submit.prototype.submit = function (expectOpt) {
 	return new Promise(function (resolve, reject) {
 		try {
 			self.prepareJson().then(function (prepared) {
-					self.txJSON = prepared.txJSON;
-					let signedRet = self.signTx();
-					self.ChainsqlAPI.handleSignedTx(self.ChainsqlAPI, signedRet, expectOpt, resolve, reject);
-				}).catch(function (error) {
-					reject(error);
-				});
+				self.txJSON = prepared.txJSON;
+				let signedRet = self.signTx();
+				self.handleSignedTx(self.ChainsqlAPI, signedRet, expectOpt, resolve, reject);
+			}).catch(function (error) {
+				reject(error);
+			});
 		} catch (error) {
 			reject(error);
 		}
 	});
-}
+};
 
 Submit.prototype.setMaxLedgerVersionOffset = function (maxLedgerVersionOffset) {
 	this.instructions.maxLedgerVersionOffset = maxLedgerVersionOffset;
-}
+};
 
 Submit.prototype.signTx = function () {
 	return this.ChainsqlAPI.api.sign(JSON.stringify(this.txJSON), this.ChainsqlAPI.connect.secret);
-}
+};
 
 Submit.prototype.handleSignedTx = function (ChainSQL, signed, expectOpt, resolve, reject) {
 	// var isFunction = false;
@@ -99,6 +99,6 @@ Submit.prototype.handleSignedTx = function (ChainSQL, signed, expectOpt, resolve
 	}).catch(function (error) {
 		reject(error);
 	});
-}
+};
 
 module.exports = Submit;
