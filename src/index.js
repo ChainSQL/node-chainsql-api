@@ -1,5 +1,4 @@
 'use strict'
-const path = require('path');
 const crypto = require('../lib/crypto');
 const keypairs = require('chainsql-keypairs');
 const EventManager = require('./eventManager')
@@ -8,19 +7,19 @@ const _ = require('lodash');
 const RippleAPI = require('chainsql-lib').ChainsqlLibAPI;
 const Submit = require('./submit');
 const Ripple = require('./ripple');
-const chainsqlError = require('./error');
+const chainsqlError = require('../lib/error');
 
 _.assign(RippleAPI.prototype, {
 	prepareTable: require('./tablePayment'),
 	prepareTx: require('./txPayment')
 })
 const addressCodec = require('chainsql-address-codec');
-const validate = require('./validate')
+const validate = require('../lib/validate')
 const Connection = require('./connect');
 const Table = require('./table');
 const Contract = require('./smartContract');
-const util = require('./util');
-const opType = require('./config').opType;
+const util = require('../lib/util');
+const opType = require('../lib/config').opType;
 const getFee = util.getFee;
 const getSequence = util.getSequence;
 const convertStringToHex = util.convertStringToHex;
@@ -29,7 +28,6 @@ const getUserToken = util.getUserToken;
 const getTxJson = util.getTxJson;
 const generateToken = util.generateToken;
 const decodeToken = util.decodeToken;
-
 
 class ChainsqlAPI extends Submit {
 	constructor() {
@@ -50,7 +48,32 @@ class ChainsqlAPI extends Submit {
 		this.strictMode = false;
 		this.needVerify = 1;
 	}
-}
+
+	submit (cb) {
+		var that = this;
+		if (that.transaction) {
+			throw new Error('you are now in transaction,can not be submit');
+		} else {
+			let cbResult = Table.parseCb(cb);
+
+			if(cbResult.isFunction) {
+				super.submit(cbResult.expectOpt).then(result => {
+					cb(null, result);
+				}).catch(error => {
+					cb(error, null);
+				});
+			} else {
+				return new Promise((resolve, reject) => {
+					super.submit(cbResult.expectOpt).then(result => {
+						resolve(result);
+					}).catch(error => {
+						reject(error);
+					});
+				})
+			}
+		}
+	}
+};
 
 ChainsqlAPI.prototype.connect = function (url, cb) {
 	let ra = new RippleAPI({
@@ -96,7 +119,7 @@ ChainsqlAPI.prototype.setRestrict = function (mode) {
 	this.strictMode = mode;
 }
 ChainsqlAPI.prototype.table = function (name) {
-	this.tab = new Table(name, this.connect);
+	this.tab = new Table(name, this);
 	if (this.transaction) {
 		this.tab.transaction = this.transaction;
 		this.tab.cache = this.cache;
@@ -108,12 +131,6 @@ ChainsqlAPI.prototype.table = function (name) {
 
 ChainsqlAPI.prototype.contract = function(jsonInterface, address, options) {
   this.contractObj = new Contract(this, jsonInterface, address, options);
-  // if (this.transaction) {
-  //   this.tab.transaction = this.transaction;
-  //   this.tab.cache = this.cache;
-  // }
-  // this.tab.strictMode = this.strictMode;
-  // this.tab.event = this.event;
   return this.contractObj;
 }
 
@@ -134,7 +151,7 @@ ChainsqlAPI.prototype.generateAddress = function () {
 	var opt = {
 		version: 35
 	}
-	var buf = new Buffer(keypair.publicKey, 'hex');
+	var buf = Buffer.from(keypair.publicKey, 'hex');
 	account.publicKey = addressCodec.encode(buf, opt);
 	// account.publickKey = keypair.publicKey;
 
@@ -454,8 +471,8 @@ ChainsqlAPI.prototype.beginTran = function () {
 function handleCommit(ChainSQL, object, resolve, reject) {
 	var isFunction = false;
 
-	if ((typeof object) == 'function')
-		isFunction = true;
+	let cbResult = Table.parseCb(object);
+	isFunction = cbResult.isFunction;
 
 	var cb = function (error, data) {
 		if (isFunction) {
@@ -524,6 +541,8 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 				if (cache[i].Raw) {
 					if (cache[i].OpType != opType.t_grant) {
 						cache[i].Raw = crypto.aesEncrypt(secret, JSON.stringify(cache[i].Raw)).toUpperCase();
+					} else {
+						cache[i].Raw = convertStringToHex(JSON.stringify(cache[i].Raw));
 					}
 				};
 
@@ -565,7 +584,7 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 				txJson.Fee = util.calcFee(txJson);
 				data.txJSON = JSON.stringify(txJson);
 				let signedRet = ChainSQL.api.sign(data.txJSON, ChainSQL.connect.secret);
-				handleSignedTx(ChainSQL, signedRet, object, resolve, reject);
+				ChainSQL.handleSignedTx(ChainSQL, signedRet, cbResult.expectOpt, resolve, reject);
 			}).catch(function (error) {
 				cb(error, null);
 			});
@@ -614,150 +633,32 @@ ChainsqlAPI.prototype.getLedgerVersion = function (cb) {
 	});
 }
 
-function handleSignedTx(ChainSQL, signed, object, resolve, reject) {
-	var isFunction = false;
-	let expectOpt = {expect:"send_success"};
-	let cbCheckRet = util.checkCbOpt(object);
-	if(cbCheckRet.status === "success") {
-		if(cbCheckRet.type === "function") {
-			isFunction = cbCheckRet.isFunction;
-		} else {
-			expectOpt.expect = cbCheckRet.expect;
-		}
-	} else {
-		return reject(cbCheckRet.errMsg);
-	}
-
-	var errFunc = function (error) {
-		if (isFunction) {
-			object(error, null);
-		} else {
-			reject(error);
-		}
-	};
-	// var exceptFunc = function(exception){
-	// 	if (isFunction) {
-	// 		object(exception, null);
-	// 	} else {
-	// 		reject(exception);
-	// 	}
-	// }
-	var sucFunc = function (data) {
-		if (isFunction) {
-			object(null, data);
-		} else {
-			resolve(data);
-		}
-	};
-	// subscribe event
-	if(expectOpt.expect !== "send_success") {
-		ChainSQL.event.subscribeTx(signed.id, isFunction ? object : function (err, data) {
-			if (err) {
-				errFunc(err);
-			} else {
-				// success
-				if (expectOpt.expect === data.status
-					&& data.type === 'singleTransaction') {
-					sucFunc({
-						status: expectOpt.expect,
-						tx_hash: signed.id
-					});
+function handleGrantPayment(ChainSQL) {
+	return new Promise((resolve, reject) => {
+		if (ChainSQL.payment.opType != opType['t_grant'])
+			reject(chainsqlError('Type of payment must be t_grant'));
+		
+		var name = ChainSQL.payment.name;
+		var publicKey = ChainSQL.payment.publicKey;
+		getUserToken(ChainSQL.api.connection, ChainSQL.connect.address, ChainSQL.connect.address, name).then(function (data) {
+			var token = data[ChainSQL.connect.address + name];
+			if (token != '') {
+				var secret = decodeToken(ChainSQL, token);
+				try {
+					token = generateToken(publicKey, secret).toUpperCase();
+				} catch (e) {
+					reject(chainsqlError('your publicKey is not validate'));
 				}
-	
-				// failure
-				if (util.checkSubError(data)) {
-					var error = {
-						status: data.status,
-						tx_hash: signed.id
-					};
-					if (data.hasOwnProperty("error_message")) {
-						error.error_message = data.error_message;
-					}
-					errFunc(error);
-				}
+				ChainSQL.payment.token = token;
 			}
-		}).then(function (data) {
-			// subscribeTx success
-		}).catch(function (error) {
-			// subscribeTx failure
-			errFunc('subscribeTx exception.' + error);
-		});
-	}
-	
+			delete ChainSQL.payment.name;
+			delete ChainSQL.payment.publicKey;
 
-	// submit transaction
-	ChainSQL.api.submit(signed.signedTransaction).then(function (result) {
-		//console.log('submit ', JSON.stringify(result));
-		if (result.resultCode != 'tesSUCCESS') {
-			if(expectOpt.expect !== "send_success") {
-				ChainSQL.event.unsubscribeTx(signed.id);
-			}
-			//return error message
-			errFunc(result);
-		} else {
-			// submit successfully
-			if (expectOpt.expect === "send_success") {
-				// ChainSQL.event.unsubscribeTx(signed.id);
-				sucFunc({
-					status: 'send_success',
-					tx_hash: signed.id
-				});
-			}
-		}
-	}).catch(function (error) {
-		errFunc(error);
-	});
-}
-
-function prepareTable(ChainSQL, payment, object, resolve, reject) {
-	var errFunc = function (error) {
-		if ((typeof object) == 'function') {
-			object(error, null);
-		} else {
+			resolve();
+		}).catch(error => {
 			reject(error);
-		}
-	};
-	ChainSQL.api.prepareTable(payment).then(function (tx_json) {
-		// console.log(tx_json);
-		getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function (data) {
-			data.tx_json.Fee = util.calcFee(data.tx_json);
-			var payment = data.tx_json;
-			let signedRet = ChainSQL.api.sign(JSON.stringify(data.tx_json), ChainSQL.connect.secret);
-			handleSignedTx(ChainSQL, signedRet, object, resolve, reject);
-		}).catch(function (error) {
-			errFunc(error);
 		});
-	}).catch(function (error) {
-		errFunc(error);
-	});
-}
-
-function handleGrantPayment(ChainSQL, object, resolve, reject) {
-	if (ChainSQL.payment.opType != opType['t_grant'])
-		return reject(chainsqlError('Type of payment must be t_grant'));
-
-	// var payment = ChainSQL.payment;
-	var name = ChainSQL.payment.name;
-	var publicKey = ChainSQL.payment.publicKey;
-	getUserToken(ChainSQL.api.connection, ChainSQL.connect.address, ChainSQL.connect.address, name).then(function (data) {
-		var token = data[ChainSQL.connect.address + name];
-		if (token != '') {
-			var secret = decodeToken(ChainSQL, token);
-			try {
-				token = generateToken(publicKey, secret).toUpperCase();
-			} catch (e) {
-				return reject(chainsqlError('your publicKey is not validate'));
-			}
-			ChainSQL.payment.token = token;
-		}
-		delete ChainSQL.payment.name;
-		delete ChainSQL.payment.publicKey;
-
-		prepareTable(ChainSQL, ChainSQL.payment, object, resolve, reject);
-
-	}).catch(error => {
-		reject(error);
-	});
+	})
 }
 
 ChainsqlAPI.prototype.sign = function (json, secret) {
@@ -870,32 +771,19 @@ ChainsqlAPI.prototype.getBySqlUser = function(sql){
 	});
 };
 
-ChainsqlAPI.prototype.submit = function (cb) {
-	var that = this;
-	if (that.transaction) {
-		throw chainsqlError('you are now in transaction,can not be submit');
-	} else {
-
-		//if (cb === undefined || cb === null) {
-		//    cb = {expect:'send_success'};
-		//}
-
-		if ((typeof cb) != 'function') {
-			return new Promise(function (resolve, reject) {
-				if (that.payment.opType == opType['t_grant']) {
-					handleGrantPayment(that, cb, resolve, reject);
-				} else {
-					prepareTable(that, that.payment, cb, resolve, reject);
-				}
+ChainsqlAPI.prototype.prepareJson = function(){
+	let that = this;
+	return new Promise((resolve, reject) => {
+		if (that.payment.opType === opType['t_grant']) {
+			handleGrantPayment(that).then(() => {
+				that.api.prepareTable(that, that.payment, resolve, reject);
+			}).catch(error => {
+				reject(error);
 			});
 		} else {
-			if (that.payment.opType == opType['t_grant']) {
-				handleGrantPayment(that, cb, null, null);
-			} else {
-				prepareTable(that, that.payment, cb, null, null);
-			}
+			that.api.prepareTable(that, that.payment, resolve, reject);
 		}
-	}
+	})
 }
 
 function callback(data, callback) {

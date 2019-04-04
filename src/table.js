@@ -1,15 +1,8 @@
 'use strict'
-const opType = require('./config').opType;
-const chainsqlError = require('./error');
-const Table = function(name, connect) {
-  this.tab = name;
-  this.query = [];
-  this.exec = '';
-  this.field = null;
-  this.connect = connect;
-  this.cache = [];
-};
-const util = require('./util');
+const opType = require('../lib/config').opType;
+const chainsqlError = require('../lib/error');
+var Submit = require('./submit');
+const util = require('../lib/util');
 const convertStringToHex = util.convertStringToHex;
 const getTableSequence = util.getTableSequence;
 const getUserToken = util.getUserToken;
@@ -17,6 +10,91 @@ const getTxJson = util.getTxJson;
 const generateToken = util.generateToken;
 const decodeToken = util.decodeToken;
 const crypto = require('../lib/crypto');
+
+class Table extends Submit {
+	constructor(name, ChainsqlAPI) {
+		super().ChainsqlAPI = ChainsqlAPI;
+		this.tab = name;
+		this.query = [];
+		this.exec = '';
+		this.field = null;
+		this.connect = ChainsqlAPI.connect;
+		this.cache = [];
+	}
+
+	submit (cb) {
+		var connect = this.connect;
+		var that = this;
+		
+		if (that.exec == 'r_get') {
+		  if (Object.prototype.toString.call(this.query[0]) !== '[object Array]') {
+			this.query.unshift([]);
+		  };
+		  
+		  if ((typeof cb) != 'function') {
+			return new Promise(function(resolve, reject) {
+			  handleGetRecord(that, cb, resolve, reject);
+			});
+		  } else {
+				handleGetRecord(that, cb, null, null);
+		  }
+		} else {
+			let cbResult = Table.parseCb(cb);
+			if(cbResult.isFunction) {
+				super.submit(cbResult.expectOpt).then(result => {
+					cb(null, result);
+				}).catch(error => {
+					cb(error, null);
+				});
+			} else {
+				return new Promise((resolve, reject) => {
+					super.submit(cbResult.expectOpt).then(result => {
+						resolve(result);
+					}).catch(error => {
+						reject(error);
+					});
+				})
+			}
+		}
+	}
+
+	static parseCb(cb) {
+		var isFunction = false;
+		let expectOpt = {expect:"send_success"};
+		let cbCheckRet = util.checkCbOpt(cb);
+		if (cbCheckRet.status === "success") {
+			if (cbCheckRet.type === "function") {
+				isFunction = cbCheckRet.isFunction;
+			} else {
+				expectOpt.expect = cbCheckRet.expect;
+			}
+		} else {
+			throw new Error(cbCheckRet.errMsg);
+		}
+
+		// var errFunc = function (error) {
+		// 	if (isFunction) {
+		// 		cb(error, null);
+		// 	} else {
+		// 		Promise.reject(error);
+		// 	}
+		// };
+		// var sucFunc = function (data) {
+		// 	if (isFunction) {
+		// 		cb(null, data);
+		// 	} else {
+		// 		Promise.resolve(data);
+		// 	}
+		// };
+		let result = {};
+		// result.sucFunc = sucFunc;
+		// result.errFunc = errFunc;
+		result.isFunction = isFunction;
+		result.expectOpt = expectOpt;
+
+		return result;
+	}
+};
 
 Table.prototype.insert = function(raw, field) {
   if (!this.tab) throw chainsqlError('you must appoint the table name');
@@ -334,35 +412,35 @@ Table.prototype.having = function(value) {
   return this;
 }
 
-function prepareTable(ChainSQL, payment, object, resolve, reject) {
-	
-	var connect = ChainSQL.connect;
-	var isFunction = false;
-	let expectOpt = {expect:"send_success"};
-	let cbCheckRet = util.checkCbOpt(object);
-	if(cbCheckRet.status === "success") {
-		if(cbCheckRet.type === "function") {
-			isFunction = cbCheckRet.isFunction;
-		} else {
-			expectOpt.expect = cbCheckRet.expect;
-		}
-	} else {
-		return reject(cbCheckRet.errMsg);
-	}
-	
-	var cb = function(error, data) {
-		if (isFunction) {
-			object(error, data);
-		} else {
-			if (error) {
-				reject(error);
-			} else {
-				resolve(data);
+Table.prototype.prepareJson = function() {
+	var connect = this.connect;
+	var that = this;
+
+	var payment = {
+		address: connect.address,
+		owner: connect.scope,
+		opType: opType[that.exec],
+		raw: JSON.stringify(that.query),
+		strictMode: that.strictMode,
+		tables: [{
+			Table: {
+				TableName: convertStringToHex(that.tab),
 			}
-		}
-	}
-	
-	getUserToken(ChainSQL.connect.api.connection, ChainSQL.connect.scope,ChainSQL.connect.address, ChainSQL.tab).then(function(token) {
+		}],
+		tsType: 'SQLStatement'
+	};
+	if (that.exec == 'r_insert' && that.field) {
+		payment.autoFillField = convertStringToHex(that.field);
+	};
+
+	return new Promise(function (resolve, reject) {
+		prepareTable(that, payment, resolve, reject);
+	});
+}
+function prepareTable(ChainSQL, payment, resolve, reject) {
+	var connect = ChainSQL.connect;
+
+	getUserToken(connect.api.connection, connect.scope, connect.address, ChainSQL.tab).then(function(token) {
 		token = token[ ChainSQL.connect.scope + ChainSQL.tab];
 		if (token && token != '') {
 			var secret = decodeToken(ChainSQL, token);
@@ -371,75 +449,9 @@ function prepareTable(ChainSQL, payment, object, resolve, reject) {
 			payment.raw = convertStringToHex(payment.raw);
 		}
 		
-		connect.api.prepareTable(payment).then(function(tx_json) {
-			getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function(data) {
-				data.tx_json.Fee = util.calcFee(data.tx_json);
-				//var payment = data.tx_json;
-				var signedRet = connect.api.sign(JSON.stringify(data.tx_json), ChainSQL.connect.secret);
-				// subscribe event
-				if (expectOpt.expect !== "send_success") {
-					ChainSQL.event.subscribeTx(signedRet.id, isFunction ? object : function (err, data) {
-						if (err) {
-							cb(err, null);
-						} else {
-							// success
-							if (expectOpt.expect == data.status && data.type === 'singleTransaction') {
-								cb(null, {
-									status: expectOpt.expect,
-									tx_hash: signedRet.id
-								});
-							}
-
-							// failure
-							if (util.checkSubError(data)) {
-								var error = {
-									status: data.status,
-									tx_hash: signedRet.id
-								};
-								if (data.hasOwnProperty("error_message")) {
-									error.error_message = data.error_message;
-								}
-								cb(null, error);
-							}
-						}
-					}).then(function (data) {
-						// subscribeTx success
-					}).catch(function (error) {
-						// subscribeTx failure
-						reject('subscribeTx failure.' + error);
-					});
-				}
-
-				// submit transaction
-				connect.api.submit(signedRet.signedTransaction).then(function (result) {
-					//console.log('submit ', JSON.stringify(result));
-					if (result.resultCode != 'tesSUCCESS') {
-						if(expectOpt.expect !== "send_success") {
-							ChainSQL.event.unsubscribeTx(signedRet.id);
-						}
-
-						cb(null, result);
-					} else {
-						// submit successfully
-						if (expectOpt.expect == 'send_success') {
-							cb(null, {
-								status: 'send_success',
-								tx_hash: signedRet.id
-							});
-							// ChainSQL.event.unsubscribeTx(signedRet.id);
-						}
-					}
-				}).catch(function (error) {
-					throw chainsqlError(error);
-				});
-			}).catch(function(error) {
-				cb(error, null);
-			});
-		}).catch(function (error) {
-			cb(error, null);
-		});
+		connect.api.prepareTable(connect, payment, resolve, reject);
 	}).catch(function(error) {
-		cb(error, null);
+		reject(error);
 	});
 }
 
@@ -489,52 +501,6 @@ function handleGetRecord(ChainSQL, object, resolve, reject) {
 	}).catch(function (err) {
 		cb(err, null);
 	});
-}
-
-Table.prototype.submit = function(cb) {
-  var connect = this.connect;
-  var that = this;
-  //if (cb === undefined || cb === null) {
-  //  cb = {expect:'send_success'};
-  //}
-  
-  if (that.exec == 'r_get') {
-    if (Object.prototype.toString.call(this.query[0]) !== '[object Array]') {
-      this.query.unshift([]);
-    };
-    
-    if ((typeof cb) != 'function') {
-      return new Promise(function(resolve, reject) {
-        handleGetRecord(that, cb, resolve, reject);
-      });
-    } else {
-		  handleGetRecord(that, cb, null, null);
-    }
-  } else {
-    var payment = {
-      address: connect.address,
-      owner: connect.scope,
-      opType: opType[that.exec],
-      raw: JSON.stringify(that.query),
-      strictMode: that.strictMode,
-      tables: [{
-        Table: {
-          TableName: convertStringToHex(that.tab),
-        }
-      }],
-      tsType: 'SQLStatement'
-    };
-    if (that.exec == 'r_insert' && that.field) {
-      payment.autoFillField = convertStringToHex(that.field);
-    };
-    if ((typeof cb) != 'function') {
-      return new Promise(function(resolve, reject) {
-		  prepareTable(that, payment, cb, resolve, reject);
-	  });
-    } else {
-		  prepareTable(that, payment, cb, null, null);
-    }
-  }
 }
 
 module.exports = Table;

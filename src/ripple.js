@@ -1,7 +1,7 @@
 'use strict'
-var util = require('./util');
+var util = require('../lib/util');
 var Submit = require('./submit');
-const FloatOperation = require('./floatOperation');
+const FloatOperation = require('../lib/floatOperation');
 
 class Ripple extends Submit {
     constructor(ChainsqlAPI) {
@@ -9,11 +9,11 @@ class Ripple extends Submit {
     }
 }
 
-Ripple.prototype.prepareSign = function () {
+Ripple.prototype.signTx = function () {
     return this.ChainsqlAPI.api.sign(this.txJSON, this.ChainsqlAPI.connect.secret);
 };
 
-Ripple.prototype.prepareJSon = function () {
+Ripple.prototype.prepareJson = function () {
     let txJson = this.txJSON;
     let instructions = this.instructions;
     let transactionType = this.txType;

@@ -32,7 +32,7 @@ async function main(){
 		// 	abi = compileResult.contracts[contractName].interface;
 		// }
 
-		//deployContractAwait();
+		// deployContractAwait();
 		deployContract();
 
 		// callContract();

@@ -35,8 +35,8 @@ main();
 
 async function main(){
 	try {
-		await c.connect('ws://127.0.0.1:6008');
-		// await c.connect('ws://101.201.40.124:5006');
+		// await c.connect('ws://127.0.0.1:6008');
+		await c.connect('ws://101.201.40.124:5006');
 		console.log('连接成功');
 
 		c.as(owner);
@@ -140,16 +140,16 @@ async function testChainsql(){
 	// await testCreateTable();
 
 	// // //创建另一张表，用来测试rename,drop
-	// await testCreateTable1();
+	await testCreateTable1();
 	// await testInsert();
 	// await testUpdate();
 	// await testDelete();
 	// await testRename();
 	// await testGet();
-	await testGetBySql();
-	await testGetBySqlUser();
+	// await testGetBySql();
+	// await testGetBySqlUser();
 	// await testDrop();
-	//await testGrant();
+	// await testGrant();
 	// await testTxs();
 	// await insertAfterGrant();
 	// await testOperationRule();
@@ -158,7 +158,6 @@ async function testChainsql(){
 
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
-
 }
 
 function subTable(tb, owner) {
@@ -213,7 +212,7 @@ var testCreateTable1 = async function() {
 		let rs = await c.createTable(sTableName, raw, option).submit({expect:'db_success'});
 		console.log("testCreateTable1" , rs);	
 	} catch (error) {
-		console.log(error);
+		console.error(error);
 	}
 };
 
@@ -247,9 +246,13 @@ var testDelete = async function(){
 }
 
 var testRename= async function(){
-	var rs = await c.renameTable(sTableName2,sReName).submit({expect:'db_success'});
-	console.log("testRename",rs);
-}
+	try {
+		var rs = await c.renameTable(sTableName,sReName).submit({expect:'db_success'});
+		console.log("testRename",rs);	
+	} catch (error) {
+		console.error(error);
+	}
+};
 var testGet = async function(){
 
 	var raw = []
@@ -266,7 +269,7 @@ var testGet = async function(){
 }
 
 var testGetBySql = async function(){
-	var tableNameInDB = await c.getTableNameInDB(owner.address,"wiki");
+	var tableNameInDB = await c.getTableNameInDB(owner.address, sTableName);
 	var tableName = "t_" + tableNameInDB;
 	var rs = await c.getBySqlAdmin("select * from " + tableName);
 	console.log(rs);
@@ -280,7 +283,7 @@ var testGetBySqlUser = async function(){
 }
 
 var testDrop = async function(){
-	var rs = await c.dropTable(sReName).submit({expect:'db_success'});
+	var rs = await c.dropTable(sTableName).submit({expect:'db_success'});
 	console.log("testDrop",rs);
 }
 
@@ -469,7 +472,6 @@ async function testAccountTables()
 	} catch (error) {
 		console.error(error);
 	}
-	
 }
 
 async function testTableAuth(){
