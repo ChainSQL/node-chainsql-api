@@ -3,9 +3,9 @@ const ChainsqlAPI = require('../src/index').ChainsqlAPI;
 const c = new ChainsqlAPI();
 
 var root = {
-    secret: "xnoPBzXtMeMyMHUVTgbuqAfg1SUTb",
-    address: "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh"
-}
+	secret: "xnoPBzXtMeMyMHUVTgbuqAfg1SUTb",
+	address: "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh"
+};
 
 var owner = {
     address: "zpMZ2H58HFPB5QTycMGWSXUeF47eA8jyd4",
@@ -25,7 +25,7 @@ var user2 = {
 
 var grantAddr = "0xzzzzzzzzzzzzzzzzzzzzBZbvji";
 
-var sTableName = "table";
+var sTableName = "chainsqlTest";
 var sTableNameNew = "table_new"
 var tableRaw = [
     { 'field': 'id', 'type': 'int' },
@@ -59,7 +59,6 @@ var tagStep = {
 
 main();
 async function main() {
-    // let res = await c.connect('ws://101.201.40.124:5006');
     let res = await c.connect('ws://127.0.0.1:6006');
     console.log("connect successfully.")
     c.setRestrict(true);
@@ -101,9 +100,13 @@ var active = async function () {
 
 var table_create = async function () {
     c.as(owner)
-    let lll = await c.createTable(sTableName, tableRaw).submit({ expect: 'db_success' });
-    console.log("    createTable", sTableName, lll);
-}
+	try {
+		let lll = await c.createTable(sTableName, tableRaw).submit({expect:"db_success"});	
+		console.log("    createTable", sTableName, lll);
+	} catch (error) {
+		console.log("    createTable ", sTableName, error);
+	}
+};
 var table_create_operationRule = async function () {
     c.as(owner)
     var rule = {
@@ -137,9 +140,13 @@ var table_drop = async function () {
 var table_insert = async function () {
     c.as(userOperation)
     c.use(owner.address)
-    let lll = await c.table(sTableName).insert(insertRaw, "txHash").submit({ expect: 'db_success' });
-    console.log("    insert", lll);
-}
+	try {
+		let lll = await c.table(sTableName).insert(insertRaw, "txHash").submit({ expect: 'db_success' });	
+		console.log("    insert", lll);
+	} catch (error) {
+		console.log("    insert error: ", error);	
+	}
+};
 var table_insert_operationRule = async function () {
     c.as(userOperation)
     c.use(owner.address)

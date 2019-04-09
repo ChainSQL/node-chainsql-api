@@ -3,7 +3,8 @@
 const _ = require('lodash');
 var chainsqlLibUtils = require('chainsql-lib').ChainsqlLibUtil;
 const keypairs = require('chainsql-keypairs');
-const chainsqlUtils = require('./util');
+const chainsqlUtils = require('../lib/util');
+const chainsqlError = require('../lib/error');
 var abi = require('web3-eth-abi');
 var utils = require('web3-utils');
 var formatters = require('web3-core-helpers').formatters;
@@ -26,7 +27,7 @@ var Contract = function Contract(chainsql, jsonInterface, address, options) {
 	this.connect = chainsql.connect;
 
 	if(!(this instanceof Contract)) {
-		throw new Error('Please use the "new" keyword to instantiate a chainsql contract() object!');
+		throw chainsqlError('Please use the "new" keyword to instantiate a chainsql contract() object!');
 	}
 
 	// sets _requestmanager
@@ -35,7 +36,7 @@ var Contract = function Contract(chainsql, jsonInterface, address, options) {
 	//this.clearSubscriptions = this._requestManager.clearSubscriptions;
 
 	if(!jsonInterface || !(Array.isArray(jsonInterface))) {
-		throw new Error('You must provide the json interface of the contract when instantiating a contract object.');
+		throw chainsqlError('You must provide the json interface of the contract when instantiating a contract object.');
 	}
 
 	// create the options object
@@ -77,6 +78,13 @@ var Contract = function Contract(chainsql, jsonInterface, address, options) {
 
 				if (method.name) {
 					funcName = utils._jsonInterfaceMethodToString(method);
+				}
+        
+				if(method.type === "fallback") {
+					method.name = "fallback";
+					method.input = {length:0};
+					method.type = "function";
+					funcName = "fallback()";
 				}
 
 				// function
@@ -187,7 +195,7 @@ Contract.prototype._getOrSetDefaultOptions = function getOrSetDefaultOptions(opt
 	for(let key in options) {
 		if( preDefOptions.indexOf(key) === -1 ) {
 			let errMsg = "Find a unexpected key in options: " + key;
-			throw new Error(errMsg);
+			throw chainsqlError(errMsg);
 		}
 	}
 	var gasPrice = options.gasPrice ? String(options.gasPrice): null;
@@ -353,7 +361,7 @@ Contract.prototype._encodeMethodABI = function _encodeMethodABI() {
 			var inputLength = (_.isArray(json.inputs)) ? json.inputs.length : 0;
 
 			if (inputLength !== args.length) {
-				throw new Error('The number of arguments is not matching the methods required number. You need to pass '+ inputLength +' arguments.');
+				throw chainsqlError('The number of arguments do not match the methods required number. You need to pass '+ inputLength +' arguments.');
 			}
 
 			if (json.type === 'function') {
@@ -368,7 +376,7 @@ Contract.prototype._encodeMethodABI = function _encodeMethodABI() {
 	// return constructor
 	if(methodSignature === 'constructor') {
 		if(!this._deployData)
-			throw new Error('The contract has no contract data option set. This is necessary to append the constructor parameters.');
+			throw chainsqlError('The contract does not set contract data. This is necessary to append the constructor parameters.');
 
 		return this._deployData + paramsABI;
 	// return method
@@ -376,7 +384,7 @@ Contract.prototype._encodeMethodABI = function _encodeMethodABI() {
 		var returnValue = (signature) ? signature + paramsABI : paramsABI;
 
 		if(!returnValue) {
-			throw new Error('Couldn\'t find a matching contract method named "'+ this._method.name +'".');
+			throw chainsqlError('Couldn\'t find a matching contract method named "'+ this._method.name +'".');
 		} else {
 			return returnValue;
 		}
@@ -428,7 +436,7 @@ Contract.prototype.deploy = function(options, callback){
 
 	// return error, if no "data" is specified
 	if(!options.ContractData) {
-		throw new Error('No "ContractData" specified in neither the given options, nor the default options.');
+		throw chainsqlError('No "ContractData" specified in neither the given options, nor the default options.');
 	}
 	options.data = options.ContractData;
 
@@ -506,14 +514,14 @@ Contract.prototype._generateEventOptions = function() {
 	});
 
 	if (!event) {
-		throw new Error('Event "' + event.name + '" doesn\'t exist in this contract.');
+		throw chainsqlError('Event "' + event.name + '" doesn\'t exist in this contract.');
 	}
 
 	// if (!utils.isAddress(this.options.address)) {
 	// 	throw new Error('This contract object doesn\'t have address set yet, please set an address first.');
 	// }
 	if (!this.options.address) {
-		throw new Error('This contract object doesn\'t have address set yet, please set an address first.');
+		throw chainsqlError('This contract object doesn\'t have address set yet, please set an address first.');
 	}
 
 	return {
@@ -533,7 +541,7 @@ Contract.prototype._generateEventOptions = function() {
  */
 Contract.prototype._checkListener = function(type, event){
 	if(event === type) {
-		throw new Error('The event "'+ type +'" is a reserved event name, you can\'t use it.');
+		throw chainsqlError('The event "'+ type +'" is a reserved event name, you can\'t use it.');
 	}
 };
 
@@ -565,7 +573,7 @@ Contract.prototype._createTxObject =  function _createTxObject(){
 			return this.nextMethod.apply(null, args);
 		}
 		//throw errors.InvalidNumberOfParams(args.length, this.method.inputs.length, this.method.name);
-		throw "Invalid Method Params!";
+		throw chainsqlError("Invalid Method Params!");
 	}
 
 	txObject.arguments = args || [];
@@ -588,10 +596,17 @@ Contract.prototype._createTxObject =  function _createTxObject(){
  * @param {Boolean} makeRequest if true, it simply returns the request parameters, rather than executing it
  */
 Contract.prototype._executeMethod = function _executeMethod(){
-	var _this = this,
-		args = this._parent._processExecuteArguments.call(this, Array.prototype.slice.call(arguments)/*, defer*/);
-		//defer = promiEvent((args.type !== 'send')),
-		//ethAccounts = _this.constructor._ethAccounts || _this._ethAccounts;
+	var _this = this;
+	let argsOrigin = Array.prototype.slice.call(arguments);
+	let callback = this._parent._getCallback(argsOrigin);
+	try {
+		var args = this._parent._processExecuteArguments.call(this, argsOrigin/*, defer*/);	
+	} catch (error) {
+		return errFuncGlobal(error, callback);
+	}
+	args.callback = callback;
+	//defer = promiEvent((args.type !== 'send')),
+	//ethAccounts = _this.constructor._ethAccounts || _this._ethAccounts;
 
 	// simple return request for batch requests
 	if(args.generateRequest) {
@@ -674,7 +689,7 @@ Contract.prototype._executeMethod = function _executeMethod(){
 			else {
 				sendTxPayment.ContractOpType = 2;
 				if(args.options.hasOwnProperty("expect")) {
-					if(args.options.expect === "send_success" || args.options.expect === "validate_success" || args.options.expect === "db_success") {
+					if(chainsqlUtils.checkExpect(args.options)) {
 						txCallbackProperty.callbackExpect = args.options.expect;
 					}
 					else {
@@ -842,9 +857,7 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 					}
 				}
 				// failure
-				if (data.status === 'db_error' || 
-					data.status === 'db_timeout' || 
-					data.status === 'validate_timeout') {
+				if (chainsqlUtils.checkSubError(data)) {
 					if (data.hasOwnProperty("error_message")) {
 						resultObj.error_message = data.error_message;
 					}
@@ -863,7 +876,9 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
 	chainSQL.api.submit(signedVal.signedTransaction).then(function(result) {
 		//console.log('submit ', JSON.stringify(result));
 		if (result.resultCode !== 'tesSUCCESS') {
-			unsubscribeTx(callbackProperty.callbackExpect, chainSQL, signedVal, errFunc);
+			if(callbackProperty.callbackExpect !== "send_success"){
+				unsubscribeTx(callbackProperty.callbackExpect, chainSQL, signedVal, errFunc);
+			}
 			//return error message
 			errFunc(result);
 		} else {
@@ -980,7 +995,7 @@ Contract.prototype._processExecuteArguments = function _processExecuteArguments(
 	processedArgs.type = args.shift();
 
 	// get the callback
-	processedArgs.callback = this._parent._getCallback(args);
+	// processedArgs.callback = this._parent._getCallback(args);
 
 	// get block number to use for call
 	//if(processedArgs.type === 'call' && args[args.length - 1] !== true && (_.isString(args[args.length - 1]) || isFinite(args[args.length - 1])))
@@ -998,7 +1013,7 @@ Contract.prototype._processExecuteArguments = function _processExecuteArguments(
 	// add contract address
 	//if(!this._deployData && !utils.isAddress(this._parent.options.address))
 	if(!this._deployData && !this._parent.options.address)
-		throw new Error('This contract object doesn\'t have address set yet, please set an address first.');
+		throw chainsqlError('This contract object doesn\'t have address set yet, please set an address first.');
 
 	if(!this._deployData) {
 		processedArgs.options.to = this._parent.options.address;

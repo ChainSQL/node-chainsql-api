@@ -1,6 +1,6 @@
 'use strict';
 const EventEmitter = require('events');
-const util = require('./util');
+const util = require('../lib/util');
 const crypto = require('../lib/crypto');
 
 function EventManager(chainsql) {
@@ -163,20 +163,20 @@ function onMessage(that,dataRes){
 			}
 		}
 	}
-	else if(data.type === "contract_event" && that.cache[data.ContractAddress] !== undefined){
-		if(data.hasOwnProperty("ContractEventTopics")){
-			data.ContractEventTopics.map(function(topic,index){
+	else if (data.type === "contract_event" && that.cache[data.ContractAddress] !== undefined) {
+		if (data.hasOwnProperty("ContractEventTopics")) {
+			data.ContractEventTopics.map(function (topic, index) {
 				data.ContractEventTopics[index] = "0x" + data.ContractEventTopics[index].toLowerCase();
 			});
 		}
-		if(data.hasOwnProperty("ContractEventInfo") && data.ContractEventInfo !== ""){
+		if (data.hasOwnProperty("ContractEventInfo") && data.ContractEventInfo !== "") {
 			data.ContractEventInfo = "0x" + data.ContractEventInfo;
 		}
 		let key = data.ContractEventTopics[0];
-		if(that.cache[key]){
+		if (that.cache[key]) {
 			let contractObj = that.cache[data.ContractAddress];
 			let currentEvent = contractObj.options.jsonInterface.find(function (json) {
-				return (json.type === 'event' && json.signature === '0x'+ key.replace('0x',''));
+				return (json.type === 'event' && json.signature === '0x' + key.replace('0x', ''));
 			});
 			let output = contractObj._decodeEventABI(currentEvent, data);
 			that.cache[key](null, output);
@@ -184,7 +184,7 @@ function onMessage(that,dataRes){
 			// let keyIndex = contractObj.registeredEvent.indexOf(key);
 			// contractObj.registeredEvent.splice(keyIndex,1);
 		}
-	}	
+	}
 }
 
 function _isChainsqlType(data){
@@ -203,19 +203,30 @@ function _onChainsqlMessage(that,key,data,owner,name){
 	if(that.cachePass[key]){
 		_makeCallback(that,key,data);
 	}else{
-		util.getUserToken(that.connect,owner,that.chainsql.connect.address,name).then(function(tokenData){
-			var token = tokenData[owner + name];
-			if (token != '') {
-				var secret = util.decodeToken(that.chainsql, token);
-				that.cachePass[key] = secret;
-				_makeCallback(that,key,data);
-			}else{
-				that.cachePass[key] = null;
-				_makeCallback(that,key,data);
-			}
-		}).catch(function(err){
-			console.error(err);
-		})
+		if(data.transaction.OpType === 2 || data.transaction.OpType === 3 || data.transaction.OpType === 11){
+			that.cachePass[key] = null;
+			_makeCallback(that,key,data);
+		} else {
+			util.getUserToken(that.connect,owner,that.chainsql.connect.address,name).then(function(tokenData){
+				var token = tokenData[owner + name];
+				if (token != '') {
+					var secret = util.decodeToken(that.chainsql, token);
+					that.cachePass[key] = secret;
+					_makeCallback(that,key,data);
+				}else{
+					that.cachePass[key] = null;
+					_makeCallback(that,key,data);
+				}
+			}).catch(function(err){
+				if(err.name === "tabUnauthorized"){
+					console.log(err.message);
+					that.cachePass[key] = null;
+					_makeCallback(that,key,data);
+				} else {
+					console.error(err);
+				}
+			});
+		}
 	}
 }
 
