@@ -7,9 +7,9 @@ const c = new ChainsqlAPI();
 const RippleAPI = new require('chainsql-lib').RippleAPI;
 
 var user = {
-	secret: "xhW53JaGnb6QePRHz1ysehGNodu4p",
-	address: "zMbBhnQAPu7KHgtRXWFxp4YGX4LjtMpgo1",
-	publicKey: "cBRmXRujuiBPuK46AGpMM5EcJuDtxpxJ8J2mCmgkZnPC1u8wqkUn"
+	secret: "xxeJcpbcFyGTFCxiGjeDEw1RCimFQ",
+	address: "z44fybVuUn8jZxZRHpc3pJ62KQJgSEjzjk",
+	publicKey: "cB4MLVsyn5MnoYHhApEyGtPCuEf9PAGDopmpB7yFwTbhUtzrjRRT"
 }
 
  var owner = {
@@ -35,8 +35,8 @@ main();
 
 async function main(){
 	try {
-		await c.connect('ws://127.0.0.1:6008');
-		// await c.connect('ws://101.201.40.124:5006');
+		// await c.connect('ws://127.0.0.1:6008');
+		await c.connect('ws://101.201.40.124:5006');
 		console.log('连接成功');
 
 		c.as(owner);
@@ -140,16 +140,16 @@ async function testChainsql(){
 	// await testCreateTable();
 
 	// // //创建另一张表，用来测试rename,drop
-	// await testCreateTable1();
+	await testCreateTable1();
 	// await testInsert();
-	// await testUpdate();m
+	// await testUpdate();
 	// await testDelete();
 	// await testRename();
 	// await testGet();
-	await testGetBySql();
-	await testGetBySqlUser();
+	// await testGetBySql();
+	// await testGetBySqlUser();
 	// await testDrop();
-	//await testGrant();
+	// await testGrant();
 	// await testTxs();
 	// await insertAfterGrant();
 	// await testOperationRule();
@@ -158,7 +158,6 @@ async function testChainsql(){
 
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
-
 }
 
 function subTable(tb, owner) {
@@ -204,29 +203,41 @@ var testCreateTable1 = async function() {
 		{'field':'id','type':'int','length':11,'PK':1,'NN':1,'default':''},
 		{'field':'name','type':'varchar','length':50,'default':null},
 		{'field':'age','type':'int'}
-	]
+	];
 	var option = {
 		confidential: false
-	}
+	};
 	// 创建表
-	let rs = await c.createTable(sTableName2, raw, option).submit({expect:'db_success'});
-	console.log("testCreateTable1" , rs)
+	try {
+		let rs = await c.createTable(sTableName, raw, option).submit({expect:'db_success'});
+		console.log("testCreateTable1" , rs);	
+	} catch (error) {
+		console.error(error);
+	}
 };
 
 //重复插入的情况下报异常
 var testInsert = async function() {
 	var raw = [
-		{'age': 333,'name':'hello'},
-		{'age': 444,'name':'sss'},
-		{'age': 555,'name':'rrr'}
-	]
-	var rs = await c.table(sTableName).insert(raw).submit({expect:'db_success'});
-	console.log("testInsert",rs);
+		{'id':1,'age': 333,'name':'hello'},
+		{'id':2,'age': 444,'name':'sss'},
+		{'id':3,'age': 555,'name':'rrr'}
+	];
+	try {
+		var rs = await c.table(sTableName).insert(raw).submit({expect:'db_success'});
+		console.log("testInsert",rs);	
+	} catch (error) {
+		console.error(error);
+	}
 }
 
 var testUpdate = async function(){
-	var rs = await c.table(sTableName).get({'id': 2}).update({'age':200}).submit({expect:'db_success'});
-	console.log("testUpdate",rs);
+	try {
+		var rs = await c.table(sTableName).get({'id': 2}).update({'age':200}).submit({expect:'db_success'});
+		console.log("testUpdate",rs);	
+	} catch (error) {
+		console.error(error);
+	}
 }
 
 var testDelete = async function(){
@@ -235,9 +246,13 @@ var testDelete = async function(){
 }
 
 var testRename= async function(){
-	var rs = await c.renameTable(sTableName2,sReName).submit({expect:'db_success'});
-	console.log("testRename",rs);
-}
+	try {
+		var rs = await c.renameTable(sTableName,sReName).submit({expect:'db_success'});
+		console.log("testRename",rs);	
+	} catch (error) {
+		console.error(error);
+	}
+};
 var testGet = async function(){
 
 	var raw = []
@@ -254,7 +269,7 @@ var testGet = async function(){
 }
 
 var testGetBySql = async function(){
-	var tableNameInDB = await c.getTableNameInDB(owner.address,"wiki");
+	var tableNameInDB = await c.getTableNameInDB(owner.address, sTableName);
 	var tableName = "t_" + tableNameInDB;
 	var rs = await c.getBySqlAdmin("select * from " + tableName);
 	console.log(rs);
@@ -268,16 +283,21 @@ var testGetBySqlUser = async function(){
 }
 
 var testDrop = async function(){
-	var rs = await c.dropTable(sReName).submit({expect:'db_success'});
+	var rs = await c.dropTable(sTableName).submit({expect:'db_success'});
 	console.log("testDrop",rs);
 }
 
 //重复授权可能出异常，测一下
 var testGrant = async function(){
-	var raw = {insert:false,update:false,delete:true};
-	var rs = await c.grant(sTableName, user.address, raw, user.publicKey).submit({expect:'db_success'})
-	console.log("testGrant",rs);
-}
+	try {
+		var raw = {select:true, insert:false, update:false, delete:true};
+		var rs = await c.grant(sTableName, user.address, raw, user.publicKey).submit({expect:'db_success'});
+		console.log("testGrant",rs);
+	} catch (error) {
+		console.error(error);
+	}
+};
+
 var insertAfterGrant = async function(){
 	c.as(user);
 	c.use(owner.address);
@@ -293,23 +313,16 @@ var insertAfterGrant = async function(){
 }
 
 var testTxs = async function(){
-	c.beginTran();
-	var raw = [
-		{'field':'id','type':'int','length':11,'PK':1,'NN':1,'UQ':1,'AI':1},
-		{'field':'name','type':'varchar','length':50,'default':null},
-		{'field':'age','type':'int'},
-		{'field':'account','type':'varchar','length':64}
-	]
-
-	var option = {
-		confidential: true
+	try {
+		c.beginTran();
+		c.grant(sTableName,user.address,{insert:true,update:true},user.publicKey)
+		c.table(sTableName).insert({ 'age': 333, 'name': 'hello' });
+		c.table(sTableName).get({ 'age': 333 }).update({ 'name': 'world' });
+		var rs = await c.commit({expect: 'db_success'});	
+		console.log("testTxs",rs);
+	} catch (error) {
+		console.error(error);
 	}
-	c.createTable(sTableName,raw,option);
-	c.grant(sTableName,user.address,{insert:true,update:true},user.publicKey)
-	c.table(sTableName).insert({'age': 333,'name':'hello'});
-	c.table(sTableName).get({'age':333}).update({'name':'world'});
-	var rs = await c.commit({expect: 'db_success'});
-	console.log("testTxs",rs);
 }
 
 var testOperationRule = async function(){
@@ -453,13 +466,22 @@ function callback(err,data){
 
 async function testAccountTables()
 {
-	let retRequest = await c.getAccountTables("z4ypskpHPpMDtHsZvFHg8eDEdTjQrYYYV6",true)
-	console.log(retRequest)
+	try {
+		let retRequest = await c.getAccountTables("zn4X2eXBBaWtkJkxvXLBczQ1mRdpUCfXH3",true);
+		console.log(retRequest);	
+	} catch (error) {
+		console.error(error);
+	}
 }
 
 async function testTableAuth(){
-	let retRequest = await c.getTableAuth(owner.address,"wiki",[]);
-	console.log(retRequest)
+	try {
+		let retRequest = await c.getTableAuth(owner.address,"b1",[]);
+		console.log(retRequest);	
+	} catch (error) {
+		console.error(error);
+	}
+	
 }
 
 async function testDateTime()

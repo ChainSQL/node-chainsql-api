@@ -1,6 +1,6 @@
 'use strict';
 const EventEmitter = require('events');
-const util = require('./util');
+const util = require('../lib/util');
 const crypto = require('../lib/crypto');
 
 function EventManager(chainsql) {
@@ -203,19 +203,30 @@ function _onChainsqlMessage(that,key,data,owner,name){
 	if(that.cachePass[key]){
 		_makeCallback(that,key,data);
 	}else{
-		util.getUserToken(that.connect,owner,that.chainsql.connect.address,name).then(function(tokenData){
-			var token = tokenData[owner + name];
-			if (token != '') {
-				var secret = util.decodeToken(that.chainsql, token);
-				that.cachePass[key] = secret;
-				_makeCallback(that,key,data);
-			}else{
-				that.cachePass[key] = null;
-				_makeCallback(that,key,data);
-			}
-		}).catch(function(err){
-			console.error(err);
-		})
+		if(data.transaction.OpType === 2 || data.transaction.OpType === 3 || data.transaction.OpType === 11){
+			that.cachePass[key] = null;
+			_makeCallback(that,key,data);
+		} else {
+			util.getUserToken(that.connect,owner,that.chainsql.connect.address,name).then(function(tokenData){
+				var token = tokenData[owner + name];
+				if (token != '') {
+					var secret = util.decodeToken(that.chainsql, token);
+					that.cachePass[key] = secret;
+					_makeCallback(that,key,data);
+				}else{
+					that.cachePass[key] = null;
+					_makeCallback(that,key,data);
+				}
+			}).catch(function(err){
+				if(err.name === "tabUnauthorized"){
+					console.log(err.message);
+					that.cachePass[key] = null;
+					_makeCallback(that,key,data);
+				} else {
+					console.error(err);
+				}
+			});
+		}
 	}
 }
 
