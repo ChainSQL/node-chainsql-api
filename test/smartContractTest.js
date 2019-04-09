@@ -18,7 +18,7 @@ main();
 
 async function main(){
 	try {
-		await chainsql.connect("ws://127.0.0.1:6007");
+		await chainsql.connect("ws://127.0.0.1:6006");
 		console.log("connected successfully");
 
 		chainsql.as(RootUser);
