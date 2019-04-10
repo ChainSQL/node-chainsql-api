@@ -79,13 +79,6 @@ var Contract = function Contract(chainsql, jsonInterface, address, options) {
 				if (method.name) {
 					funcName = utils._jsonInterfaceMethodToString(method);
 				}
-        
-				if(method.type === "fallback") {
-					method.name = "fallback";
-					method.input = {length:0};
-					method.type = "function";
-					funcName = "fallback()";
-				}
 
 				// function
 				if (method.type === 'function') {
