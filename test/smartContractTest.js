@@ -63,15 +63,13 @@ function callContract(){
 
 function contractSubmit(myContract){
 	/*methods.function.submit*/
-	myContract.methods.fallback().submit({
-		Gas: 30000000,
-		ContractValue: "20000000",
+	chainsql.payToContract(contractAddr, 2000, 30000000).submit({
 		expect: "validate_success"
 	}).then(data => {
 		console.log(data);
 	}).catch(err => {
 		console.log(err);
-	});	
+	});
 	// Promise
 	// myContract.methods.transferToUser("zLtH4NFSqDFioq5zifriKKLf8xcyyw7VCf", 12000000).submit({
 	// 	Gas: 30000000,

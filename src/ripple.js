@@ -2,6 +2,7 @@
 var util = require('../lib/util');
 var Submit = require('./submit');
 const FloatOperation = require('../lib/floatOperation');
+var chainsqlLibUtils = require('chainsql-lib').ChainsqlLibUtil;
 
 class Ripple extends Submit {
 	constructor(ChainsqlAPI) {
@@ -99,6 +100,9 @@ Ripple.prototype.prepareJson = function () {
 	}
 	else if (transactionType == "EscrowCancel") {
 		return this.ChainsqlAPI.api.prepareEscrowCancellation(this.ChainsqlAPI.connect.address, txJson, instructions);
+	}
+	else if (transactionType === "PayToContract") {
+		return chainsqlLibUtils.prepareTransaction(txJson, this.ChainsqlAPI.api, {});
 	}
 }
 
@@ -313,6 +317,23 @@ Ripple.prototype.escrowCancel = function (sOwnerAddr, nCreateEscrowSeq) {
 	//
 	this.txType = "EscrowCancel";
 	this.txJSON = escrowCancellation;
+	return this;
+}
+
+Ripple.prototype.payToContract = function (contractAddr, value, gas) {
+	let contractValue = (value*1000000).toString();
+	var contractTx = {
+		TransactionType : "Contract",
+		ContractOpType  : 2,
+		Account : this.ChainsqlAPI.connect.address,
+		ContractAddress : contractAddr,
+		ContractData : "",
+		ContractValue : contractValue,
+		Gas : gas
+	};
+	
+	this.txType = "PayToContract";
+	this.txJSON = contractTx;
 	return this;
 }
 

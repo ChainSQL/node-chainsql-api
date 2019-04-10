@@ -242,6 +242,11 @@ ChainsqlAPI.prototype.escrowCancel = function (sOwnerAddr, nCreateEscrowSeq) {
 	return ripple.escrowCancel(sOwnerAddr, nCreateEscrowSeq);
 }
 
+ChainsqlAPI.prototype.payToContract = function (contractAddr, value, gas) {
+	let ripple = new Ripple(this);
+	return ripple.payToContract(contractAddr, value, gas);
+}
+
 ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
 	validate.create(name,raw);
 	var opt = inputOpt ? inputOpt : {};
