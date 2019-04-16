@@ -1,5 +1,5 @@
 'use strict'
-const ChainsqlAPI = require('../src/index').ChainsqlAPI;
+const ChainsqlAPI = require('../src/index');
 const c = new ChainsqlAPI();
 
 var root = {

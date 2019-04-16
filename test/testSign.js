@@ -2,7 +2,7 @@
 
 // const RippleAPI = new require('ripple-lib').RippleAPI;
 // const api = new RippleAPI({server: ""});
-const ChainsqlAPI = require('../src/index').ChainsqlAPI;
+const ChainsqlAPI = require('../src/index');
 const c = new ChainsqlAPI();
 const co = require('co')
 

@@ -795,4 +795,4 @@ function callback(data, callback) {
 
 }
 
-module.exports.ChainsqlAPI = ChainsqlAPI;
+module.exports = ChainsqlAPI;
