@@ -123,8 +123,8 @@ async function testRippleAPI(){
 	// await testGetLedgerVersion();
 	// await testGetLedger();
 
-	// await testGetTransactions();
-	await testGetTransaction();
+	await testGetAccountTransactions();
+	// await testGetTransaction();
 	// await testGetServerInfo();
 	// await testUnlList();
 	// await testEscrow();
@@ -384,15 +384,16 @@ async function testGetLedger(){
 	// console.log(rs);
 }
 
-async function testGetTransactions(){
+async function testGetAccountTransactions(){
 	// var opt = {
 	// 	minLedgerVersion : 	1,// || -1,
 	// 	// -1 is equivalent to most recent available validated ledger
 	// 	limit:20,
 	// 	maxLedgerVersion : 500
 	// }
-	var opt = {limit:12}
-	c.getTransactions(owner.address,opt,callback);
+	const opt = {limit:12};
+	// const opt = {start:"2282CC29603E5141EAC96B25FF4BF10E896103A06F7C055FCA90C9956B6C98F9"};
+	c.getAccountTransactions(owner.address, opt, callback);
 	// var rs = await callback2Promise(c.getTransactions,opt);
 	// console.log(rs);
 }

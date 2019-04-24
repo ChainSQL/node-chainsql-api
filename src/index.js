@@ -412,24 +412,65 @@ ChainsqlAPI.prototype.grant = function (name, user, flags, publicKey) {
 	}
 }
 
-ChainsqlAPI.prototype.getTransactions = function (address, opts, cb) {
-	if (!opts) {
-		opts = {}
-	};
-	if ((typeof cb) != 'function') {
-		return this.api.getTransactions(address, opts)
-	} else {
-		this.api.getTransactions(address, opts).then(function (data) {
+ChainsqlAPI.prototype.getAccountInfo = function (address, cb) {
+	if ((typeof cb) === "undefined") {
+		return this.api.getAccountInfo(address);
+	} else if ((typeof cb) === "function") {
+		this.api.getAccountInfo(address).then(function (data) {
 			cb(null, data);
 		}).catch(function (err) {
-			cb(err);
+			cb(err, null);
 		});
+	} else {
+		throw chainsqlError("wrong params, please check");
 	}
-}
+};
+
+ChainsqlAPI.prototype.getAccountTransactions = function (address, opts, cb) {
+	let callback, newOpt, singleArg;
+	let isCallback = false;
+	switch (arguments.length) {
+	case 1:
+		newOpt = {};
+		break;
+	case 2:
+		singleArg = arguments[1];
+		if ((typeof singleArg) === "function") {
+			callback = singleArg;
+			isCallback = true;
+		} else if ((typeof singleArg) === "object") {
+			newOpt = singleArg;
+		} else {
+			throw chainsqlError("wrong params, please check");
+		}
+		break;
+	case 3:
+		newOpt = opts;
+		if ((typeof cb) === "function") {
+			callback = cb;
+			isCallback = true;
+		} else {
+			throw chainsqlError("wrong params, please check");
+		}
+		break;
+	default:
+		throw chainsqlError("wrong params, please check");
+	}
+
+	if (isCallback) {
+		this.api.getTransactions(address, newOpt).then(function (data) {
+			callback(null, data);
+		}).catch(function (err) {
+			callback(err, null);
+		});
+	} else {
+		return this.api.getTransactions(address, newOpt);
+	}
+};
 
 ChainsqlAPI.prototype.getTransaction = function (hash, cb) {
 	if ((typeof cb) != 'function') {
-		return this.api.getTransaction(hash)
+		return this.api.getTransaction(hash);
 	} else {
 		this.api.getTransaction(hash).then(function (data) {
 			cb(null, data);
@@ -463,7 +504,63 @@ ChainsqlAPI.prototype.getUnlList = function (cb) {
 	}).catch(function (err) {
 		cb(err);
 	})
-}
+};
+
+ChainsqlAPI.prototype.getLedger = function (opts, cb) {
+	let callback, newOpt, singleArg;
+	let isCallback = false;
+	switch(arguments.length) {
+	case 0:
+		newOpt = {};
+		break;
+	case 1:
+		singleArg = arguments[0];
+		if((typeof singleArg) === "function") {
+			callback = singleArg;
+			isCallback = true;
+		} else if((typeof singleArg) === "object") {
+			newOpt = singleArg;
+		} else {
+			throw chainsqlError("wrong params, please check");
+		}
+		break;
+	case 2:
+		newOpt = opts;
+		if ((typeof cb) === "function") {
+			callback = cb;
+			isCallback = true;
+		} else {
+			throw chainsqlError("wrong params, please check");
+		}
+		break;
+	default:
+		throw chainsqlError("wrong params, please check");
+	}
+
+	if(isCallback) {
+		this.api.getLedger(newOpt).then(function (data) {
+			callback(null, data);
+		}).catch(function (err) {
+			callback(err, null);
+		});
+	} else {
+		return this.api.getLedger(newOpt);
+	}
+};
+
+ChainsqlAPI.prototype.getLedgerVersion = function (cb) {
+	if ((typeof cb) === "undefined") {
+		return this.api.getLedgerVersion();
+	} else if ((typeof cb) === "function") {
+		this.api.getLedgerVersion().then(function (data) {
+			cb(null, data);
+		}).catch(function (err) {
+			cb(err, null);
+		});
+	} else {
+		throw chainsqlError("wrong params, please check");
+	}
+};
 
 ChainsqlAPI.prototype.beginTran = function () {
 	if (this.connect && this.connect.address) {
@@ -614,29 +711,6 @@ ChainsqlAPI.prototype.commit = function (cb) {
 		handleCommit(that, cb, null, null);
 	}
 };
-
-ChainsqlAPI.prototype.getLedger = function (opt, cb) {
-	var cb = cb;
-	if (!cb) {
-		cb = callback;
-	}
-	this.api.getLedger(opt).then(function (data) {
-		cb(null, data);
-	}).catch(function (err) {
-		cb(err);
-	});
-}
-ChainsqlAPI.prototype.getLedgerVersion = function (cb) {
-	var cb = cb;
-	if (!cb) {
-		cb = callback;
-	}
-	this.api.getLedgerVersion().then(function (data) {
-		cb(null, data);
-	}).catch(function (err) {
-		cb(err);
-	});
-}
 
 function handleGrantPayment(ChainSQL) {
 	return new Promise((resolve, reject) => {
