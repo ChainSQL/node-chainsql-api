@@ -740,22 +740,13 @@ function handleGrantPayment(ChainSQL) {
 	})
 }
 
-ChainsqlAPI.prototype.sign = function (json, secret) {
+ChainsqlAPI.prototype.sign = function (json, secret, option) {
 	if (!json.Fee) {
 		json.Fee = "50";
 	}
 	let ripple = new RippleAPI();
-	return ripple.sign(JSON.stringify(json), secret);
-}
-
-ChainsqlAPI.prototype.signFor = function (json, secret, option) {
-	if (!json.Fee) {
-		json.Fee = "50";
-	}
-	let ripple = new RippleAPI();
-	var signed = ripple.sign(JSON.stringify(json), secret, option);
-	return signed;
-}
+	return ripple.sign(JSON.stringify(json), secret, option);
+};
 
 // ChainsqlAPI.prototype.encrypt = function (plainText, listPublic) {
 

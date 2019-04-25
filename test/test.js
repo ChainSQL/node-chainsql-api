@@ -254,18 +254,17 @@ var testRename= async function(){
 	}
 };
 var testGet = async function(){
-
-	var raw = []
-	//求和
-	// var rs = await c.table(sTableName).get(raw).withFields(["SUM(id)"]).submit();
-	var rs = await c.table(sTableName).get(raw).withFields([]).submit().catch(function(err){
-		console.error(err);
+	const raw = { id:1 };
+	const res = await c.table(sTableName).get(raw).submit().catch(err => {
+		return console.error(err);
 	});
 
-	// var raw = {id:1}
-	// var rs = await c.table(sTableName).get({name:'wifi'}).order({id:-1}).limit({index:0,total:1}).withFields([]).submit();
-	// var rs = await c.table(sTableName).get().withFields(["COUNT(*)"]).submit();
-	console.log("testGet",rs);
+	//求和
+	// const res = await c.table(sTableName).get(raw).withFields(["SUM(id)"]).submit();
+
+	// const res = await c.table(sTableName).get({name:'wifi'}).order({id:-1}).limit({index:0,total:1}).withFields([]).submit();
+	// const res = await c.table(sTableName).get().withFields(["COUNT(*)"]).submit();
+	console.log("testGet",res);
 }
 
 var testGetBySql = async function(){
@@ -362,6 +361,7 @@ var testOperationRule = async function(){
 var generateAccount = async function(){
 	return c.generateAddress();
 }
+
 var activateAccount = async function(account){
 	let rs = await c.pay(account,2000).submit({expect:'validate_success'});
 	console.log(rs);

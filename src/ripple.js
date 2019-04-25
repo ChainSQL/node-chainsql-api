@@ -154,15 +154,18 @@ Ripple.prototype.accountSet = function (opt) {
 	if (!opt || JSON.stringify(opt) == '{}') {
 		throw new Error('opt cannot be empty');
 	}
-	//SetFlag or ClearFlag
-	if (opt.hasOwnProperty('setFlag')) {
-		let json = "{\"" + opt.setFlag + "\": true}";
-		setting = JSON.parse(json);
+	if (opt.hasOwnProperty("enableRippling")) {
+		opt.enableRippling ? setting.defaultChainsql = true : setting.defaultChainsql = false;
 	}
-	else if (opt.hasOwnProperty("clearFlag")) {
-		let json = "{\"" + opt.clearFlag + "\": false}";
-		setting = JSON.parse(json);
-	}
+	// //SetFlag or ClearFlag
+	// if (opt.hasOwnProperty('setFlag')) {
+	// 	let json = "{\"" + opt.setFlag + "\": true}";
+	// 	setting = JSON.parse(json);
+	// }
+	// else if (opt.hasOwnProperty("clearFlag")) {
+	// 	let json = "{\"" + opt.clearFlag + "\": false}";
+	// 	setting = JSON.parse(json);
+	// }
 	//TransferFee
 	if (opt.hasOwnProperty('min') && opt.hasOwnProperty('max')) {
 		if (opt.min > opt.max && opt.max > 0) {
@@ -177,7 +180,7 @@ Ripple.prototype.accountSet = function (opt) {
 					throw new Error('Cannot set transferRate if set fixed fee');
 				}                
 			} else if(!opt.rate) {
-				setting.transferRate = 1.0
+				setting.transferRate = 1.0;
 			}
 		} else if (!opt.rate) {
 			throw new Error('Must set transferRate if min < max');
