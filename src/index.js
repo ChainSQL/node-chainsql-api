@@ -683,7 +683,18 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 			ChainSQL.api.prepareTx(payment).then(function (data) {
 				//console.log(JSON.stringify(tx_json))
 				var txJson = JSON.parse(data.txJSON);
-				txJson.Fee = util.calcFee(txJson);
+
+				var dropsPerByte = 1024;
+				ChainSQL.api.getServerInfo().then(res => {
+				  console.log(res.validatedLedger.dropsPerByte);
+				  
+				  if(res.validatedLedger.dropsPerByte != undefined)
+					  dropsPerByte = res.validatedLedger.dropsPerByte;
+				}).catch(err => {
+					console.error(err);
+				});
+		  
+				txJson.Fee = util.calcFee(txJson,dropsPerByte);
 				data.txJSON = JSON.stringify(txJson);
 				let signedRet = ChainSQL.api.sign(data.txJSON, ChainSQL.connect.secret);
 				ChainSQL.handleSignedTx(ChainSQL, signedRet, cbResult.expectOpt, resolve, reject);
