@@ -85,20 +85,24 @@ function prepareTable(ChainSQL, payment, resolve, reject) {
 		// console.log(tx_json);
 		getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function (data) {
  
-      var dropsPerByte = 1024;
+      var dropsPerByte = 1000;
       ChainSQL.api.getServerInfo().then(res => {
-        console.log(res.validatedLedger.dropsPerByte);
-        
-        if(res.validatedLedger.dropsPerByte != undefined)
-            dropsPerByte = res.validatedLedger.dropsPerByte;
+
+        if(res.validatedLedger.dropsPerByte != undefined){
+
+          dropsPerByte = res.validatedLedger.dropsPerByte;
+        }
+           
+        data.tx_json.Fee = calcFee(data.tx_json,dropsPerByte);
+        data.txJSON = data.tx_json;
+        delete data.tx_json;
+        resolve(data);
+
       }).catch(err => {
           console.error(err);
       });
 
-			data.tx_json.Fee = calcFee(data.tx_json,dropsPerByte);
-			data.txJSON = data.tx_json;
-			delete data.tx_json;
-			resolve(data);
+
 		}).catch(function (error) {
 			reject(error);
 		});

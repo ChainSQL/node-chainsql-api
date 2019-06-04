@@ -681,23 +681,28 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 			var payment = data.tx_json;
 			payment.Statements = convertStringToHex(JSON.stringify(payment.Statements));
 			ChainSQL.api.prepareTx(payment).then(function (data) {
-				//console.log(JSON.stringify(tx_json))
+
+
 				var txJson = JSON.parse(data.txJSON);
 
-				var dropsPerByte = 1024;
+				var dropsPerByte = ;
 				ChainSQL.api.getServerInfo().then(res => {
-				  console.log(res.validatedLedger.dropsPerByte);
-				  
-				  if(res.validatedLedger.dropsPerByte != undefined)
-					  dropsPerByte = res.validatedLedger.dropsPerByte;
+				 			  
+				  if(res.validatedLedger.dropsPerByte != undefined){
+
+					dropsPerByte = res.validatedLedger.dropsPerByte;
+				  }
+
+				  txJson.Fee = util.calcFee(txJson,dropsPerByte);
+				  data.txJSON = JSON.stringify(txJson);
+				  let signedRet = ChainSQL.api.sign(data.txJSON, ChainSQL.connect.secret);
+				  ChainSQL.handleSignedTx(ChainSQL, signedRet, cbResult.expectOpt, resolve, reject);				  
+					  
 				}).catch(err => {
 					console.error(err);
 				});
 		  
-				txJson.Fee = util.calcFee(txJson,dropsPerByte);
-				data.txJSON = JSON.stringify(txJson);
-				let signedRet = ChainSQL.api.sign(data.txJSON, ChainSQL.connect.secret);
-				ChainSQL.handleSignedTx(ChainSQL, signedRet, cbResult.expectOpt, resolve, reject);
+
 			}).catch(function (error) {
 				cb(error, null);
 			});
