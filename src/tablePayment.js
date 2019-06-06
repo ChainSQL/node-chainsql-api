@@ -90,7 +90,7 @@ function prepareTable(ChainSQL, payment, resolve, reject) {
 
         if(res.validatedLedger.dropsPerByte != undefined){
 
-          dropsPerByte = res.validatedLedger.dropsPerByte;
+          dropsPerByte =  parseInt(res.validatedLedger.dropsPerByte);
         }
            
         data.tx_json.Fee = calcFee(data.tx_json,dropsPerByte);

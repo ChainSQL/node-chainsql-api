@@ -685,12 +685,12 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 
 				var txJson = JSON.parse(data.txJSON);
 
-				var dropsPerByte = ;
+				var dropsPerByte = 1000;
 				ChainSQL.api.getServerInfo().then(res => {
 				 			  
 				  if(res.validatedLedger.dropsPerByte != undefined){
 
-					dropsPerByte = res.validatedLedger.dropsPerByte;
+					dropsPerByte = parseInt(res.validatedLedger.dropsPerByte);
 				  }
 
 				  txJson.Fee = util.calcFee(txJson,dropsPerByte);
