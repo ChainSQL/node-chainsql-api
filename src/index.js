@@ -118,6 +118,9 @@ ChainsqlAPI.prototype.use = function (address) {
 ChainsqlAPI.prototype.setRestrict = function (mode) {
 	this.strictMode = mode;
 }
+ChainsqlAPI.prototype.setNeedVerify = function (isNeed) {
+	isNeed ? this.needVerify = 1 : this.needVerify = 0;
+}
 ChainsqlAPI.prototype.table = function (name) {
 	this.tab = new Table(name, this);
 	if (this.transaction) {
