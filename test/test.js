@@ -21,10 +21,6 @@ var issuer = {
 	secret: "xxEiFWFxpUARr9tq1XfvkykyR97iK",
 	address: "znbWk4iuz2HL1e1Ux91TzYfFzJHGeYxBA4"	
 }
-// var owner = {
-// 	"address":"r93pPN539JdTNqFsmeSJBYafd7ZzzpVCC"
-// }
-
 
 var sTableName = "fasefa";
 var sTableName2 = "b1";
@@ -72,14 +68,14 @@ function testUnSubscribe(){
 
 async function subTx() {
 	//获取账户信息
-	let info = await c.api.getAccountInfo("rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh");
+	let info = await c.api.getAccountInfo("zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh");
 	console.log(info);
 	//获取当前区块号
 	c.getLedgerVersion(function(err,data){
 		var payment = {
-			"Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+			"Account": "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh",
 			"Amount":"1000000000",
-			"Destination": "rBuLBiHmssAMHWQMnEN7nXQXaVj7vhAv6Q",
+			"Destination": "zHyz3V6V3DZ2fYdb6AUc5WV4VKZP1pAEs9",
 			"TransactionType": "Payment",
 			"Sequence": info.sequence,
 			"LastLedgerSequence":data + 5,
