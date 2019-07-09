@@ -685,7 +685,7 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 
 				var txJson = JSON.parse(data.txJSON);
 
-				var dropsPerByte = 1000;
+				var dropsPerByte = 1024;
 				ChainSQL.api.getServerInfo().then(res => {
 				 			  
 				  if(res.validatedLedger.dropsPerByte != undefined){

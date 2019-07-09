@@ -85,7 +85,7 @@ function prepareTable(ChainSQL, payment, resolve, reject) {
 		// console.log(tx_json);
 		getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function (data) {
  
-      var dropsPerByte = 1000;
+      var dropsPerByte = 1024;
       ChainSQL.api.getServerInfo().then(res => {
 
         if(res.validatedLedger.dropsPerByte != undefined){
