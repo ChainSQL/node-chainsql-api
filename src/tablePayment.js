@@ -84,10 +84,25 @@ function prepareTable(ChainSQL, payment, resolve, reject) {
 	prepareTablePayment(payment, ChainSQL.api).then(function (tx_json) {
 		// console.log(tx_json);
 		getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function (data) {
-			data.tx_json.Fee = calcFee(data.tx_json);
-			data.txJSON = data.tx_json;
-			delete data.tx_json;
-			resolve(data);
+ 
+      var dropsPerByte = Math.ceil(1000000.0 / 1024);;
+      ChainSQL.api.getServerInfo().then(res => {
+
+        if(res.validatedLedger.dropsPerByte != undefined){
+
+          dropsPerByte =  parseInt(res.validatedLedger.dropsPerByte);
+        }
+           
+        data.tx_json.Fee = calcFee(data.tx_json,dropsPerByte);
+        data.txJSON = data.tx_json;
+        delete data.tx_json;
+        resolve(data);
+
+      }).catch(err => {
+          console.error(err);
+      });
+
+
 		}).catch(function (error) {
 			reject(error);
 		});
