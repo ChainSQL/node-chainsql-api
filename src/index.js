@@ -115,6 +115,11 @@ ChainsqlAPI.prototype.as = function (account) {
 ChainsqlAPI.prototype.use = function (address) {
 	this.connect.use(address);
 }
+
+ChainsqlAPI.prototype.useCert = function (cert) {
+	this.connect.useCert(cert);
+}
+
 ChainsqlAPI.prototype.setRestrict = function (mode) {
 	this.strictMode = mode;
 }
