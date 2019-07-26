@@ -1,4 +1,5 @@
 'use strict'
+require('dotenv').config();
 const crypto = require('../lib/crypto');
 const keypairs = require('chainsql-keypairs');
 const EventManager = require('./eventManager')
@@ -713,7 +714,7 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 				  ChainSQL.handleSignedTx(ChainSQL, signedRet, cbResult.expectOpt, resolve, reject);				  
 					  
 				}).catch(err => {
-					console.error(err);
+					cb(err, null);
 				});
 		  
 

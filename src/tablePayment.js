@@ -99,7 +99,7 @@ function prepareTable(ChainSQL, payment, resolve, reject) {
         resolve(data);
 
       }).catch(err => {
-          console.error(err);
+          reject(err);
       });
 
 
