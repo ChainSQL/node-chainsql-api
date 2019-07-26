@@ -394,7 +394,7 @@ Table.prototype.prepareJson = function() {
 	};
 	if (that.exec == 'r_insert' && that.field) {
 		payment.autoFillField = convertStringToHex(that.field);
-	};
+	}
 
 	return new Promise(function (resolve, reject) {
 		prepareTable(that, payment, resolve, reject);
@@ -403,11 +403,12 @@ Table.prototype.prepareJson = function() {
 function prepareTable(ChainSQL, payment, resolve, reject) {
 	var connect = ChainSQL.connect;
 
-	getUserToken(connect.api.connection, connect.scope, connect.address, ChainSQL.tab).then(function(token) {
-		token = token[ ChainSQL.connect.scope + ChainSQL.tab];
+	getUserToken(connect.api.connection, connect.scope, connect.address, ChainSQL.tab).then(function (token) {
+		token = token[ChainSQL.connect.scope + ChainSQL.tab];
 		if (token && token != '') {
 			var secret = decodeToken(ChainSQL, token);
-			payment.raw = crypto.aesEncrypt(secret, payment.raw).toUpperCase();
+			const algType = ChainSQL.connect.secret === "gmAlg" ? "gmAlg" : "aes";
+			payment.raw = crypto.symEncrypt(secret, payment.raw, algType).toUpperCase();
 		} else {
 			payment.raw = convertStringToHex(payment.raw);
 		}

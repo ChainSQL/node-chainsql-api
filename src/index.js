@@ -291,8 +291,13 @@ ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
 
 		if (confidential) {
 			var token = generateToken(that.connect.secret);
-			var secret = decodeToken(that, token);
-			payment.raw = crypto.aesEncrypt(secret, payment.raw).toUpperCase();
+			var symKey = decodeToken(that, token);
+			if(that.connect.secret === "gmAlg") {
+				payment.raw = crypto.symEncrypt(symKey, payment.raw, "gmAlg").toUpperCase();
+			} else {
+				payment.raw = crypto.symEncrypt(symKey, payment.raw).toUpperCase();
+			}
+			
 			payment.token = token.toUpperCase();
 		} else {
 			payment.raw = convertStringToHex(payment.raw);
@@ -650,7 +655,8 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 				var secret = decodeToken(ChainSQL, token);
 				if (cache[i].Raw) {
 					if (cache[i].OpType != opType.t_grant) {
-						cache[i].Raw = crypto.aesEncrypt(secret, JSON.stringify(cache[i].Raw)).toUpperCase();
+						const algType = ChainSQL.connect.secret === "gmAlg" ? "gmAlg" : "aes";
+						cache[i].Raw = crypto.symEncrypt(secret, JSON.stringify(cache[i].Raw), algType).toUpperCase();
 					} else {
 						cache[i].Raw = convertStringToHex(JSON.stringify(cache[i].Raw));
 					}
