@@ -145,10 +145,15 @@ ChainsqlAPI.prototype.generateAddress = function () {
 		account = ripple.generateAddress();
 		keypair = keypairs.deriveKeypair(account.secret);
 	} else {
-		keypair = keypairs.deriveKeypair(arguments[0]);
-		account = {
-			secret: arguments[0],
-			address: keypairs.deriveAddress(keypair.publicKey)
+		if(typeof(arguments[0]) === "object" ) {
+			account = ripple.generateAddress(arguments[0]);
+			keypair = keypairs.deriveKeypair(account.secret);
+		} else {
+			keypair = keypairs.deriveKeypair(arguments[0]);
+			account = {
+				secret: arguments[0],
+				address: keypairs.deriveAddress(keypair.publicKey)
+			}
 		}
 	}
 	var opt = {
