@@ -1,5 +1,5 @@
 'use strict'
-const path = require('path');
+require('dotenv').config();
 const crypto = require('../lib/crypto');
 const keypairs = require('chainsql-keypairs');
 const EventManager = require('./eventManager')
@@ -8,19 +8,19 @@ const _ = require('lodash');
 const RippleAPI = require('chainsql-lib').ChainsqlLibAPI;
 const Submit = require('./submit');
 const Ripple = require('./ripple');
-const chainsqlError = require('./error');
+const chainsqlError = require('../lib/error');
 
 _.assign(RippleAPI.prototype, {
 	prepareTable: require('./tablePayment'),
 	prepareTx: require('./txPayment')
 })
 const addressCodec = require('chainsql-address-codec');
-const validate = require('./validate')
+const validate = require('../lib/validate')
 const Connection = require('./connect');
 const Table = require('./table');
 const Contract = require('./smartContract');
-const util = require('./util');
-const opType = require('./config').opType;
+const util = require('../lib/util');
+const opType = require('../lib/config').opType;
 const getFee = util.getFee;
 const getSequence = util.getSequence;
 const convertStringToHex = util.convertStringToHex;
@@ -29,7 +29,6 @@ const getUserToken = util.getUserToken;
 const getTxJson = util.getTxJson;
 const generateToken = util.generateToken;
 const decodeToken = util.decodeToken;
-
 
 class ChainsqlAPI extends Submit {
 	constructor() {
@@ -50,7 +49,32 @@ class ChainsqlAPI extends Submit {
 		this.strictMode = false;
 		this.needVerify = 1;
 	}
-}
+
+	submit(cb) {
+		var that = this;
+		if (that.transaction) {
+			throw new Error('you are now in transaction,can not be submit');
+		} else {
+			let cbResult = util.parseCb(cb);
+
+			if (cbResult.isFunction) {
+				super.submit(cbResult.expectOpt).then(result => {
+					cb(null, result);
+				}).catch(error => {
+					cb(error, null);
+				});
+			} else {
+				return new Promise((resolve, reject) => {
+					super.submit(cbResult.expectOpt).then(result => {
+						resolve(result);
+					}).catch(error => {
+						reject(error);
+					});
+				});
+			}
+		}
+	}
+};
 
 ChainsqlAPI.prototype.connect = function (url, cb) {
 	let ra = new RippleAPI({
@@ -84,8 +108,8 @@ ChainsqlAPI.prototype.disconnect = function (cb) {
 	}
 }
 ChainsqlAPI.prototype.as = function (account) {
-	if(!account.secret || !account.address){
-		throw chainsqlError("c.as parameter invalid,must contain 'secret' and 'address'"); 
+	if (!account.secret || !account.address) {
+		throw chainsqlError("c.as parameter invalid,must contain 'secret' and 'address'");
 	}
 	this.connect.as(account);
 }
@@ -95,8 +119,11 @@ ChainsqlAPI.prototype.use = function (address) {
 ChainsqlAPI.prototype.setRestrict = function (mode) {
 	this.strictMode = mode;
 }
+ChainsqlAPI.prototype.setNeedVerify = function (isNeed) {
+	isNeed ? this.needVerify = 1 : this.needVerify = 0;
+}
 ChainsqlAPI.prototype.table = function (name) {
-	this.tab = new Table(name, this.connect);
+	this.tab = new Table(name, this);
 	if (this.transaction) {
 		this.tab.transaction = this.transaction;
 		this.tab.cache = this.cache;
@@ -108,12 +135,6 @@ ChainsqlAPI.prototype.table = function (name) {
 
 ChainsqlAPI.prototype.contract = function (jsonInterface, address, options) {
 	this.contractObj = new Contract(this, jsonInterface, address, options);
-	// if (this.transaction) {
-	//   this.tab.transaction = this.transaction;
-	//   this.tab.cache = this.cache;
-	// }
-	// this.tab.strictMode = this.strictMode;
-	// this.tab.event = this.event;
 	return this.contractObj;
 }
 
@@ -125,16 +146,21 @@ ChainsqlAPI.prototype.generateAddress = function () {
 		account = ripple.generateAddress();
 		keypair = keypairs.deriveKeypair(account.secret);
 	} else {
-		keypair = keypairs.deriveKeypair(arguments[0]);
-		account = {
-			secret: arguments[0],
-			address: keypairs.deriveAddress(keypair.publicKey)
+		if (typeof (arguments[0]) === "object") {
+			account = ripple.generateAddress(arguments[0]);
+			keypair = keypairs.deriveKeypair(account.secret);
+		} else {
+			keypair = keypairs.deriveKeypair(arguments[0]);
+			account = {
+				secret: arguments[0],
+				address: keypairs.deriveAddress(keypair.publicKey)
+			}
 		}
 	}
 	var opt = {
 		version: 35
 	}
-	var buf = new Buffer(keypair.publicKey, 'hex');
+	var buf = Buffer.from(keypair.publicKey, 'hex');
 	account.publicKey = addressCodec.encode(buf, opt);
 	// account.publickKey = keypair.publicKey;
 
@@ -223,6 +249,11 @@ ChainsqlAPI.prototype.escrowExecute = function (sOwnerAddr, nCreateEscrowSeq) {
 ChainsqlAPI.prototype.escrowCancel = function (sOwnerAddr, nCreateEscrowSeq) {
 	let ripple = new Ripple(this);
 	return ripple.escrowCancel(sOwnerAddr, nCreateEscrowSeq);
+}
+
+ChainsqlAPI.prototype.payToContract = function (contractAddr, value, gas) {
+	let ripple = new Ripple(this);
+	return ripple.payToContract(contractAddr, value, gas);
 }
 
 ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
@@ -379,24 +410,65 @@ ChainsqlAPI.prototype.grant = function (name, user, flags, publicKey) {
 	}
 }
 
-ChainsqlAPI.prototype.getTransactions = function (address, opts, cb) {
-	if (!opts) {
-		opts = {}
-	};
-	if ((typeof cb) != 'function') {
-		return this.api.getTransactions(address, opts)
-	} else {
-		this.api.getTransactions(address, opts).then(function (data) {
+ChainsqlAPI.prototype.getAccountInfo = function (address, cb) {
+	if ((typeof cb) === "undefined") {
+		return this.api.getAccountInfo(address);
+	} else if ((typeof cb) === "function") {
+		this.api.getAccountInfo(address).then(function (data) {
 			cb(null, data);
 		}).catch(function (err) {
-			cb(err);
+			cb(err, null);
 		});
+	} else {
+		throw chainsqlError("wrong params, please check");
 	}
-}
+};
+
+ChainsqlAPI.prototype.getAccountTransactions = function (address, opts, cb) {
+	let callback, newOpt, singleArg;
+	let isCallback = false;
+	switch (arguments.length) {
+		case 1:
+			newOpt = {};
+			break;
+		case 2:
+			singleArg = arguments[1];
+			if ((typeof singleArg) === "function") {
+				callback = singleArg;
+				isCallback = true;
+			} else if ((typeof singleArg) === "object") {
+				newOpt = singleArg;
+			} else {
+				throw chainsqlError("wrong params, please check");
+			}
+			break;
+		case 3:
+			newOpt = opts;
+			if ((typeof cb) === "function") {
+				callback = cb;
+				isCallback = true;
+			} else {
+				throw chainsqlError("wrong params, please check");
+			}
+			break;
+		default:
+			throw chainsqlError("wrong params, please check");
+	}
+
+	if (isCallback) {
+		this.api.getTransactions(address, newOpt).then(function (data) {
+			callback(null, data);
+		}).catch(function (err) {
+			callback(err, null);
+		});
+	} else {
+		return this.api.getTransactions(address, newOpt);
+	}
+};
 
 ChainsqlAPI.prototype.getTransaction = function (hash, cb) {
 	if ((typeof cb) != 'function') {
-		return this.api.getTransaction(hash)
+		return this.api.getTransaction(hash);
 	} else {
 		this.api.getTransaction(hash).then(function (data) {
 			cb(null, data);
@@ -430,7 +502,63 @@ ChainsqlAPI.prototype.getUnlList = function (cb) {
 	}).catch(function (err) {
 		cb(err);
 	})
-}
+};
+
+ChainsqlAPI.prototype.getLedger = function (opts, cb) {
+	let callback, newOpt, singleArg;
+	let isCallback = false;
+	switch (arguments.length) {
+		case 0:
+			newOpt = {};
+			break;
+		case 1:
+			singleArg = arguments[0];
+			if ((typeof singleArg) === "function") {
+				callback = singleArg;
+				isCallback = true;
+			} else if ((typeof singleArg) === "object") {
+				newOpt = singleArg;
+			} else {
+				throw chainsqlError("wrong params, please check");
+			}
+			break;
+		case 2:
+			newOpt = opts;
+			if ((typeof cb) === "function") {
+				callback = cb;
+				isCallback = true;
+			} else {
+				throw chainsqlError("wrong params, please check");
+			}
+			break;
+		default:
+			throw chainsqlError("wrong params, please check");
+	}
+
+	if (isCallback) {
+		this.api.getLedger(newOpt).then(function (data) {
+			callback(null, data);
+		}).catch(function (err) {
+			callback(err, null);
+		});
+	} else {
+		return this.api.getLedger(newOpt);
+	}
+};
+
+ChainsqlAPI.prototype.getLedgerVersion = function (cb) {
+	if ((typeof cb) === "undefined") {
+		return this.api.getLedgerVersion();
+	} else if ((typeof cb) === "function") {
+		this.api.getLedgerVersion().then(function (data) {
+			cb(null, data);
+		}).catch(function (err) {
+			cb(err, null);
+		});
+	} else {
+		throw chainsqlError("wrong params, please check");
+	}
+};
 
 ChainsqlAPI.prototype.beginTran = function () {
 	if (this.connect && this.connect.address) {
@@ -443,8 +571,8 @@ ChainsqlAPI.prototype.beginTran = function () {
 function handleCommit(ChainSQL, object, resolve, reject) {
 	var isFunction = false;
 
-	if ((typeof object) == 'function')
-		isFunction = true;
+	let cbResult = util.parseCb(object);
+	isFunction = cbResult.isFunction;
 
 	var cb = function (error, data) {
 		if (isFunction) {
@@ -512,7 +640,10 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 				var secret = decodeToken(ChainSQL, token);
 				if (cache[i].Raw) {
 					if (cache[i].OpType != opType.t_grant) {
-						cache[i].Raw = crypto.aesEncrypt(secret, JSON.stringify(cache[i].Raw)).toUpperCase();
+						const algType = ChainSQL.connect.secret === "gmAlg" ? "gmAlg" : "aes";
+						cache[i].Raw = crypto.symEncrypt(secret, JSON.stringify(cache[i].Raw), algType).toUpperCase();
+					} else {
+						cache[i].Raw = convertStringToHex(JSON.stringify(cache[i].Raw));
 					}
 				};
 
@@ -549,12 +680,28 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 			var payment = data.tx_json;
 			payment.Statements = convertStringToHex(JSON.stringify(payment.Statements));
 			ChainSQL.api.prepareTx(payment).then(function (data) {
-				//console.log(JSON.stringify(tx_json))
+
+
 				var txJson = JSON.parse(data.txJSON);
-				txJson.Fee = util.calcFee(txJson);
-				data.txJSON = JSON.stringify(txJson);
-				let signedRet = ChainSQL.api.sign(data.txJSON, ChainSQL.connect.secret);
-				handleSignedTx(ChainSQL, signedRet, object, resolve, reject);
+
+				var dropsPerByte = Math.ceil(1000000.0 / 1024);
+				ChainSQL.api.getServerInfo().then(res => {
+
+					if (res.validatedLedger.dropsPerByte != undefined) {
+
+						dropsPerByte = parseInt(res.validatedLedger.dropsPerByte);
+					}
+
+					txJson.Fee = util.calcFee(txJson, dropsPerByte);
+					data.txJSON = JSON.stringify(txJson);
+					let signedRet = ChainSQL.api.sign(data.txJSON, ChainSQL.connect.secret);
+					ChainSQL.handleSignedTx(ChainSQL, signedRet, cbResult.expectOpt, resolve, reject);
+
+				}).catch(err => {
+					cb(err, null);
+				});
+
+
 			}).catch(function (error) {
 				cb(error, null);
 			});
@@ -580,198 +727,41 @@ ChainsqlAPI.prototype.commit = function (cb) {
 	}
 };
 
-ChainsqlAPI.prototype.getLedger = function (opt, cb) {
-	var cb = cb;
-	if (!cb) {
-		cb = callback;
-	}
-	this.api.getLedger(opt).then(function (data) {
-		cb(null, data);
-	}).catch(function (err) {
-		cb(err);
-	});
-}
-ChainsqlAPI.prototype.getLedgerVersion = function (cb) {
-	var cb = cb;
-	if (!cb) {
-		cb = callback;
-	}
-	this.api.getLedgerVersion().then(function (data) {
-		cb(null, data);
-	}).catch(function (err) {
-		cb(err);
-	});
-}
+function handleGrantPayment(ChainSQL) {
+	return new Promise((resolve, reject) => {
+		if (ChainSQL.payment.opType != opType['t_grant'])
+			reject(chainsqlError('Type of payment must be t_grant'));
 
-function handleSignedTx(ChainSQL, signed, object, resolve, reject) {
-	var isFunction = false;
-	let expectOpt = { expect: "send_success" };
-	let cbCheckRet = util.checkCbOpt(object);
-	if (cbCheckRet.status === "success") {
-		if (cbCheckRet.type === "function") {
-			isFunction = cbCheckRet.isFunction;
-		} else {
-			expectOpt.expect = cbCheckRet.expect;
-		}
-	} else {
-		return reject(cbCheckRet.errMsg);
-	}
-
-	var errFunc = function (error) {
-		if (isFunction) {
-			object(error, null);
-		} else {
-			reject(error);
-		}
-	};
-	// var exceptFunc = function(exception){
-	// 	if (isFunction) {
-	// 		object(exception, null);
-	// 	} else {
-	// 		reject(exception);
-	// 	}
-	// }
-	var sucFunc = function (data) {
-		if (isFunction) {
-			object(null, data);
-		} else {
-			resolve(data);
-		}
-	};
-	// subscribe event
-	if (expectOpt.expect !== "send_success") {
-		ChainSQL.event.subscribeTx(signed.id, isFunction ? object : function (err, data) {
-			if (err) {
-				errFunc(err);
-			} else {
-				// success
-				if (expectOpt.expect === data.status
-					&& data.type === 'singleTransaction') {
-					sucFunc({
-						status: expectOpt.expect,
-						tx_hash: signed.id
-					});
+		var name = ChainSQL.payment.name;
+		var publicKey = ChainSQL.payment.publicKey;
+		getUserToken(ChainSQL.api.connection, ChainSQL.connect.address, ChainSQL.connect.address, name).then(function (data) {
+			var token = data[ChainSQL.connect.address + name];
+			if (token != '') {
+				var secret = decodeToken(ChainSQL, token);
+				try {
+					token = generateToken(publicKey, secret).toUpperCase();
+				} catch (e) {
+					reject(chainsqlError('your publicKey is not validate'));
 				}
-
-				// failure
-				if (util.checkSubError(data)) {
-					var error = {
-						status: data.status,
-						tx_hash: signed.id
-					};
-					if (data.hasOwnProperty("error_message")) {
-						error.error_message = data.error_message;
-					}
-					errFunc(error);
-				}
+				ChainSQL.payment.Token = token;
 			}
-		}).then(function (data) {
-			// subscribeTx success
-		}).catch(function (error) {
-			// subscribeTx failure
-			errFunc('subscribeTx exception.' + error);
-		});
-	}
+			delete ChainSQL.payment.name;
+			delete ChainSQL.payment.publicKey;
 
-
-	// submit transaction
-	ChainSQL.api.submit(signed.signedTransaction).then(function (result) {
-		//console.log('submit ', JSON.stringify(result));
-		if (result.resultCode != 'tesSUCCESS') {
-			if (expectOpt.expect !== "send_success") {
-				ChainSQL.event.unsubscribeTx(signed.id);
-			}
-			//return error message
-			errFunc(result);
-		} else {
-			// submit successfully
-			if (expectOpt.expect === "send_success") {
-				// ChainSQL.event.unsubscribeTx(signed.id);
-				sucFunc({
-					status: 'send_success',
-					tx_hash: signed.id
-				});
-			}
-		}
-	}).catch(function (error) {
-		errFunc(error);
-	});
-}
-
-function prepareTable(ChainSQL, payment, object, resolve, reject) {
-	var errFunc = function (error) {
-		if ((typeof object) == 'function') {
-			object(error, null);
-		} else {
+			resolve();
+		}).catch(error => {
 			reject(error);
-		}
-	};
-	ChainSQL.api.prepareTable(payment).then(function (tx_json) {
-		// console.log(tx_json);
-		getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function (data) {
-			if (data.status == 'error') {
-				if (data.error_message)
-					errFunc(new Error(data.error_message));
-				else
-					errFunc(new Error('getTxJson error'));
-			} else {
-				data.tx_json.Fee = util.calcFee(data.tx_json);
-				var payment = data.tx_json;
-				let signedRet = ChainSQL.api.sign(JSON.stringify(data.tx_json), ChainSQL.connect.secret);
-				handleSignedTx(ChainSQL, signedRet, object, resolve, reject);
-			}
-		}).catch(function (error) {
-			errFunc(error);
 		});
-	}).catch(function (error) {
-		errFunc(error);
-	});
+	})
 }
 
-function handleGrantPayment(ChainSQL, object, resolve, reject) {
-	if (ChainSQL.payment.OpType != opType['t_grant'])
-		return reject(chainsqlError('Type of payment must be t_grant'));
-
-	// var payment = ChainSQL.payment;
-	var name = ChainSQL.payment.name;
-	var publicKey = ChainSQL.payment.publicKey;
-	getUserToken(ChainSQL.api.connection, ChainSQL.connect.address, ChainSQL.connect.address, name).then(function (data) {
-		var token = data[ChainSQL.connect.address + name];
-		if (token != '') {
-			var secret = decodeToken(ChainSQL, token);
-			try {
-				token = generateToken(publicKey, secret).toUpperCase();
-			} catch (e) {
-				return reject(chainsqlError('your publicKey is not validate'));
-			}
-			ChainSQL.payment.Token = token;
-		}
-		delete ChainSQL.payment.name;
-		delete ChainSQL.payment.publicKey;
-
-		prepareTable(ChainSQL, ChainSQL.payment, object, resolve, reject);
-
-	}).catch(error => {
-		reject(error);
-	});
-}
-
-ChainsqlAPI.prototype.sign = function (json, secret) {
+ChainsqlAPI.prototype.sign = function (json, secret, option) {
 	if (!json.Fee) {
 		json.Fee = "50";
 	}
 	let ripple = new RippleAPI();
-	return ripple.sign(JSON.stringify(json), secret);
-}
-
-ChainsqlAPI.prototype.signFor = function (json, secret, option) {
-	if (!json.Fee) {
-		json.Fee = "50";
-	}
-	let ripple = new RippleAPI();
-	var signed = ripple.sign(JSON.stringify(json), secret, option);
-	return signed;
-}
+	return ripple.sign(JSON.stringify(json), secret, option);
+};
 
 // ChainsqlAPI.prototype.encrypt = function (plainText, listPublic) {
 
@@ -945,7 +935,7 @@ ChainsqlAPI.prototype.stopDump = function (owner, table) {
 		})
 	})
 }
- 
+
 ChainsqlAPI.prototype.dumpPosition = function name(owner, table) {
 	var connect = this.connect
 	var json = {
@@ -978,75 +968,72 @@ ChainsqlAPI.prototype.checkAdminAuth = function () {
 	})
 }
 
-ChainsqlAPI.prototype.submit = function (cb) {
-	var that = this;
-	if (that.transaction) {
-		throw chainsqlError('you are now in transaction,can not be submit');
-	} else {
-		var payment = that.payment;
-		switch (payment.OpType) {
-			case opType['t_create']:
+ChainsqlAPI.prototype.prepareJson = function () {
+	let that = this;
+	var payment = that.payment;
+	switch (payment.OpType) {
+		case opType['t_create']:
 
-				if (payment.Confidential) {
-					var token = generateToken(that.connect.secret);
-					var secret = decodeToken(that, token);
-					payment.Raw = crypto.aesEncrypt(secret, JSON.stringify(payment.Raw)).toUpperCase();
-					payment.Token = token.toUpperCase();
+			if (payment.Confidential) {
+				var token = generateToken(that.connect.secret);
+				var symKey = decodeToken(that, token);
+				if (that.connect.secret === "gmAlg") {
+					payment.Raw = crypto.symEncrypt(symKey, payment.Raw, "gmAlg").toUpperCase();
 				} else {
-					payment.Raw = convertStringToHex(JSON.stringify(payment.Raw))
-				};
-
-				if (payment.OperationRule) {
-					payment.OperationRule = convertStringToHex(JSON.stringify(payment.OperationRule));
+					payment.Raw = crypto.symEncrypt(symKey, payment.Raw).toUpperCase();
 				}
 
-				payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
-				break;
+				payment.Token = token.toUpperCase();
+			} else {
+				payment.Raw = convertStringToHex(payment.raw);
+			}
 
-			case opType['t_recreate']:
+			if (payment.OperationRule) {
+				payment.OperationRule = convertStringToHex(JSON.stringify(payment.OperationRule));
+			}
 
-				payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
-				break
-			case opType['t_drop']:
+			payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
+			break;
 
-				payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
-				break
+		case opType['t_recreate']:
 
-			case opType['t_rename']:
+			payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
+			break
+		case opType['t_drop']:
 
-				payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
-				payment.Tables[0].Table.TableNewName = convertStringToHex(payment.Tables[0].Table.TableNewName)
-				break
-			case opType['t_grant']:
+			payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
+			break
 
-				payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
-				payment.Raw = convertStringToHex(JSON.stringify(payment.Raw))
-				break
+		case opType['t_rename']:
 
-			default:
-				break;
-		}
+			payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
+			payment.Tables[0].Table.TableNewName = convertStringToHex(payment.Tables[0].Table.TableNewName)
+			break
+		case opType['t_grant']:
 
-		if ((typeof cb) != 'function') {
-			return new Promise(function (resolve, reject) {
-				if (that.payment.OpType == opType['t_grant']) {
-					handleGrantPayment(that, cb, resolve, reject);
-				} else {
-					prepareTable(that, that.payment, cb, resolve, reject);
-				}
+			payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
+			payment.Raw = convertStringToHex(JSON.stringify(payment.Raw))
+			break
+
+		default:
+			break;
+	}
+
+	return new Promise((resolve, reject) => {
+		if (that.payment.opType === opType['t_grant']) {
+			handleGrantPayment(that).then(() => {
+				that.api.prepareTable(that, that.payment, resolve, reject);
+			}).catch(error => {
+				reject(error);
 			});
 		} else {
-			if (that.payment.OpType == opType['t_grant']) {
-				handleGrantPayment(that, cb, null, null);
-			} else {
-				prepareTable(that, that.payment, cb, null, null);
-			}
+			that.api.prepareTable(that, that.payment, resolve, reject);
 		}
-	}
+	})
 }
 
 function callback(data, callback) {
 
 }
 
-module.exports.ChainsqlAPI = ChainsqlAPI;
+module.exports = ChainsqlAPI;

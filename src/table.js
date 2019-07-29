@@ -1,16 +1,8 @@
 'use strict'
-const opType = require('./config').opType;
-const chainsqlError = require('./error');
-const Table = function(name, connect) {
-  this.tab = name;
-  this.query = [];
-  this.exec = '';
-  this.field = null;
-  this.connect = connect;
-  this.cache = [];
-  this.payment = "";
-};
-const util = require('./util');
+const opType = require('../lib/config').opType;
+const chainsqlError = require('../lib/error');
+var Submit = require('./submit');
+const util = require('../lib/util');
 const convertStringToHex = util.convertStringToHex;
 const getTableSequence = util.getTableSequence;
 const getUserToken = util.getUserToken;
@@ -19,7 +11,56 @@ const generateToken = util.generateToken;
 const decodeToken = util.decodeToken;
 const crypto = require('../lib/crypto');
 
-Table.prototype.insert = function(raw, field) {
+class Table extends Submit {
+  constructor(name, ChainsqlAPI) {
+    super().ChainsqlAPI = ChainsqlAPI;
+    this.tab = name;
+    this.query = [];
+    this.exec = '';
+    this.field = null;
+    this.connect = ChainsqlAPI.connect;
+    this.cache = [];
+    this.payment = "";
+  }
+
+  submit(cb) {
+    var connect = this.connect;
+    var that = this;
+
+    if (that.exec == 'r_get') {
+      if (Object.prototype.toString.call(this.query[0]) !== '[object Array]') {
+        this.query.unshift([]);
+      }
+
+      if ((typeof cb) != 'function') {
+        return new Promise(function (resolve, reject) {
+          handleGetRecord(that, cb, resolve, reject);
+        });
+      } else {
+        handleGetRecord(that, cb, null, null);
+      }
+    } else {
+      let cbResult = util.parseCb(cb);
+      if (cbResult.isFunction) {
+        super.submit(cbResult.expectOpt).then(result => {
+          cb(null, result);
+        }).catch(error => {
+          cb(error, null);
+        });
+      } else {
+        return new Promise((resolve, reject) => {
+          super.submit(cbResult.expectOpt).then(result => {
+            resolve(result);
+          }).catch(error => {
+            reject(error);
+          });
+        });
+      }
+    }
+  }
+}
+
+Table.prototype.insert = function (raw, field) {
   if (!this.tab) throw chainsqlError('you must appoint the table name');
   if (this.exec !== '' && this.exec !== 'r_insert') throw chainsqlError('Object can not hava function insert');
   var that = this;
@@ -27,7 +68,7 @@ Table.prototype.insert = function(raw, field) {
     this.field = field;
   }
   if (Object.prototype.toString.call(raw) === '[object Array]') {
-    raw.forEach(function(item) {
+    raw.forEach(function (item) {
       that.query.push(item);
     })
   } else {
@@ -66,7 +107,7 @@ Table.prototype.insert = function(raw, field) {
   }
 }
 
-Table.prototype.update = function() {
+Table.prototype.update = function () {
   if (!this.tab) throw chainsqlError('you must appoint the table name');
   if (this.exec !== 'r_get') throw chainsqlError('Object can not hava function update');
   var that = this;
@@ -101,7 +142,7 @@ Table.prototype.update = function() {
     return this;
   }
 }
-Table.prototype.delete = function() {
+Table.prototype.delete = function () {
   if (!this.tab) throw chainsqlError('you must appoint the table name');
   var that = this;
   //if (this.exec !== 'r_get') throw new Error('Object can not hava function delete');
@@ -134,7 +175,7 @@ Table.prototype.delete = function() {
     return this;
   }
 }
-Table.prototype.assert = function(raw) {
+Table.prototype.assert = function (raw) {
   if (!this.transaction) throw chainsqlError('you must begin the transaction first');
   if (!this.tab) throw chainsqlError('you must appoint the table name');
   if (this.transaction) {
@@ -150,7 +191,7 @@ Table.prototype.assert = function(raw) {
   	return this;
   }*/
 }
-Table.prototype.get = function(raw) {
+Table.prototype.get = function (raw) {
   if (!this.tab) throw chainsqlError('you must appoint the table name');
   if (this.exec !== '') throw chainsqlError('Object can not hava function get');
   var that = this
@@ -178,14 +219,14 @@ Table.prototype.get = function(raw) {
   this.payment = payment
   return this;
 }
-Table.prototype.withFields = function(field) {
+Table.prototype.withFields = function (field) {
   if (this.exec !== 'r_get') throw chainsqlError('Object can not hava function filterWith');
   this.query.unshift(field);
 
   this.payment.tx_json.Raw = this.query
   return this;
 }
-Table.prototype.assert = function(json) {
+Table.prototype.assert = function (json) {
   this.exec = 't_assert';
   this.query.unshift(json);
   return this;
@@ -234,32 +275,32 @@ function hasHaving(item) {
       return true;
     }
   }
-  return false;    
+  return false;
 }
 
 function hasExtraCond(item) {
-    if (hasLimit(item) 
-        || hasOrder(item) 
-        || hasGroupBy(item) 
-        || hasHaving(item)) {
-            return true;
-        }
-    return false;
+  if (hasLimit(item)
+    || hasOrder(item)
+    || hasGroupBy(item)
+    || hasHaving(item)) {
+    return true;
+  }
+  return false;
 }
 
-Table.prototype.limit = function(limit) {
-  if(limit){
-    if(typeof(limit.index) != 'number')
+Table.prototype.limit = function (limit) {
+  if (limit) {
+    if (typeof (limit.index) != 'number')
       throw chainsqlError('limit.index must be a number')
-    if(typeof(limit.total) != 'number')
-    throw chainsqlError('limit.total must be a number')
+    if (typeof (limit.total) != 'number')
+      throw chainsqlError('limit.total must be a number')
   }
   if (this.exec !== 'r_get')
     throw chainsqlError('Object can not hava function limit');
 
   var flag = 0;
   var indx = 0;
-  this.query.forEach(function(item) {
+  this.query.forEach(function (item) {
     if (hasLimit(item)) {
       flag = flag | 1;
       return;
@@ -270,8 +311,8 @@ Table.prototype.limit = function(limit) {
     //  return;
     //}
     if (hasExtraCond(item)) {
-        flag = flag | 2;
-        return;
+      flag = flag | 2;
+      return;
     }
     indx++;
   });
@@ -285,13 +326,13 @@ Table.prototype.limit = function(limit) {
   return this;
 }
 
-Table.prototype.order = function(orderObject) {
+Table.prototype.order = function (orderObject) {
   if (this.exec !== 'r_get')
     throw chainsqlError('Object can not hava function limit');
 
   var index = 0;
   var flag = 0;
-  this.query.forEach(function(item) {
+  this.query.forEach(function (item) {
     if (hasOrder(item)) {
       flag = flag | 2;
       return;
@@ -302,8 +343,8 @@ Table.prototype.order = function(orderObject) {
     //  return;
     //}
     if (hasExtraCond(item)) {
-        flag = flag | 1;
-        return; 
+      flag = flag | 1;
+      return;
     }
     index++;
   });
@@ -317,14 +358,14 @@ Table.prototype.order = function(orderObject) {
   if (Object.prototype.toString.call(orderObject) === '[object Object]') {
     orders.push(orderObject);
   } else if (Object.prototype.toString.call(orderObject) === '[object Array]') {
-    orderObject.forEach(function(e) {
+    orderObject.forEach(function (e) {
       orders.push(e);
     });
   }
 
   if ((flag & 2) === 2) {
     var temp_this = this;
-    orders.forEach(function(e) {
+    orders.forEach(function (e) {
       temp_this.query[index]['$order'].push(e);
     });
   } else {
@@ -334,7 +375,7 @@ Table.prototype.order = function(orderObject) {
   return this;
 }
 
-Table.prototype.groupby = function(group) {
+Table.prototype.groupby = function (group) {
   if (this.exec !== 'r_get')
     throw chainsqlError('Object can not hava function groupby');
 
@@ -343,15 +384,15 @@ Table.prototype.groupby = function(group) {
 
   var index = 0;
   var flag = 0;
-  this.query.forEach(function(item) {
+  this.query.forEach(function (item) {
     if (hasGroupBy(item)) {
       flag = flag | 2;
       return;
     }
 
     if (hasExtraCond(item)) {
-        flag = flag | 1;
-        return; 
+      flag = flag | 1;
+      return;
     }
     index++;
   });
@@ -363,17 +404,17 @@ Table.prototype.groupby = function(group) {
 
   if ((flag & 2) === 2) {
     var temp_this = this;
-    group.forEach(function(e) {
+    group.forEach(function (e) {
       temp_this.query[index]['$group'].push(e);
     });
   } else {
     this.query[index]['$group'] = group;
   }
-  
+
   return this;
 }
 
-Table.prototype.having = function(value) {
+Table.prototype.having = function (value) {
   console.log(this.exec)
   if (this.exec !== 'r_get')
     throw chainsqlError('Object can not hava function having');
@@ -383,15 +424,15 @@ Table.prototype.having = function(value) {
 
   var flag = 0;
   var indx = 0;
-  this.query.forEach(function(item) {
+  this.query.forEach(function (item) {
     if (hasHaving(item)) {
       flag = flag | 1;
       return;
     }
 
     if (hasExtraCond(item)) {
-        flag = flag | 2;
-        return;
+      flag = flag | 2;
+      return;
     }
     indx++;
   });
@@ -401,196 +442,83 @@ Table.prototype.having = function(value) {
     indx = this.query.length - 1;
   }
 
-  this.query[indx]['$having'] = value;  
+  this.query[indx]['$having'] = value;
   return this;
 }
 
-function prepareTable(ChainSQL, payment, object, resolve, reject) {
-	
-	var connect = ChainSQL.connect;
-	var isFunction = false;
-	let expectOpt = {expect:"send_success"};
-	let cbCheckRet = util.checkCbOpt(object);
-	if(cbCheckRet.status === "success") {
-		if(cbCheckRet.type === "function") {
-			isFunction = cbCheckRet.isFunction;
-		} else {
-			expectOpt.expect = cbCheckRet.expect;
-		}
-	} else {
-		return reject(cbCheckRet.errMsg);
-	}
-	
-	var cb = function(error, data) {
-		if (isFunction) {
-			object(error, data);
-		} else {
-			if (error) {
-				reject(error);
-			} else {
-				resolve(data);
-			}
-		}
-	}
-	
-	getUserToken(ChainSQL.connect.api.connection, ChainSQL.connect.scope,ChainSQL.connect.address, ChainSQL.tab).then(function(token) {
-		token = token[ ChainSQL.connect.scope + ChainSQL.tab];
+Table.prototype.prepareJson = function () {
+  var that = this;
+  let payment = that.payment
+  payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
+
+  payment.Raw = JSON.stringify(that.payment.Raw)
+
+  if (that.exec == 'r_insert' && that.field) {
+    payment.AutoFillField = convertStringToHex(that.field);
+  }
+
+  return new Promise(function (resolve, reject) {
+    prepareTable(that, payment, resolve, reject);
+  });
+}
+function prepareTable(ChainSQL, payment, resolve, reject) {
+  var connect = ChainSQL.connect;
+
+  getUserToken(connect.api.connection, connect.scope, connect.address, ChainSQL.tab).then(function (token) {
+    token = token[ChainSQL.connect.scope + ChainSQL.tab];
     if (token && token != '') {
       var secret = decodeToken(ChainSQL, token);
-      payment.Raw = crypto.aesEncrypt(secret, payment.Raw).toUpperCase();
+      const algType = ChainSQL.connect.secret === "gmAlg" ? "gmAlg" : "aes";
+      payment.raw = crypto.symEncrypt(secret, payment.raw, algType).toUpperCase();
     } else {
-      payment.Raw = convertStringToHex(payment.Raw);
-    };
-		
-		connect.api.prepareTable(payment).then(function(tx_json) {
-			getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function(data) {
-				data.tx_json.Fee = util.calcFee(data.tx_json);
-				//var payment = data.tx_json;
-				var signedRet = connect.api.sign(JSON.stringify(data.tx_json), ChainSQL.connect.secret);
-				// subscribe event
-				if (expectOpt.expect !== "send_success") {
-					ChainSQL.event.subscribeTx(signedRet.id, isFunction ? object : function (err, data) {
-						if (err) {
-							cb(err, null);
-						} else {
-							// success
-							if (expectOpt.expect == data.status && data.type === 'singleTransaction') {
-								cb(null, {
-									status: expectOpt.expect,
-									tx_hash: signedRet.id
-								});
-							}
+      payment.raw = convertStringToHex(payment.raw);
+    }
 
-							// failure
-							if (util.checkSubError(data)) {
-								var error = {
-									status: data.status,
-									tx_hash: signedRet.id
-								};
-								if (data.hasOwnProperty("error_message")) {
-									error.error_message = data.error_message;
-								}
-								cb(null, error);
-							}
-						}
-					}).then(function (data) {
-						// subscribeTx success
-					}).catch(function (error) {
-						// subscribeTx failure
-						reject('subscribeTx failure.' + error);
-					});
-				}
-
-				// submit transaction
-				connect.api.submit(signedRet.signedTransaction).then(function (result) {
-					//console.log('submit ', JSON.stringify(result));
-					if (result.resultCode != 'tesSUCCESS') {
-						if(expectOpt.expect !== "send_success") {
-							ChainSQL.event.unsubscribeTx(signedRet.id);
-						}
-
-						cb(null, result);
-					} else {
-						// submit successfully
-						if (expectOpt.expect == 'send_success') {
-							cb(null, {
-								status: 'send_success',
-								tx_hash: signedRet.id
-							});
-							// ChainSQL.event.unsubscribeTx(signedRet.id);
-						}
-					}
-				}).catch(function (error) {
-					throw chainsqlError(error);
-				});
-			}).catch(function(error) {
-				cb(error, null);
-			});
-		}).catch(function (error) {
-			cb(error, null);
-		});
-	}).catch(function(error) {
-		cb(error, null);
-	});
+    connect.api.prepareTable(connect, payment, resolve, reject);
+  }).catch(function (error) {
+    reject(error);
+  });
 }
 
 function handleGetRecord(ChainSQL, object, resolve, reject) {
-	
-	var isFunction = false;
-	if ((typeof object) === 'function') 
-		isFunction = true;
-	
-	var cb = function(error, data) {
-		if (isFunction) {
-			object(error, data);
-		} else {
-			if (error) {
-				reject(error);
-			} else {
-				resolve(data);
-			}
-		}
-	};
-	
-	var connect = ChainSQL.connect;
-	//console.log('select \n\t', JSON.stringify(ChainSQL.query));
+
+  var isFunction = false;
+  if ((typeof object) === 'function')
+    isFunction = true;
+
+  var cb = function (error, data) {
+    if (isFunction) {
+      object(error, data);
+    } else {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(data);
+      }
+    }
+  };
+
+  var connect = ChainSQL.connect;
+  //console.log('select \n\t', JSON.stringify(ChainSQL.query));
   let json = ChainSQL.payment
   json.tx_json.Raw = JSON.stringify(json.tx_json.Raw);
 
-	util.getValidatedLedgerIndex(connect).then(function (ledgerVersion) {
+  util.getValidatedLedgerIndex(connect).then(function (ledgerVersion) {
     json.tx_json.LedgerIndex = ledgerVersion;
     return util.signData(JSON.stringify(json.tx_json), ChainSQL.connect.secret);
-	}).then(function (signed) {
-		return connect.api.connection.request({
-			command: 'r_get',
-			publicKey: signed.publicKey,
-			signature: signed.signature,
+  }).then(function (signed) {
+    return connect.api.connection.request({
+      command: 'r_get',
+      publicKey: signed.publicKey,
+      signature: signed.signature,
       signingData: JSON.stringify(json.tx_json),
       tx_json: json.tx_json
-		});
-	}).then(function (data) {
-		cb(null, data);
-	}).catch(function (err) {
-		cb(err, null);
-	});
-}
-
-Table.prototype.submit = function(cb) {
-  var connect = this.connect;
-  var that = this;
-  //if (cb === undefined || cb === null) {
-  //  cb = {expect:'send_success'};
-  //}
-  
-  if (that.exec == 'r_get') {
-    if (Object.prototype.toString.call(this.query[0]) !== '[object Array]') {
-      this.query.unshift([]);
-    };
-    
-    if ((typeof cb) != 'function') {
-      return new Promise(function(resolve, reject) {
-        handleGetRecord(that, cb, resolve, reject);
-      });
-    } else {
-		  handleGetRecord(that, cb, null, null);
-    }
-  } else {
-    let payment = that.payment
-    payment.Tables[0].Table.TableName = convertStringToHex(payment.Tables[0].Table.TableName)
-
-    payment.Raw = JSON.stringify(that.payment.Raw)
-
-    if (that.exec == 'r_insert' && that.field) {
-      payment.AutoFillField = convertStringToHex(that.field);
-    };
-    if ((typeof cb) != 'function') {
-      return new Promise(function(resolve, reject) {
-		  prepareTable(that, payment, cb, resolve, reject);
-	  });
-    } else {
-		  prepareTable(that, payment, cb, null, null);
-    }
-  }
+    });
+  }).then(function (data) {
+    cb(null, data);
+  }).catch(function (err) {
+    cb(err, null);
+  });
 }
 
 module.exports = Table;
