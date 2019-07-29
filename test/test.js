@@ -1,6 +1,6 @@
 'use strict'
 const co = require('co')
-const ChainsqlAPI = require('../src/index').ChainsqlAPI;
+const ChainsqlAPI = require('../src/index');
 // ChainsqlAPI.prototype.callback2Promise = require('./callback2Promise');
 const c = new ChainsqlAPI();
 
@@ -21,10 +21,6 @@ var issuer = {
 	secret: "xxEiFWFxpUARr9tq1XfvkykyR97iK",
 	address: "znbWk4iuz2HL1e1Ux91TzYfFzJHGeYxBA4"	
 }
-// var owner = {
-// 	"address":"r93pPN539JdTNqFsmeSJBYafd7ZzzpVCC"
-// }
-
 
 var sTableName = "fasefa";
 var sTableName2 = "b1";
@@ -35,8 +31,8 @@ main();
 
 async function main(){
 	try {
-		await c.connect('ws://127.0.0.1:6008');
-		// await c.connect('ws://101.201.40.124:5006');
+		// await c.connect('ws://127.0.0.1:6008');
+		await c.connect('ws://101.201.40.124:5006');
 		console.log('连接成功');
 
 		c.as(owner);
@@ -72,14 +68,14 @@ function testUnSubscribe(){
 
 async function subTx() {
 	//获取账户信息
-	let info = await c.api.getAccountInfo("rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh");
+	let info = await c.api.getAccountInfo("zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh");
 	console.log(info);
 	//获取当前区块号
 	c.getLedgerVersion(function(err,data){
 		var payment = {
-			"Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+			"Account": "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh",
 			"Amount":"1000000000",
-			"Destination": "rBuLBiHmssAMHWQMnEN7nXQXaVj7vhAv6Q",
+			"Destination": "zHyz3V6V3DZ2fYdb6AUc5WV4VKZP1pAEs9",
 			"TransactionType": "Payment",
 			"Sequence": info.sequence,
 			"LastLedgerSequence":data + 5,
@@ -123,8 +119,8 @@ async function testRippleAPI(){
 	// await testGetLedgerVersion();
 	// await testGetLedger();
 
-	// await testGetTransactions();
-	await testGetTransaction();
+	await testGetAccountTransactions();
+	// await testGetTransaction();
 	// await testGetServerInfo();
 	// await testUnlList();
 	// await testEscrow();
@@ -140,16 +136,16 @@ async function testChainsql(){
 	// await testCreateTable();
 
 	// // //创建另一张表，用来测试rename,drop
-	// await testCreateTable1();
+	await testCreateTable1();
 	// await testInsert();
 	// await testUpdate();
 	// await testDelete();
 	// await testRename();
 	// await testGet();
-	await testGetBySql();
-	await testGetBySqlUser();
+	// await testGetBySql();
+	// await testGetBySqlUser();
 	// await testDrop();
-	//await testGrant();
+	// await testGrant();
 	// await testTxs();
 	// await insertAfterGrant();
 	// await testOperationRule();
@@ -158,7 +154,6 @@ async function testChainsql(){
 
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
-
 }
 
 function subTable(tb, owner) {
@@ -213,7 +208,7 @@ var testCreateTable1 = async function() {
 		let rs = await c.createTable(sTableName, raw, option).submit({expect:'db_success'});
 		console.log("testCreateTable1" , rs);	
 	} catch (error) {
-		console.log(error);
+		console.error(error);
 	}
 };
 
@@ -247,26 +242,29 @@ var testDelete = async function(){
 }
 
 var testRename= async function(){
-	var rs = await c.renameTable(sTableName2,sReName).submit({expect:'db_success'});
-	console.log("testRename",rs);
-}
+	try {
+		var rs = await c.renameTable(sTableName,sReName).submit({expect:'db_success'});
+		console.log("testRename",rs);	
+	} catch (error) {
+		console.error(error);
+	}
+};
 var testGet = async function(){
-
-	var raw = []
-	//求和
-	// var rs = await c.table(sTableName).get(raw).withFields(["SUM(id)"]).submit();
-	var rs = await c.table(sTableName).get(raw).withFields([]).submit().catch(function(err){
-		console.error(err);
+	const raw = { id:1 };
+	const res = await c.table(sTableName).get(raw).submit().catch(err => {
+		return console.error(err);
 	});
 
-	// var raw = {id:1}
-	// var rs = await c.table(sTableName).get({name:'wifi'}).order({id:-1}).limit({index:0,total:1}).withFields([]).submit();
-	// var rs = await c.table(sTableName).get().withFields(["COUNT(*)"]).submit();
-	console.log("testGet",rs);
+	//求和
+	// const res = await c.table(sTableName).get(raw).withFields(["SUM(id)"]).submit();
+
+	// const res = await c.table(sTableName).get({name:'wifi'}).order({id:-1}).limit({index:0,total:1}).withFields([]).submit();
+	// const res = await c.table(sTableName).get().withFields(["COUNT(*)"]).submit();
+	console.log("testGet",res);
 }
 
 var testGetBySql = async function(){
-	var tableNameInDB = await c.getTableNameInDB(owner.address,"wiki");
+	var tableNameInDB = await c.getTableNameInDB(owner.address, sTableName);
 	var tableName = "t_" + tableNameInDB;
 	var rs = await c.getBySqlAdmin("select * from " + tableName);
 	console.log(rs);
@@ -280,7 +278,7 @@ var testGetBySqlUser = async function(){
 }
 
 var testDrop = async function(){
-	var rs = await c.dropTable(sReName).submit({expect:'db_success'});
+	var rs = await c.dropTable(sTableName).submit({expect:'db_success'});
 	console.log("testDrop",rs);
 }
 
@@ -359,6 +357,7 @@ var testOperationRule = async function(){
 var generateAccount = async function(){
 	return c.generateAddress();
 }
+
 var activateAccount = async function(account){
 	let rs = await c.pay(account,2000).submit({expect:'validate_success'});
 	console.log(rs);
@@ -381,15 +380,16 @@ async function testGetLedger(){
 	// console.log(rs);
 }
 
-async function testGetTransactions(){
+async function testGetAccountTransactions(){
 	// var opt = {
 	// 	minLedgerVersion : 	1,// || -1,
 	// 	// -1 is equivalent to most recent available validated ledger
 	// 	limit:20,
 	// 	maxLedgerVersion : 500
 	// }
-	var opt = {limit:12}
-	c.getTransactions(owner.address,opt,callback);
+	const opt = {limit:12};
+	// const opt = {start:"2282CC29603E5141EAC96B25FF4BF10E896103A06F7C055FCA90C9956B6C98F9"};
+	c.getAccountTransactions(owner.address, opt, callback);
 	// var rs = await callback2Promise(c.getTransactions,opt);
 	// console.log(rs);
 }
@@ -469,7 +469,6 @@ async function testAccountTables()
 	} catch (error) {
 		console.error(error);
 	}
-	
 }
 
 async function testTableAuth(){

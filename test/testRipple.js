@@ -1,5 +1,5 @@
 'use strict'
-const ChainsqlAPI = require('../src/index').ChainsqlAPI;
+const ChainsqlAPI = require('../src/index');
 const c = new ChainsqlAPI();
 
 var root = {
@@ -77,8 +77,7 @@ var testGateWay = async function () {
     let res;
     console.log("----------- GateWay >>>>>>>>>>>>>");
     var opt = {
-        setFlag: "defaultChainsql",
-        //clearFlag: "defaultChainsql",
+        enableRippling: true,
         rate: 1.002,
         min: 1,
         max: 1.5

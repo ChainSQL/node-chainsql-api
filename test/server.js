@@ -2,7 +2,7 @@
 
 
 const co = require('co')
-const ChainsqlAPI = require('../src/index').ChainsqlAPI;
+const ChainsqlAPI = require('../src/index');
 const r = new ChainsqlAPI();
 var path = require('path');
 var basePath = path.join(require.resolve('chainsql-lib'), '../common');

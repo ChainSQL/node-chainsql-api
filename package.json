@@ -1,6 +1,6 @@
 {
   "name": "chainsql",
-  "version": "0.6.54",
+  "version": "0.6.56",
   "description": "An database driver for chainsql ",
   "main": "src/index.js",
   "scripts": {
@@ -9,17 +9,18 @@
   "dependencies": {
     "bignumber.js": "^2.4.0",
     "chainsql-keypairs": "^0.10.4",
+    "chainsql-lib": "^0.17.43",
     "co": "^4.6.0",
+    "dotenv": "^8.0.0",
     "elliptic": "^5.1.0",
     "hash.js": "^1.0.3",
     "lodash": "^4.14.1",
-    "chainsql-lib": "^0.17.38",
-    "sjcl": "~1.0.3",
-    "ws": "^2.2.2",
     "protobufjs": "^6.8.0",
+    "sjcl": "~1.0.3",
     "web3-core-helpers": "1.0.0-beta.36",
     "web3-eth-abi": "1.0.0-beta.36",
-    "web3-utils": "1.0.0-beta.36"
+    "web3-utils": "1.0.0-beta.36",
+    "ws": "^6.2.1"
   },
   "repository": {
     "type": "git",

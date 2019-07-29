@@ -50,14 +50,14 @@ class ChainsqlAPI extends Submit {
 		this.needVerify = 1;
 	}
 
-	submit(cb) {
+	submit (cb) {
 		var that = this;
 		if (that.transaction) {
 			throw new Error('you are now in transaction,can not be submit');
 		} else {
 			let cbResult = util.parseCb(cb);
 
-			if (cbResult.isFunction) {
+			if(cbResult.isFunction) {
 				super.submit(cbResult.expectOpt).then(result => {
 					cb(null, result);
 				}).catch(error => {
@@ -133,9 +133,9 @@ ChainsqlAPI.prototype.table = function (name) {
 	return this.tab;
 }
 
-ChainsqlAPI.prototype.contract = function (jsonInterface, address, options) {
-	this.contractObj = new Contract(this, jsonInterface, address, options);
-	return this.contractObj;
+ChainsqlAPI.prototype.contract = function(jsonInterface, address, options) {
+  this.contractObj = new Contract(this, jsonInterface, address, options);
+  return this.contractObj;
 }
 
 ChainsqlAPI.prototype.generateAddress = function () {
@@ -146,7 +146,7 @@ ChainsqlAPI.prototype.generateAddress = function () {
 		account = ripple.generateAddress();
 		keypair = keypairs.deriveKeypair(account.secret);
 	} else {
-		if (typeof (arguments[0]) === "object") {
+		if(typeof(arguments[0]) === "object" ) {
 			account = ripple.generateAddress(arguments[0]);
 			keypair = keypairs.deriveKeypair(account.secret);
 		} else {
@@ -428,31 +428,31 @@ ChainsqlAPI.prototype.getAccountTransactions = function (address, opts, cb) {
 	let callback, newOpt, singleArg;
 	let isCallback = false;
 	switch (arguments.length) {
-		case 1:
-			newOpt = {};
-			break;
-		case 2:
-			singleArg = arguments[1];
-			if ((typeof singleArg) === "function") {
-				callback = singleArg;
-				isCallback = true;
-			} else if ((typeof singleArg) === "object") {
-				newOpt = singleArg;
-			} else {
-				throw chainsqlError("wrong params, please check");
-			}
-			break;
-		case 3:
-			newOpt = opts;
-			if ((typeof cb) === "function") {
-				callback = cb;
-				isCallback = true;
-			} else {
-				throw chainsqlError("wrong params, please check");
-			}
-			break;
-		default:
+	case 1:
+		newOpt = {};
+		break;
+	case 2:
+		singleArg = arguments[1];
+		if ((typeof singleArg) === "function") {
+			callback = singleArg;
+			isCallback = true;
+		} else if ((typeof singleArg) === "object") {
+			newOpt = singleArg;
+		} else {
 			throw chainsqlError("wrong params, please check");
+		}
+		break;
+	case 3:
+		newOpt = opts;
+		if ((typeof cb) === "function") {
+			callback = cb;
+			isCallback = true;
+		} else {
+			throw chainsqlError("wrong params, please check");
+		}
+		break;
+	default:
+		throw chainsqlError("wrong params, please check");
 	}
 
 	if (isCallback) {
@@ -507,35 +507,35 @@ ChainsqlAPI.prototype.getUnlList = function (cb) {
 ChainsqlAPI.prototype.getLedger = function (opts, cb) {
 	let callback, newOpt, singleArg;
 	let isCallback = false;
-	switch (arguments.length) {
-		case 0:
-			newOpt = {};
-			break;
-		case 1:
-			singleArg = arguments[0];
-			if ((typeof singleArg) === "function") {
-				callback = singleArg;
-				isCallback = true;
-			} else if ((typeof singleArg) === "object") {
-				newOpt = singleArg;
-			} else {
-				throw chainsqlError("wrong params, please check");
-			}
-			break;
-		case 2:
-			newOpt = opts;
-			if ((typeof cb) === "function") {
-				callback = cb;
-				isCallback = true;
-			} else {
-				throw chainsqlError("wrong params, please check");
-			}
-			break;
-		default:
+	switch(arguments.length) {
+	case 0:
+		newOpt = {};
+		break;
+	case 1:
+		singleArg = arguments[0];
+		if((typeof singleArg) === "function") {
+			callback = singleArg;
+			isCallback = true;
+		} else if((typeof singleArg) === "object") {
+			newOpt = singleArg;
+		} else {
 			throw chainsqlError("wrong params, please check");
+		}
+		break;
+	case 2:
+		newOpt = opts;
+		if ((typeof cb) === "function") {
+			callback = cb;
+			isCallback = true;
+		} else {
+			throw chainsqlError("wrong params, please check");
+		}
+		break;
+	default:
+		throw chainsqlError("wrong params, please check");
 	}
 
-	if (isCallback) {
+	if(isCallback) {
 		this.api.getLedger(newOpt).then(function (data) {
 			callback(null, data);
 		}).catch(function (err) {
@@ -686,21 +686,20 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 
 				var dropsPerByte = Math.ceil(1000000.0 / 1024);
 				ChainSQL.api.getServerInfo().then(res => {
+				 			  
+				  if(res.validatedLedger.dropsPerByte != undefined){
 
-					if (res.validatedLedger.dropsPerByte != undefined) {
+					dropsPerByte = parseInt(res.validatedLedger.dropsPerByte);
+				  }
 
-						dropsPerByte = parseInt(res.validatedLedger.dropsPerByte);
-					}
-
-					txJson.Fee = util.calcFee(txJson, dropsPerByte);
-					data.txJSON = JSON.stringify(txJson);
-					let signedRet = ChainSQL.api.sign(data.txJSON, ChainSQL.connect.secret);
-					ChainSQL.handleSignedTx(ChainSQL, signedRet, cbResult.expectOpt, resolve, reject);
-
+				  txJson.Fee = util.calcFee(txJson,dropsPerByte);
+				  data.txJSON = JSON.stringify(txJson);
+				  let signedRet = ChainSQL.api.sign(data.txJSON, ChainSQL.connect.secret);
+				  ChainSQL.handleSignedTx(ChainSQL, signedRet, cbResult.expectOpt, resolve, reject);				  
+					  
 				}).catch(err => {
 					cb(err, null);
 				});
-
 
 			}).catch(function (error) {
 				cb(error, null);
@@ -731,7 +730,6 @@ function handleGrantPayment(ChainSQL) {
 	return new Promise((resolve, reject) => {
 		if (ChainSQL.payment.opType != opType['t_grant'])
 			reject(chainsqlError('Type of payment must be t_grant'));
-
 		var name = ChainSQL.payment.name;
 		var publicKey = ChainSQL.payment.publicKey;
 		getUserToken(ChainSQL.api.connection, ChainSQL.connect.address, ChainSQL.connect.address, name).then(function (data) {
