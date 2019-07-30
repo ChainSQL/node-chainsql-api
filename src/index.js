@@ -1,5 +1,4 @@
 'use strict'
-require('dotenv').config();
 const crypto = require('../lib/crypto');
 const keypairs = require('chainsql-keypairs');
 const EventManager = require('./eventManager')
@@ -31,7 +30,7 @@ const generateToken = util.generateToken;
 const decodeToken = util.decodeToken;
 
 class ChainsqlAPI extends Submit {
-	constructor() {
+	constructor(algType = "normal") {
 		super();
 		this.tab = null;
 		this.query = {};
@@ -48,6 +47,11 @@ class ChainsqlAPI extends Submit {
 		this.cache = [];
 		this.strictMode = false;
 		this.needVerify = 1;
+		if(algType === "gmAlg" || algType === "normal") {
+			keypairs.setCryptAlgType(algType);
+		} else {
+			throw new Error("Wrong algType for ChainsqlAPI object, must be 'gmAlg' or 'normal'");
+		}
 	}
 
 	submit (cb) {
