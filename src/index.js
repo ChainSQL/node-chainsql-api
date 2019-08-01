@@ -31,7 +31,7 @@ const generateToken = util.generateToken;
 const decodeToken = util.decodeToken;
 
 class ChainsqlAPI extends Submit {
-	constructor() {
+	constructor(algType = "normal") {
 		super();
 		this.tab = null;
 		this.query = {};
@@ -48,6 +48,11 @@ class ChainsqlAPI extends Submit {
 		this.cache = [];
 		this.strictMode = false;
 		this.needVerify = 1;
+		if (algType === "gmAlg" || algType === "normal") {
+			keypairs.setCryptAlgType(algType);
+		} else {
+			throw new Error("Wrong algType for ChainsqlAPI object, must be 'gmAlg' or 'normal'");
+		}
 	}
 
 	submit (cb) {
@@ -976,14 +981,14 @@ ChainsqlAPI.prototype.prepareJson = function () {
 				var token = generateToken(that.connect.secret);
 				var symKey = decodeToken(that, token);
 				if (that.connect.secret === "gmAlg") {
-					payment.Raw = crypto.symEncrypt(symKey, payment.Raw, "gmAlg").toUpperCase();
+					payment.Raw = crypto.symEncrypt(symKey, JSON.stringify(payment.Raw), "gmAlg").toUpperCase();
 				} else {
-					payment.Raw = crypto.symEncrypt(symKey, payment.Raw).toUpperCase();
+					payment.Raw = crypto.symEncrypt(symKey, JSON.stringify(payment.Raw)).toUpperCase();
 				}
 
 				payment.Token = token.toUpperCase();
 			} else {
-				payment.Raw = convertStringToHex(payment.raw);
+				payment.Raw = convertStringToHex(JSON.stringify(payment.Raw));
 			}
 
 			if (payment.OperationRule) {

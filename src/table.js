@@ -469,9 +469,9 @@ function prepareTable(ChainSQL, payment, resolve, reject) {
     if (token && token != '') {
       var secret = decodeToken(ChainSQL, token);
       const algType = ChainSQL.connect.secret === "gmAlg" ? "gmAlg" : "aes";
-      payment.raw = crypto.symEncrypt(secret, payment.raw, algType).toUpperCase();
+      payment.Raw = crypto.symEncrypt(secret, payment.Raw, algType).toUpperCase();
     } else {
-      payment.raw = convertStringToHex(payment.raw);
+      payment.Raw = convertStringToHex(payment.Raw);
     }
 
     connect.api.prepareTable(connect, payment, resolve, reject);
