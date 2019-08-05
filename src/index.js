@@ -733,7 +733,7 @@ ChainsqlAPI.prototype.commit = function (cb) {
 
 function handleGrantPayment(ChainSQL) {
 	return new Promise((resolve, reject) => {
-		if (ChainSQL.payment.opType != opType['t_grant'])
+		if (ChainSQL.payment.OpType != opType['t_grant'])
 			reject(chainsqlError('Type of payment must be t_grant'));
 		var name = ChainSQL.payment.name;
 		var publicKey = ChainSQL.payment.publicKey;
@@ -1023,7 +1023,7 @@ ChainsqlAPI.prototype.prepareJson = function () {
 	}
 
 	return new Promise((resolve, reject) => {
-		if (that.payment.opType === opType['t_grant']) {
+		if (that.payment.OpType === opType['t_grant']) {
 			handleGrantPayment(that).then(() => {
 				that.api.prepareTable(that, that.payment, resolve, reject);
 			}).catch(error => {
