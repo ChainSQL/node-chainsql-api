@@ -876,6 +876,23 @@ ChainsqlAPI.prototype.getBySqlUser = function(sql){
 	});
 };
 
+ChainsqlAPI.prototype.createRandom = function() {
+	const chainsqlCon = this.connect;
+	return chainsqlCon.api.connection.request({
+		command: "g_createrandom"
+	});
+};
+
+ChainsqlAPI.prototype.generatCryptData = function(smAlgType, dataSetCount, plainLen) {
+	const chainsqlCon = this.connect;
+	return chainsqlCon.api.connection.request({
+		command: "g_cryptdata",
+		alg_type: smAlgType,
+		data_set_count: dataSetCount,
+		plain_data_len: plainLen
+	});
+};
+
 ChainsqlAPI.prototype.prepareJson = function(){
 	let that = this;
 	return new Promise((resolve, reject) => {
