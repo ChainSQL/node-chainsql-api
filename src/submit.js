@@ -44,9 +44,23 @@ Submit.prototype.setCert = function () {
 
 	if(this.ChainsqlAPI.connect.userCert != undefined){
 
-		var certTxJSON = JSON.parse(self.txJSON);
-		certTxJSON.Certificate =  util.convertStringToHex (self.ChainsqlAPI.connect.userCert);
-		self.txJSON  =  JSON.stringify(certTxJSON);
+		if(typeof(self.txJSON) == "object"){
+
+
+			self.txJSON.Certificate  =   util.convertStringToHex (self.ChainsqlAPI.connect.userCert);
+
+
+		}else if(typeof(self.txJSON) == "string"){
+
+			var txJson = JSON.parse(self.txJSON);
+
+			txJson.Certificate = util.convertStringToHex (self.ChainsqlAPI.connect.userCert);
+
+			self.txJSON = JSON.stringify(txJson);
+
+		}
+
+
 
 	}
 };
