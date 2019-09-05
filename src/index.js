@@ -876,6 +876,29 @@ ChainsqlAPI.prototype.getBySqlUser = function(sql){
 	});
 };
 
+
+ChainsqlAPI.prototype.getLedgerTxs = function(ledgerIndex,includeSuccess,includeFailure){
+
+	var connect = this.connect;
+
+	return new Promise(function(resolve, reject){
+		connect.api.connection.request({
+			command: 'ledger_txs',
+			ledger_index:ledgerIndex,
+			include_success:includeSuccess,
+			include_failure:includeFailure
+		}).then(function(data){
+			resolve(data);
+		}).catch(function(err){
+			reject(err);
+		});
+	});
+
+};
+
+
+
+
 ChainsqlAPI.prototype.prepareJson = function(){
 	let that = this;
 	return new Promise((resolve, reject) => {
