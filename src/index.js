@@ -119,6 +119,9 @@ ChainsqlAPI.prototype.as = function (account) {
 }
 ChainsqlAPI.prototype.use = function (address) {
 	this.connect.use(address);
+	if(typeof(address) != 'string'){
+		throw chainsqlError("c.use parameter invalid,must be a string.'"); 
+	}
 }
 ChainsqlAPI.prototype.setRestrict = function (mode) {
 	this.strictMode = mode;
