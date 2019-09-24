@@ -786,13 +786,14 @@ ChainsqlAPI.prototype.sign = function (json, secret, option) {
 	return ripple.sign(JSON.stringify(json), secret, option);
 };
 
-// ChainsqlAPI.prototype.encrypt = function (plainText, listPublic) {
+ChainsqlAPI.prototype.eciesEncrypt = function (plainText, publicKey) {
+	return crypto.eciesEncrypt(plainText,publicKey);
+}
 
-// }
-
-// ChainsqlAPI.prototype.decrypt = function (cipher, secret) {
-
-// }
+ChainsqlAPI.prototype.eciesDecrypt = function (cipher, secret) {
+	var keypair = keypairs.deriveKeypair(secret);
+	return crypto.eciesDecrypt(cipher,keypair.privateKey);
+}
 
 ChainsqlAPI.prototype.getAccountTables = function(address, bGetDetailInfo=false){
 	var connection = this.api ? this.api.connection : this.connect.api.connection;

@@ -1,5 +1,4 @@
 'use strict'
-const co = require('co')
 const ChainsqlAPI = require('../src/index');
 // ChainsqlAPI.prototype.callback2Promise = require('./callback2Promise');
 const c = new ChainsqlAPI();
