@@ -1,6 +1,6 @@
 {
   "name": "chainsql",
-  "version": "0.6.62",
+  "version": "0.6.63",
   "description": "An database driver for chainsql ",
   "main": "src/index.js",
   "scripts": {
