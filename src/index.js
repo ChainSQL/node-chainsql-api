@@ -29,6 +29,7 @@ const getTxJson = util.getTxJson;
 const generateToken = util.generateToken;
 const decodeToken = util.decodeToken;
 
+
 class ChainsqlAPI extends Submit {
 	constructor(algType = "normal") {
 		super();
@@ -169,7 +170,16 @@ ChainsqlAPI.prototype.generateAddress = function () {
 	}
 	var buf = Buffer.from(keypair.publicKey, 'hex');
 	account.publicKey = addressCodec.encode(buf, opt);
+
+	var test1 = addressCodec.decode(account.publicKey,opt);
+	//var hexStr = stringToHex(test1);
+	//var str = test1.toString();
+
+	var buf2 = Buffer.from(test1).toString('hex');
+
 	// account.publickKey = keypair.publicKey;
+
+	addressCodec.decodeToken
 
 	return account;
 }
@@ -900,6 +910,34 @@ ChainsqlAPI.prototype.getLedgerTxs = function(ledgerIndex,includeSuccess,include
 
 };
 
+
+ChainsqlAPI.prototype.signFromString = function (messageHex, secret) {
+
+	try {
+		var keypair = keypairs.deriveKeypair(secret);
+		var signatue  = keypairs.sign(messageHex,keypair.privateKey);
+		return signatue;
+	}
+	catch (error) {
+		console.log(error);
+	}
+};
+
+
+ChainsqlAPI.prototype.verify = function (messageHex, signature, publicKey) {
+
+	try {
+		/// ECDSA secp256k1
+		var opt = {version:35};
+		var secp256k1Pub    = addressCodec.decode(publicKey,opt);
+		var secp256k1PubHex = Buffer.from(secp256k1Pub).toString('hex');
+		var bVerify  = keypairs.verify(messageHex, signature,secp256k1PubHex);
+		return bVerify;
+	}
+	catch (error) {
+		console.log(error);
+	}
+}
 
 
 
