@@ -170,17 +170,6 @@ ChainsqlAPI.prototype.generateAddress = function () {
 	}
 	var buf = Buffer.from(keypair.publicKey, 'hex');
 	account.publicKey = addressCodec.encode(buf, opt);
-
-	var test1 = addressCodec.decode(account.publicKey,opt);
-	//var hexStr = stringToHex(test1);
-	//var str = test1.toString();
-
-	var buf2 = Buffer.from(test1).toString('hex');
-
-	// account.publickKey = keypair.publicKey;
-
-	addressCodec.decodeToken
-
 	return account;
 }
 
@@ -913,14 +902,9 @@ ChainsqlAPI.prototype.getLedgerTxs = function(ledgerIndex,includeSuccess,include
 
 ChainsqlAPI.prototype.signFromString = function (messageHex, secret) {
 
-	try {
-		var keypair = keypairs.deriveKeypair(secret);
-		var signatue  = keypairs.sign(messageHex,keypair.privateKey);
-		return signatue;
-	}
-	catch (error) {
-		console.log(error);
-	}
+	var keypair = keypairs.deriveKeypair(secret);
+	var signatue  = keypairs.sign(messageHex,keypair.privateKey);
+	return signatue;
 };
 
 
@@ -936,6 +920,7 @@ ChainsqlAPI.prototype.verify = function (messageHex, signature, publicKey) {
 	}
 	catch (error) {
 		console.log(error);
+		return false;
 	}
 }
 
