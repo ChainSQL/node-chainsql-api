@@ -394,6 +394,10 @@ Table.prototype.prepareJson = function() {
 	};
 	if (that.exec == 'r_insert' && that.field) {
 		payment.autoFillField = convertStringToHex(that.field);
+  };
+  	
+	if(this.connect.userCert != undefined){
+		  payment.Certificate = util.convertStringToHex (this.connect.userCert);
 	}
 
 	return new Promise(function (resolve, reject) {

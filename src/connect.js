@@ -12,6 +12,11 @@ Connection.prototype.use = function(address) {
   if (!this.address) throw new Error('please invoke as method before use!')
   this.scope = address;
 }
+
+Connection.prototype.useCert = function(cert) {
+  this.userCert = cert;
+}
+
 Connection.prototype.connect = function() {
   let that = this;
   return new Promise(function(resolve, reject) {

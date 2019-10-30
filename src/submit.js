@@ -20,6 +20,9 @@ Submit.prototype.submit = function (expectOpt) {
 		try {
 			self.prepareJson().then(function (prepared) {
 				self.txJSON = prepared.txJSON;
+
+				self.setCert();
+					
 				let signedRet = self.signTx();
 				self.handleSignedTx(self.ChainsqlAPI, signedRet, expectOpt, resolve, reject);
 			}).catch(function (error) {
@@ -33,6 +36,33 @@ Submit.prototype.submit = function (expectOpt) {
 
 Submit.prototype.setMaxLedgerVersionOffset = function (maxLedgerVersionOffset) {
 	this.instructions.maxLedgerVersionOffset = maxLedgerVersionOffset;
+};
+
+Submit.prototype.setCert = function () {
+
+	let self = this;
+
+	if(this.ChainsqlAPI.connect.userCert != undefined){
+
+		if(typeof(self.txJSON) == "object"){
+
+
+			self.txJSON.Certificate  =   util.convertStringToHex (self.ChainsqlAPI.connect.userCert);
+
+
+		}else if(typeof(self.txJSON) == "string"){
+
+			var txJson = JSON.parse(self.txJSON);
+
+			txJson.Certificate = util.convertStringToHex (self.ChainsqlAPI.connect.userCert);
+
+			self.txJSON = JSON.stringify(txJson);
+
+		}
+
+
+
+	}
 };
 
 Submit.prototype.signTx = function () {
@@ -79,7 +109,7 @@ Submit.prototype.handleSignedTx = function (ChainSQL, signed, expectOpt, resolve
 	}
 
 	// submit transaction
-	ChainSQL.api.submit(signed.signedTransaction).then(function (result) {
+  ChainSQL.api.submit(signed.signedTransaction).then(function (result) {
 		//console.log('submit ', JSON.stringify(result));
 		if (result.resultCode !== 'tesSUCCESS') {
 			if(expectOpt.expect !== "send_success") {

@@ -124,6 +124,11 @@ ChainsqlAPI.prototype.use = function (address) {
 		throw chainsqlError("c.use parameter invalid,must be a string.'"); 
 	}
 }
+
+ChainsqlAPI.prototype.useCert = function (cert) {
+	this.connect.useCert(cert);
+}
+
 ChainsqlAPI.prototype.setRestrict = function (mode) {
 	this.strictMode = mode;
 }

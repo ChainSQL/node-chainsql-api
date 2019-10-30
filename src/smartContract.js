@@ -1,5 +1,7 @@
 "use strict";
 
+var util = require('../lib/util');
+
 const _ = require('lodash');
 var chainsqlLibUtils = require('chainsql-lib').ChainsqlLibUtil;
 const keypairs = require('chainsql-keypairs');
@@ -769,6 +771,19 @@ function handleContractPayment(contractObj, contractPaymet, callbackProperty, re
 		}
 	};
 	prepareContractPayment(chainSQL, contractPaymet).then(data => {
+
+
+
+		if(chainSQL.connect.userCert != undefined && (typeof(data.txJSON) == "string")  ){	
+	
+				var txJson = JSON.parse(data.txJSON);
+				txJson.Certificate = util.convertStringToHex (chainSQL.connect.userCert);
+	
+				data.txJSON = JSON.stringify(txJson);
+			
+
+		}
+
 		let signedRet = chainSQL.api.sign(data.txJSON, chainSQL.connect.secret);
 		submitContractTx(contractObj, signedRet, callbackProperty, resolve, reject);
 	}).catch(err => {

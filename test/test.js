@@ -1,4 +1,8 @@
 'use strict'
+
+const fs   = require("fs");
+const co = require('co')
+
 const ChainsqlAPI = require('../src/index');
 // ChainsqlAPI.prototype.callback2Promise = require('./callback2Promise');
 const c = new ChainsqlAPI();
@@ -30,11 +34,15 @@ main();
 
 async function main(){
 	try {
-		// await c.connect('ws://127.0.0.1:6008');
-		await c.connect('ws://101.201.40.124:5006');
+		 await c.connect('ws://127.0.0.1:6005');
+		//await c.connect('ws://101.201.40.124:5006');
 		console.log('连接成功');
 
 		c.as(owner);
+
+		// // 读取证书文件
+		// var data = fs.readFileSync('D:\\git\\ca\\test\\userCert.cert');
+		// c.useCert(data.toString());
 
 		// c.setRestrict(true);
 		//激活user账户
