@@ -396,10 +396,6 @@ Table.prototype.prepareJson = function() {
 		payment.autoFillField = convertStringToHex(that.field);
   };
   	
-	if(this.connect.userCert != undefined){
-		  payment.Certificate = util.convertStringToHex (this.connect.userCert);
-	}
-
 	return new Promise(function (resolve, reject) {
 		prepareTable(that, payment, resolve, reject);
 	});
