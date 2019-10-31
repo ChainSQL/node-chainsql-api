@@ -97,6 +97,9 @@ Submit.prototype.handleSignedTx = function (ChainSQL, signed, expectOpt, resolve
 					if (data.hasOwnProperty("error_message")) {
 						error.error_message = data.error_message;
 					}
+					if(data.hasOwnProperty("error")){
+						error.error_code = data.error;
+					}
 					reject(error);
 				}
 			}
