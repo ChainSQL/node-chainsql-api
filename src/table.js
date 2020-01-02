@@ -394,8 +394,8 @@ Table.prototype.prepareJson = function() {
 	};
 	if (that.exec == 'r_insert' && that.field) {
 		payment.autoFillField = convertStringToHex(that.field);
-	}
-
+  };
+  	
 	return new Promise(function (resolve, reject) {
 		prepareTable(that, payment, resolve, reject);
 	});

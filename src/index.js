@@ -29,6 +29,7 @@ const getTxJson = util.getTxJson;
 const generateToken = util.generateToken;
 const decodeToken = util.decodeToken;
 
+
 class ChainsqlAPI extends Submit {
 	constructor(algType = "normal") {
 		super();
@@ -119,7 +120,15 @@ ChainsqlAPI.prototype.as = function (account) {
 }
 ChainsqlAPI.prototype.use = function (address) {
 	this.connect.use(address);
+	if(typeof(address) != 'string'){
+		throw chainsqlError("c.use parameter invalid,must be a string.'"); 
+	}
 }
+
+ChainsqlAPI.prototype.useCert = function (cert) {
+	this.connect.useCert(cert);
+}
+
 ChainsqlAPI.prototype.setRestrict = function (mode) {
 	this.strictMode = mode;
 }
@@ -166,8 +175,6 @@ ChainsqlAPI.prototype.generateAddress = function () {
 	}
 	var buf = Buffer.from(keypair.publicKey, 'hex');
 	account.publicKey = addressCodec.encode(buf, opt);
-	// account.publickKey = keypair.publicKey;
-
 	return account;
 }
 
@@ -783,13 +790,14 @@ ChainsqlAPI.prototype.sign = function (json, secret, option) {
 	return ripple.sign(JSON.stringify(json), secret, option);
 };
 
-// ChainsqlAPI.prototype.encrypt = function (plainText, listPublic) {
+ChainsqlAPI.prototype.eciesEncrypt = function (plainText, publicKey) {
+	return crypto.eciesEncrypt(plainText,publicKey);
+}
 
-// }
-
-// ChainsqlAPI.prototype.decrypt = function (cipher, secret) {
-
-// }
+ChainsqlAPI.prototype.eciesDecrypt = function (cipher, secret) {
+	var keypair = keypairs.deriveKeypair(secret);
+	return crypto.eciesDecrypt(cipher,keypair.privateKey);
+}
 
 ChainsqlAPI.prototype.getAccountTables = function(address, bGetDetailInfo=false){
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
@@ -892,6 +900,53 @@ ChainsqlAPI.prototype.generatCryptData = function(smAlgType, dataSetCount, plain
 		plain_data_len: plainLen
 	});
 };
+
+
+ChainsqlAPI.prototype.getLedgerTxs = function(ledgerIndex,includeSuccess,includeFailure){
+
+	var connect = this.connect;
+
+	return new Promise(function(resolve, reject){
+		connect.api.connection.request({
+			command: 'ledger_txs',
+			ledger_index:ledgerIndex,
+			include_success:includeSuccess,
+			include_failure:includeFailure
+		}).then(function(data){
+			resolve(data);
+		}).catch(function(err){
+			reject(err);
+		});
+	});
+
+};
+
+
+ChainsqlAPI.prototype.signFromString = function (messageHex, secret) {
+
+	var keypair = keypairs.deriveKeypair(secret);
+	var signatue  = keypairs.sign(messageHex,keypair.privateKey);
+	return signatue;
+};
+
+
+ChainsqlAPI.prototype.verify = function (messageHex, signature, publicKey) {
+
+	try {
+		/// ECDSA secp256k1
+		var opt = {version:35};
+		var secp256k1Pub    = addressCodec.decode(publicKey,opt);
+		var secp256k1PubHex = Buffer.from(secp256k1Pub).toString('hex');
+		var bVerify  = keypairs.verify(messageHex, signature,secp256k1PubHex);
+		return bVerify;
+	}
+	catch (error) {
+		console.log(error);
+		return false;
+	}
+}
+
+
 
 ChainsqlAPI.prototype.prepareJson = function(){
 	let that = this;
