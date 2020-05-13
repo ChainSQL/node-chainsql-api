@@ -771,17 +771,11 @@ function handleContractPayment(contractObj, contractPaymet, callbackProperty, re
 		}
 	};
 	prepareContractPayment(chainSQL, contractPaymet).then(data => {
-
-
-
 		if(chainSQL.connect.userCert != undefined && (typeof(data.txJSON) == "string")  ){	
-	
 				var txJson = JSON.parse(data.txJSON);
 				txJson.Certificate = util.convertStringToHex (chainSQL.connect.userCert);
-	
-				data.txJSON = JSON.stringify(txJson);
-			
 
+				data.txJSON = JSON.stringify(txJson);
 		}
 
 		let signedRet = chainSQL.api.sign(data.txJSON, chainSQL.connect.secret);
