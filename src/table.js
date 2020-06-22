@@ -90,10 +90,15 @@ Table.prototype.insert = function(raw, field) {
   }
 }
 
-Table.prototype.update = function() {
+Table.prototype.update = function(raw,field) {
   if (!this.tab) throw chainsqlError('you must appoint the table name');
   if (this.exec !== 'r_get') throw chainsqlError('Object can not hava function update');
-  this.query.unshift(Array.prototype.slice.call(arguments)[0]);
+  this.query.unshift(raw);
+ 
+  if (field) {
+    this.field = field;
+  }
+
   this.exec = 'r_update';
   if (this.transaction) {
     this.cache.push({
@@ -392,7 +397,7 @@ Table.prototype.prepareJson = function() {
 		}],
 		tsType: 'SQLStatement'
 	};
-	if (that.exec == 'r_insert' && that.field) {
+	if ( (that.exec == 'r_insert' || that.exec == 'r_update') && that.field) {
 		payment.autoFillField = convertStringToHex(that.field);
   };
   	
