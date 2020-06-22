@@ -34,6 +34,31 @@ Submit.prototype.submit = function (expectOpt) {
 	});
 };
 
+
+/**
+ * @return {JsonObject} 
+ * {"signedTransaction":"","id":""}
+ */
+Submit.prototype.txSign = function () {
+	let self = this;
+	return new Promise(function (resolve, reject) {
+		try {
+			self.prepareJson().then(function (prepared) {
+				
+				self.txJSON = prepared.txJSON;
+				let signedRet = self.signTx();
+				resolve(signedRet);
+			}).catch(function (error) {
+				reject(error);
+			});
+		} catch (error) {
+			reject(error);
+		}
+	});
+};
+
+
+
 Submit.prototype.setMaxLedgerVersionOffset = function (maxLedgerVersionOffset) {
 	this.instructions.maxLedgerVersionOffset = maxLedgerVersionOffset;
 };

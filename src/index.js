@@ -29,7 +29,6 @@ const getTxJson = util.getTxJson;
 const generateToken = util.generateToken;
 const decodeToken = util.decodeToken;
 
-
 class ChainsqlAPI extends Submit {
 	constructor(algType = "normal") {
 		super();
@@ -160,8 +159,12 @@ ChainsqlAPI.prototype.generateAddress = function () {
 		keypair = keypairs.deriveKeypair(account.secret);
 	} else {
 		if(typeof(arguments[0]) === "object" ) {
-			account = ripple.generateAddress(arguments[0]);
-			keypair = keypairs.deriveKeypair(account.secret);
+            let secretNew = keypairs.generateSeed(arguments[0]);
+            keypair = keypairs.deriveKeypair(secretNew);
+            account = {
+                secret: secretNew,
+                address: keypairs.deriveAddress(keypair.publicKey)
+            }
 		} else {
 			keypair = keypairs.deriveKeypair(arguments[0]);
 			account = {
@@ -881,6 +884,23 @@ ChainsqlAPI.prototype.getBySqlUser = function(sql){
 		}).catch(function(err) {
 			reject(err);
 		});
+	});
+};
+
+ChainsqlAPI.prototype.createRandom = function() {
+	const chainsqlCon = this.connect;
+	return chainsqlCon.api.connection.request({
+		command: "g_createrandom"
+	});
+};
+
+ChainsqlAPI.prototype.generatCryptData = function(smAlgType, dataSetCount, plainLen) {
+	const chainsqlCon = this.connect;
+	return chainsqlCon.api.connection.request({
+		command: "g_cryptdata",
+		alg_type: smAlgType,
+		data_set_count: dataSetCount,
+		plain_data_len: plainLen
 	});
 };
 
