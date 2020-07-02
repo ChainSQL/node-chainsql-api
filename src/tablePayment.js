@@ -2,8 +2,9 @@
 
 var _ = require('lodash');
 const path = require('path');
-const basePath = path.join(require.resolve('chainsql-lib'), '../transaction/utils');
-var utils = require(basePath);
+const getTxJson = require('../lib/util').getTxJson;
+const calcFee = require('../lib/util').calcFee;
+var utils = require('chainsql-lib').ChainsqlLibUtil;
 var validate = utils.common.validate;
 var toRippledAmount = utils.common.toRippledAmount;
 var paymentFlags = utils.common.txFlags.Payment;
@@ -65,12 +66,49 @@ function createPaymentTransaction(paymentArgument) {
   return txJSON;
 }
 
-function prepareTablePayment(payment) {
+function checkTablePayment(payment)
+{
+  if(payment.address === undefined)  return "account is null, please use the function 'as' first.";
+  return "";
+}
+function prepareTablePayment(payment, chainsqlApi) {
   var instructions = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
   //validate.preparePayment({ address: address, payment: payment, instructions: instructions });
+  let err = checkTablePayment(payment)
+  if( err != "")  return Promise.reject(err);
   var txJSON = createPaymentTransaction(payment);
-  return utils.prepareTransaction(txJSON, this, instructions);
+  return utils.prepareTransaction(txJSON, chainsqlApi, instructions);
 }
 
+function prepareTable(ChainSQL, payment, resolve, reject) {
+	prepareTablePayment(payment, ChainSQL.api).then(function (tx_json) {
+		// console.log(tx_json);
+		getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function (data) {
+ 
+      var dropsPerByte = Math.ceil(1000000.0 / 1024);;
+      ChainSQL.api.getServerInfo().then(res => {
 
-module.exports = prepareTablePayment;
+        if(res.validatedLedger.dropsPerByte != undefined){
+
+          dropsPerByte =  parseInt(res.validatedLedger.dropsPerByte);
+        }
+           
+        data.tx_json.Fee = calcFee(data.tx_json,dropsPerByte);
+        data.txJSON = data.tx_json;
+        delete data.tx_json;
+        resolve(data);
+
+      }).catch(err => {
+          reject(err);
+      });
+
+
+		}).catch(function (error) {
+			reject(error);
+		});
+	}).catch(function (error) {
+		reject(error);
+	});
+}
+
+module.exports = prepareTable;

@@ -1,4 +1,4 @@
-const ChainsqlAPI = require('../src/index').ChainsqlAPI;
+const ChainsqlAPI = require('../src/index');
 const api = new ChainsqlAPI();
 
 const functionEntry = function(fun, arguments) {
