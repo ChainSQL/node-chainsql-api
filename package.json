@@ -19,7 +19,7 @@
     "web3-core-helpers": "1.0.0-beta.36",
     "web3-eth-abi": "1.0.0-beta.36",
     "web3-utils": "1.0.0-beta.36",
-    "ws": "^6.2.1"
+    "ws": "^7.2.0"
   },
   "repository": {
     "type": "git",
