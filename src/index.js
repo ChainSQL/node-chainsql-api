@@ -904,6 +904,26 @@ ChainsqlAPI.prototype.generatCryptData = function(smAlgType, dataSetCount, plain
 	});
 };
 
+ChainsqlAPI.prototype.setEncTabToSync = function(address, tableName) {
+	const chainsqlCon = this.connect;
+	return chainsqlCon.api.connection.request({
+		command: "g_addEncTabToSync",
+		account: address,
+		tablename: tableName
+	});
+};
+ChainsqlAPI.prototype.getSyncTabAccount = function() {
+	const chainsqlCon = this.connect;
+	return chainsqlCon.api.connection.request({
+		command: "g_getSyncPub"
+	});
+};
+ChainsqlAPI.prototype.getNodeAccount = function() {
+	const chainsqlCon = this.connect;
+	return chainsqlCon.api.connection.request({
+		command: "g_getNodePub"
+	});
+};
 
 ChainsqlAPI.prototype.getLedgerTxs = function(ledgerIndex,includeSuccess,includeFailure){
 
