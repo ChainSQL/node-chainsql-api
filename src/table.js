@@ -412,7 +412,14 @@ function prepareTable(ChainSQL, payment, resolve, reject) {
 		token = token[ChainSQL.connect.scope + ChainSQL.tab];
 		if (token && token != '') {
 			var secret = decodeToken(ChainSQL, token);
-			const algType = ChainSQL.connect.secret === "gmAlg" ? "gmAlg" : "aes";
+      var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
+
+      let algType = "aes";
+      if(ChainSQL.connect.secret === "gmAlg"){
+        algType = "gmAlg";
+      }else if(regSoftGMSeed.test(ChainSQL.connect.secret)){
+        algType = "softGMAlg";
+      }
 			payment.raw = crypto.symEncrypt(secret, payment.raw, algType).toUpperCase();
 		} else {
 			payment.raw = convertStringToHex(payment.raw);
