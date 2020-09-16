@@ -25,7 +25,7 @@ var issuer = {
 	address: "znbWk4iuz2HL1e1Ux91TzYfFzJHGeYxBA4"	
 }
 
-var sTableName = "fasefa";
+var sTableName = "fasefa25";
 var sTableName2 = "b1";
 var sReName = "boy1234";
 var sTableName3 = "hijack12";
@@ -34,7 +34,7 @@ main();
 
 async function main(){
 	try {
-		 await c.connect('ws://127.0.0.1:6005');
+		 await c.connect('ws://127.0.0.1:7017');
 		//await c.connect('ws://101.201.40.124:5006');
 		console.log('连接成功');
 
@@ -143,9 +143,9 @@ async function testChainsql(){
 	// await testCreateTable();
 
 	// // //创建另一张表，用来测试rename,drop
-	await testCreateTable1();
-	// await testInsert();
-	// await testUpdate();
+	//await testCreateTable1();
+	//await testInsert();
+	await testUpdate();
 	// await testDelete();
 	// await testRename();
 	// await testGet();
@@ -204,8 +204,8 @@ var testCreateTable = async function() {
 var testCreateTable1 = async function() {
 	var raw = [
 		{'field':'id','type':'int','length':11,'PK':1,'NN':1,'default':''},
-		{'field':'name','type':'varchar','length':50,'default':null},
-		{'field':'age','type':'int'}
+		{'field':'name','type':'text','default':''},
+		{'field':'txnField','type':'text'}
 	];
 	var option = {
 		confidential: false
@@ -222,12 +222,10 @@ var testCreateTable1 = async function() {
 //重复插入的情况下报异常
 var testInsert = async function() {
 	var raw = [
-		{'id':1,'age': 333,'name':'hello'},
-		{'id':2,'age': 444,'name':'sss'},
-		{'id':3,'age': 555,'name':'rrr'}
+		{'id':7}
 	];
 	try {
-		var rs = await c.table(sTableName).insert(raw).submit({expect:'db_success'});
+		var rs = await c.table(sTableName).insert(raw,"name","txnField").submit({expect:'db_success'});
 		console.log("testInsert",rs);	
 	} catch (error) {
 		console.error(error);
@@ -236,7 +234,7 @@ var testInsert = async function() {
 
 var testUpdate = async function(){
 	try {
-		var rs = await c.table(sTableName).get({'id': 2}).update({'age':200}).submit({expect:'db_success'});
+		var rs = await c.table(sTableName).get({'id': 7}).update({'name':"26"},"name","txnField").submit({expect:'db_success'});
 		console.log("testUpdate",rs);	
 	} catch (error) {
 		console.error(error);
