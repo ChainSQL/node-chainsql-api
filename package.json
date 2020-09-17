@@ -1,6 +1,6 @@
 {
-  "name": "chainsql",
-  "version": "0.6.66",
+  "name": "chainsql-gm",
+  "version": "1.1.0",
   "description": "An database driver for chainsql ",
   "main": "src/index.js",
   "scripts": {
@@ -8,8 +8,8 @@
   },
   "dependencies": {
     "bignumber.js": "^2.4.0",
-    "chainsql-keypairs": "^0.10.6",
-    "chainsql-lib": "^0.17.44",
+    "chainsql-keypairs": "0.10.6",
+    "chainsql-lib-gm": "1.1.0",
     "co": "^4.6.0",
     "elliptic": "^5.1.0",
     "hash.js": "^1.0.3",
@@ -26,7 +26,7 @@
     "url": "git+https://github.com/chainsql/node-chainsql-api"
   },
   "keywords": [
-    "chainsql",
+    "chainsql-gm",
     "ripple",
     "mysql"
   ],
