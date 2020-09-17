@@ -1,6 +1,6 @@
 {
   "name": "chainsql-gm",
-  "version": "1.1.0",
+  "version": "1.1.6",
   "description": "An database driver for chainsql ",
   "main": "src/index.js",
   "scripts": {
@@ -8,8 +8,8 @@
   },
   "dependencies": {
     "bignumber.js": "^2.4.0",
-    "chainsql-keypairs": "0.10.6",
-    "chainsql-lib-gm": "1.1.0",
+    "chainsql-keypairs": "0.10.9",
+    "chainsql-lib-gm": "1.1.6",
     "co": "^4.6.0",
     "elliptic": "^5.1.0",
     "hash.js": "^1.0.3",

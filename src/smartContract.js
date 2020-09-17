@@ -3,7 +3,7 @@
 var util = require('../lib/util');
 
 const _ = require('lodash');
-var chainsqlLibUtils = require('chainsql-lib').ChainsqlLibUtil;
+var chainsqlLibUtils = require('chainsql-lib-gm').ChainsqlLibUtil;
 const keypairs = require('chainsql-keypairs');
 const chainsqlUtils = require('../lib/util');
 const chainsqlError = require('../lib/error');

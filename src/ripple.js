@@ -2,7 +2,7 @@
 var util = require('../lib/util');
 var Submit = require('./submit');
 const FloatOperation = require('../lib/floatOperation');
-var chainsqlLibUtils = require('chainsql-lib').ChainsqlLibUtil;
+var chainsqlLibUtils = require('chainsql-lib-gm').ChainsqlLibUtil;
 
 class Ripple extends Submit {
 	constructor(ChainsqlAPI) {
