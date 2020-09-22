@@ -1,6 +1,6 @@
 {
   "name": "chainsql",
-  "version": "0.6.69",
+  "version": "0.7.0",
   "description": "An database driver for chainsql ",
   "main": "src/index.js",
   "scripts": {
@@ -22,7 +22,8 @@
     "ws": "^7.2.0"
   },
   "devDependencies": {
-    "mocha": "~2.3.3"
+    "mocha": "~2.3.3",
+    "chai": "^4.2.0"
   },
   "repository": {
     "type": "git",
