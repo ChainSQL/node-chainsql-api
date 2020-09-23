@@ -11,7 +11,7 @@
     "chainsql-keypairs": "^0.10.6",
     "chainsql-lib": "^0.17.44",
     "co": "^4.6.0",
-    "elliptic": "^5.1.0",
+    "elliptic": ""^6.5.3",
     "hash.js": "^1.0.3",
     "lodash": "^4.17.15",
     "protobufjs": "^6.8.0",
