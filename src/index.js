@@ -681,7 +681,14 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 				var secret = decodeToken(ChainSQL, token);
 				if (cache[i].Raw) {
 					if (cache[i].OpType != opType.t_grant) {
-						const algType = ChainSQL.connect.secret === "gmAlg" ? "gmAlg" : "aes";
+
+						var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
+						let algType = "aes";
+						if(ChainSQL.connect.secret === "gmAlg"){
+						  algType = "gmAlg";
+						}else if(regSoftGMSeed.test(ChainSQL.connect.secret)){
+						  algType = "softGMAlg";
+						}
 						cache[i].Raw = crypto.symEncrypt(secret, JSON.stringify(cache[i].Raw), algType).toUpperCase();
 					} else {
 						cache[i].Raw = convertStringToHex(JSON.stringify(cache[i].Raw));
