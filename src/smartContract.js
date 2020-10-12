@@ -4,7 +4,7 @@ var util = require('../lib/util');
 
 const _ = require('lodash');
 var chainsqlLibUtils = require('chainsql-lib').ChainsqlLibUtil;
-const keypairs = require('chainsql-keypairs');
+const keypairs = require('chainsql-keypairs-test');
 const chainsqlUtils = require('../lib/util');
 const chainsqlError = require('../lib/error');
 var abi = require('web3-eth-abi');

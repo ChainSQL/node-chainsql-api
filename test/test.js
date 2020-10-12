@@ -25,34 +25,83 @@ var issuer = {
 	address: "znbWk4iuz2HL1e1Ux91TzYfFzJHGeYxBA4"	
 }
 
-var sTableName = "fasefa25";
+const smUser = {
+    secret: "pw5MLePoMLs1DA8y7CgRZWw6NfHik7ZARg8Wp2pr44vVKrpSeUV",
+    address: "zKzpkRTZPtsaQ733G8aRRG5x5Z2bTqhGbt",
+    publicKey: "pYvKjFb71Qrx26jpfMPAkpN1zfr5WTQoHCpsEtE98ZrBCv2EoxEs4rmWR7DcqTwSwEY81opTgL7pzZ2rZ3948vHi4H23vnY3"
+};
+
+var smRoot = {
+	secret: "p97evg5Rht7ZB7DbEpVqmV3yiSBMxR3pRBKJyLcRWt7SL5gEeBb",
+	address: "zN7TwUjJ899xcvNXZkNJ8eFFv2VLKdESsj",
+	publicKey: 'pYvWhW4azFwanovo5MhL71j5PyTWSJi2NVurPYUrE9UYaSVLp29RhtxxQB7xeGvFmdjbtKRzBQ4g9bCW5hjBQSeb7LePMwFM'
+}
+
+
+// zM8SaWYBPSiRd7x8KpcrwLL7UJU8YDG8Wf
+
+// pwhRt7Cw561HobWUtsCn3heg3UqCCjNSk6vZXLk1LjwmbtzVy1r
+
+var smTest = {
+	secret: 'pwhRt7Cw561HobWUtsCn3heg3UqCCjNSk6vZXLk1LjwmbtzVy1r', 
+	address: 'zM8SaWYBPSiRd7x8KpcrwLL7UJU8YDG8Wf', 
+	publicKey: 'pYvPU2kQCUgJZzMYX3RFFGvhyVHeSb3UeLGLAjTtTn7jPTR2hJbHvDi7ScDXMyuc7aFueaNMohSxJnoa9KGKgTwxaqgWWEvc'
+}
+
+var smUser7 ={
+    secret:"pwRdHmA4cSUKKtFyo4m2vhiiz5g6ym58Noo9dTsUU97mARNjevj",
+    address: "zMXMtS2C36J1p3uhTxRFWV8pEhHa8AMMSL", 
+    publicKey: "pYvXDbsUUr5dpumrojYApjG8nLfFMXhu3aDvxq5oxEa4ZSeyjrMzisdPsYjfxyg9eN3ZJsNjtNENbzXPL89st39oiSp5yucU"
+}
+
+// var smTest = {
+// 	secret: 'pw2E1su2nmj5qnFJoq6WfCQLjGLWuKVuAFR49vrkSGr16DQwHKu', 
+// 	address: 'zGPoujotavee98sssyKCVGig3mVJB42sZJ', 
+// 	publicKey: 'pYvhKdDqBnGzXc4Ff1wutzc7z3z2UcN4aPxMPN1pW66…hkDLmoHFRkGmBaz2fzdjZsXW85FCgHFVw3VqeGGVfQt'
+// }
+
+var sTableName = "jmtable5";
 var sTableName2 = "b1";
-var sReName = "boy1234";
+var sReName = "jmtable2";
 var sTableName3 = "hijack12";
+//var  wsAddr = "ws://192.168.191.208:5215";
+//var  wsAddr = "ws://192.168.191.223:6006";
+var wsAddr = "ws://192.168.29.113:6006"
 
 main();
-
 async function main(){
+
 	try {
-		 await c.connect('ws://127.0.0.1:7017');
-		//await c.connect('ws://101.201.40.124:5006');
+
+		// let accountInfo = c.generateAddress({algorithm:"softGMAlg",secret:smUser7.secret});
+		// console.log(JSON.stringify(accountInfo))
+		// accountInfo = c.generateAddress({algorithm:"softGMAlg"});
+		// console.log(accountInfo)
+		// accountInfo = c.generateAddress({algorithm:"softGMAlg"});
+		// console.log(accountInfo)
+
+		await c.connect(wsAddr);
+		//await c.connect('ws://127.0.0.1:7017');
 		console.log('连接成功');
 
-		c.as(owner);
+		c.as(smRoot);
 
-		// // 读取证书文件
-		// var data = fs.readFileSync('D:\\git\\ca\\test\\userCert.cert');
+		// 读取证书文件
+		// var data = fs.readFileSync('C:\\ca\\userCert.cert');
 		// c.useCert(data.toString());
+
+		// let accountInfo = c.generateAddress({algorithm:"softGMAlg"});
+		// console.log(accountInfo)
 
 		// c.setRestrict(true);
 		//激活user账户
-		// await activateAccount(user.address);
+		await activateAccount(smUser.address);
 
 		//await testSubscribe();
 
 		// await testRippleAPI();
 		// await testAccount();
-		await testChainsql();
+		//await testChainsql();
 
 		//await c.disconnect();
 		console.log('运行结束');
@@ -140,12 +189,12 @@ async function testAccount(){
 }
 
 async function testChainsql(){
-	// await testCreateTable();
+	//await testCreateTable();
 
 	// // //创建另一张表，用来测试rename,drop
-	//await testCreateTable1();
-	//await testInsert();
-	await testUpdate();
+//	await testCreateTable1();
+	await testInsert();
+//	await testUpdate();
 	// await testDelete();
 	// await testRename();
 	// await testGet();
@@ -194,7 +243,7 @@ var testCreateTable = async function() {
 		{'field':'age','type':'int'}
 	]
 	var option = {
-		confidential: false
+		confidential: true
 	}
 	// 创建表
 	let rs = await c.createTable(sTableName, raw, option).submit({expect:'db_success'});
@@ -205,7 +254,29 @@ var testCreateTable1 = async function() {
 	var raw = [
 		{'field':'id','type':'int','length':11,'PK':1,'NN':1,'default':''},
 		{'field':'name','type':'text','default':''},
-		{'field':'txnField','type':'text'}
+		{'field':'txnField','type':'text'},
+		{"field":"age1","type":"int"},
+		{"field":"age2","type":"int"},
+		{"field":"age3","type":"int"},
+		{"field":"age4","type":"int"},
+		{"field":"age5","type":"int"},
+		{"field":"age6","type":"int"},
+		{"field":"age7","type":"int"},
+		{"field":"age8","type":"int"},
+		{"field":"age9","type":"int"},
+		{"field":"age10","type":"int"},
+		{"field":"age11","type":"int"},
+		{"field":"age12","type":"int"},
+		{"field":"age13","type":"int"},
+		{"field":"age14","type":"int"},
+		{"field":"age15","type":"int"},
+		{"field":"age16","type":"int"},
+		{"field":"age17","type":"int"},
+		{"field":"age18","type":"int"},
+		{"field":"age19","type":"int"},
+		{"field":"age20","type":"int"},
+		{"field":"age21","type":"int"},
+		{"field":"age22","type":"int"}
 	];
 	var option = {
 		confidential: false
@@ -219,14 +290,20 @@ var testCreateTable1 = async function() {
 	}
 };
 
+// {'age': 333,'name':'hello'},
+// {'age': 444,'name':'sss'},
+// {'age': 555,'name':'rrr'}
+
 //重复插入的情况下报异常
 var testInsert = async function() {
 	var raw = [
-		{'id':7}
+		{'id':7},
+		{'id':8},
+		{'id':9}
 	];
 	try {
-		var rs = await c.table(sTableName).insert(raw,"name","txnField").submit({expect:'db_success'});
-		console.log("testInsert",rs);	
+		var rs = await c.table(sTableName).insert(raw).submit({expect:'db_success'});
+		console.log("testInsert ",rs);	
 	} catch (error) {
 		console.error(error);
 	}
@@ -234,7 +311,7 @@ var testInsert = async function() {
 
 var testUpdate = async function(){
 	try {
-		var rs = await c.table(sTableName).get({'id': 7}).update({'name':"26"},"name","txnField").submit({expect:'db_success'});
+		var rs = await c.table(sTableName).get({'id': 7}).update({'name':"28"},"name","txnField").submit({expect:'db_success'});
 		console.log("testUpdate",rs);	
 	} catch (error) {
 		console.error(error);
@@ -290,8 +367,8 @@ var testDrop = async function(){
 //重复授权可能出异常，测一下
 var testGrant = async function(){
 	try {
-		var raw = {select:true, insert:false, update:false, delete:true};
-		var rs = await c.grant(sTableName, user.address, raw, user.publicKey).submit({expect:'db_success'});
+		var raw = {select:true, insert:true, update:true, delete:true};
+		var rs = await c.grant(sTableName, smUser7.address, raw, smUser7.publicKey).submit({expect:'validate_success'});
 		console.log("testGrant",rs);
 	} catch (error) {
 		console.error(error);
@@ -314,10 +391,11 @@ var insertAfterGrant = async function(){
 
 var testTxs = async function(){
 	try {
+		c.as(smRoot)
 		c.beginTran();
-		c.grant(sTableName,user.address,{insert:true,update:true},user.publicKey)
-		c.table(sTableName).insert({ 'age': 333, 'name': 'hello' });
-		c.table(sTableName).get({ 'age': 333 }).update({ 'name': 'world' });
+		//c.grant(sTableName,user.address,{insert:true,update:true},user.publicKey)
+		c.table(sTableName).insert({ 'id':1245, 'name': '333'});
+	//	c.table(sTableName).get({ 'age': 333 }).update({ 'name': 'world' });
 		var rs = await c.commit({expect: 'db_success'});	
 		console.log("testTxs",rs);
 	} catch (error) {

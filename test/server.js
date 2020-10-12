@@ -8,7 +8,7 @@ var path = require('path');
 var basePath = path.join(require.resolve('chainsql-lib'), '../common');
 var common = require(basePath);
 var crypto = require('../lib/crypto');
-const keypairs = require('chainsql-keypairs');
+const keypairs = require('chainsql-keypairs-test');
 
 co(function*() {
 	try {
