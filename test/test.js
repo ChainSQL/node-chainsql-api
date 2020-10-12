@@ -7,7 +7,7 @@ const ChainsqlAPI = require('../src/index');
 // ChainsqlAPI.prototype.callback2Promise = require('./callback2Promise');
 const c = new ChainsqlAPI();
 
-const RippleAPI = new require('chainsql-lib').RippleAPI;
+const RippleAPI = new require('chainsql-lib-test').RippleAPI;
 
 var user = {
 	secret: "xxeJcpbcFyGTFCxiGjeDEw1RCimFQ",
