@@ -1046,6 +1046,14 @@ ChainsqlAPI.prototype.prepareJson = function(){
 	})
 }
 
+/**
+ * 设置操作链的ID
+ * @param {16进制字符串} schemaID schemaID="" 代表操作的是主链;
+ */
+ChainsqlAPI.prototype.setSchema = function(schemaID){
+	this.connect.setSchema(schemaID);
+}
+
 function callback(data, callback) {
 
 }

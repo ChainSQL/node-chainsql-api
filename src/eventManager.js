@@ -28,9 +28,16 @@ EventManager.prototype.subscribeTable = function(owner, name, cb) {
 };
 EventManager.prototype.subscribeTx = function(id, cb) {
 	var that = this;
+
+    var schema_id = ""
+    if(that.chainsql.connect.schemaID !=undefined){
+      schema_id = that.chainsql.connect.schemaID
+	}
+	
 	var messageTx = {
 		"command": "subscribe",
-		"transaction": id
+		"transaction": id,
+		schema_id: schema_id,
 	};
 	if (!that.onMessage) {
 		_onMessage(that);
