@@ -17,6 +17,10 @@ Connection.prototype.useCert = function(cert) {
   this.userCert = cert;
 }
 
+Connection.prototype.setSchema = function(schemaID) {
+  this.schemaID = schemaID;
+}
+
 Connection.prototype.connect = function() {
   let that = this;
   return new Promise(function(resolve, reject) {
