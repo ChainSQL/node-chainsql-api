@@ -1,7 +1,7 @@
 {
-  "name": "chainsql",
-  "version": "0.70.1",
-  "description": "An database driver for chainsql ",
+  "name": "chainsql-json-gm",
+  "version": "0.0.2",
+  "description": "An database driver with gm for chainsql ",
   "main": "src/index.js",
   "scripts": {
     "test": "mocha"
@@ -33,7 +33,7 @@
     "ripple",
     "mysql"
   ],
-  "author": "peersafe",
+  "author": "sjxz12358",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/peersafe/node-chainsql/issues"
