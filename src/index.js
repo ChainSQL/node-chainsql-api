@@ -1,5 +1,4 @@
 'use strict'
-require('dotenv').config();
 const crypto = require('../lib/crypto');
 const keypairs = require('chainsql-keypairs');
 const EventManager = require('./eventManager')
@@ -21,10 +20,9 @@ const Table = require('./table');
 const Contract = require('./smartContract');
 const util = require('../lib/util');
 const opType = require('../lib/config').opType;
-const getFee = util.getFee;
-const getSequence = util.getSequence;
 const convertStringToHex = util.convertStringToHex;
-const getTableSequence = util.getTableSequence;
+const getCryptAlgTypeFromAccout = util.getCryptAlgTypeFromAccout;
+
 const getUserToken = util.getUserToken;
 const getTxJson = util.getTxJson;
 const generateToken = util.generateToken;
@@ -48,10 +46,10 @@ class ChainsqlAPI extends Submit {
 		this.cache = [];
 		this.strictMode = false;
 		this.needVerify = 1;
-		if (algType === "gmAlg" || algType === "normal") {
+		if(algType === "gmAlg" || algType === "normal" || algType === "softGMAlg" ) {
 			keypairs.setCryptAlgType(algType);
 		} else {
-			throw new Error("Wrong algType for ChainsqlAPI object, must be 'gmAlg' or 'normal'");
+			throw new Error("Wrong algType for ChainsqlAPI object, must be 'gmAlg','softGMAlg' or 'normal'");
 		}
 	}
 
@@ -113,14 +111,26 @@ ChainsqlAPI.prototype.disconnect = function (cb) {
 	}
 }
 ChainsqlAPI.prototype.as = function (account) {
-	if (!account.secret || !account.address) {
-		throw chainsqlError("c.as parameter invalid,must contain 'secret' and 'address'");
+	
+	if(!account.secret || !account.address){
+		throw chainsqlError("c.as parameter invalid,must contain 'secret' and 'address'"); 
 	}
-	this.connect.as(account);
+
+	// 根据账户信息判断底层的算法类型  
+	keypairs.setCryptAlgType(getCryptAlgTypeFromAccout(account));
+	this.connect.as(account); 
 }
 ChainsqlAPI.prototype.use = function (address) {
 	this.connect.use(address);
+	if(typeof(address) != 'string'){
+		throw chainsqlError("c.use parameter invalid,must be a string.'"); 
+	}
 }
+
+ChainsqlAPI.prototype.useCert = function (cert) {
+	this.connect.useCert(cert);
+}
+
 ChainsqlAPI.prototype.setRestrict = function (mode) {
 	this.strictMode = mode;
 }
@@ -144,7 +154,8 @@ ChainsqlAPI.prototype.contract = function(jsonInterface, address, options) {
 }
 
 ChainsqlAPI.prototype.generateAddress = function () {
-	var account;
+
+	var account = {secret:"",address:""};
 	var keypair;
 	let ripple = new RippleAPI();
 	if (arguments.length == 0) {
@@ -152,23 +163,29 @@ ChainsqlAPI.prototype.generateAddress = function () {
 		keypair = keypairs.deriveKeypair(account.secret);
 	} else {
 		if(typeof(arguments[0]) === "object" ) {
-			account = ripple.generateAddress(arguments[0]);
-			keypair = keypairs.deriveKeypair(account.secret);
-		} else {
-			keypair = keypairs.deriveKeypair(arguments[0]);
-			account = {
-				secret: arguments[0],
-				address: keypairs.deriveAddress(keypair.publicKey)
+            let seed = keypairs.generateSeed(arguments[0]);
+			keypair  = keypairs.deriveKeypair(seed);
+
+			if(typeof(seed) !== "object"){
+				// ed25519
+				account.secret = seed;
+			}else{
+				// softGMAlg
+				account.secret = util.encodeChainsqlAccountSecret(keypair.privateKey)
 			}
+
+		} else {
+			keypair = keypairs.deriveKeypair(arguments[0])
+			account.secret =arguments[0]
 		}
+
+		account.address = keypairs.deriveAddress(keypair.publicKey);
 	}
 	var opt = {
 		version: 35
 	}
 	var buf = Buffer.from(keypair.publicKey, 'hex');
 	account.publicKey = addressCodec.encode(buf, opt);
-	// account.publickKey = keypair.publicKey;
-
 	return account;
 }
 
@@ -645,7 +662,14 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 				var secret = decodeToken(ChainSQL, token);
 				if (cache[i].Raw) {
 					if (cache[i].OpType != opType.t_grant) {
-						const algType = ChainSQL.connect.secret === "gmAlg" ? "gmAlg" : "aes";
+
+						var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
+						let algType = "aes";
+						if(ChainSQL.connect.secret === "gmAlg"){
+						  algType = "gmAlg";
+						}else if(regSoftGMSeed.test(ChainSQL.connect.secret)){
+						  algType = "softGMAlg";
+						}
 						cache[i].Raw = crypto.symEncrypt(secret, JSON.stringify(cache[i].Raw), algType).toUpperCase();
 					} else {
 						cache[i].Raw = convertStringToHex(JSON.stringify(cache[i].Raw));
@@ -746,7 +770,8 @@ function handleGrantPayment(ChainSQL) {
 				} catch (e) {
 					reject(chainsqlError('your publicKey is not validate'));
 				}
-				ChainSQL.payment.Token = token;
+				ChainSQL.payment.token = token;
+				console.log("token : ",token)
 			}
 			delete ChainSQL.payment.name;
 			delete ChainSQL.payment.publicKey;
@@ -766,13 +791,55 @@ ChainsqlAPI.prototype.sign = function (json, secret, option) {
 	return ripple.sign(JSON.stringify(json), secret, option);
 };
 
-// ChainsqlAPI.prototype.encrypt = function (plainText, listPublic) {
+ChainsqlAPI.prototype.eciesEncrypt = function (plainText, publicKey) {
+	return crypto.eciesEncrypt(plainText,publicKey);
+}
 
-// }
+ChainsqlAPI.prototype.eciesDecrypt = function (cipher, secret) {
+	var keypair = keypairs.deriveKeypair(secret);
+	return crypto.eciesDecrypt(cipher,keypair.privateKey);
+}
 
-// ChainsqlAPI.prototype.decrypt = function (cipher, secret) {
 
-// }
+
+/**
+ * 对称加密
+ * @param {*} plainText 
+ * @param {*} publicKey 
+ */
+ChainsqlAPI.prototype.symEncrypt = function (symKey, plaintext, algType = 'aes') {
+	return crypto.symEncrypt(symKey,plaintext,algType);
+}
+
+/**
+ * 对称解密
+ * @param {*} cipher 
+ * @param {*} privateKey 
+ */
+ChainsqlAPI.prototype.symDecrypt = function (symKey, encryptedHex, algType = 'aes') {
+
+	return crypto.symDecrypt(symKey, encryptedHex, algType);
+}
+
+/**
+ * 非对称加密
+ * @param {*} plainText 
+ * @param {*} publicKey 
+ */
+ChainsqlAPI.prototype.asymEncrypt = function (plainText, publicKey) {
+	return keypairs.asymEncrypt(plainText,publicKey);
+}
+
+/**
+ * 非对称解密
+ * @param {*} cipher 
+ * @param {*} privateKey 
+ */
+ChainsqlAPI.prototype.asymDecrypt = function (cipher, privateKey) {
+
+	return keypairs.asymDecrypt(cipher,privateKey);
+}
+
 
 ChainsqlAPI.prototype.getAccountTables = function (address, bGetDetailInfo = false) {
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
@@ -971,7 +1038,71 @@ ChainsqlAPI.prototype.checkAdminAuth = function () {
 	})
 }
 
-ChainsqlAPI.prototype.prepareJson = function () {
+ChainsqlAPI.prototype.createRandom = function() {
+	const chainsqlCon = this.connect;
+	return chainsqlCon.api.connection.request({
+		command: "g_createrandom"
+	});
+};
+
+ChainsqlAPI.prototype.generatCryptData = function(smAlgType, dataSetCount, plainLen) {
+	const chainsqlCon = this.connect;
+	return chainsqlCon.api.connection.request({
+		command: "g_cryptdata",
+		alg_type: smAlgType,
+		data_set_count: dataSetCount,
+		plain_data_len: plainLen
+	});
+};
+
+
+ChainsqlAPI.prototype.getLedgerTxs = function(ledgerIndex,includeSuccess,includeFailure){
+
+	var connect = this.connect;
+
+	return new Promise(function(resolve, reject){
+		connect.api.connection.request({
+			command: 'ledger_txs',
+			ledger_index:ledgerIndex,
+			include_success:includeSuccess,
+			include_failure:includeFailure
+		}).then(function(data){
+			resolve(data);
+		}).catch(function(err){
+			reject(err);
+		});
+	});
+
+};
+
+
+ChainsqlAPI.prototype.signFromString = function (messageHex, secret) {
+
+	var keypair   = keypairs.deriveKeypair(secret);
+	var signatue  = keypairs.sign(messageHex,keypair.privateKey);
+	return signatue;
+};
+
+
+ChainsqlAPI.prototype.verify = function (messageHex, signature, publicKey) {
+
+	try {
+		/// ECDSA secp256k1
+		var opt = {version:35};
+		var secp256k1Pub    = addressCodec.decode(publicKey,opt);
+		var secp256k1PubHex = Buffer.from(secp256k1Pub).toString('hex');
+		var bVerify  = keypairs.verify(messageHex, signature,secp256k1PubHex);
+		return bVerify;
+	}
+	catch (error) {
+		console.log(error);
+		return false;
+	}
+}
+
+
+
+ChainsqlAPI.prototype.prepareJson = function(){
 	let that = this;
 	var payment = that.payment;
 	switch (payment.OpType) {

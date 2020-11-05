@@ -107,11 +107,15 @@ Table.prototype.insert = function (raw, field) {
   }
 }
 
-Table.prototype.update = function () {
+Table.prototype.update = function(raw,field) {
   if (!this.tab) throw chainsqlError('you must appoint the table name');
   if (this.exec !== 'r_get') throw chainsqlError('Object can not hava function update');
-  var that = this;
-  this.query.unshift(Array.prototype.slice.call(arguments)[0]);
+  this.query.unshift(raw);
+ 
+  if (field) {
+    this.field = field;
+  }
+
   this.exec = 'r_update';
 
   let payment = {
@@ -453,7 +457,7 @@ Table.prototype.prepareJson = function () {
 
   payment.Raw = JSON.stringify(that.payment.Raw)
 
-  if (that.exec == 'r_insert' && that.field) {
+  if ((that.exec == 'r_insert' || that.exec == 'r_update') && that.field) {
     payment.AutoFillField = convertStringToHex(that.field);
   }
 
@@ -468,7 +472,14 @@ function prepareTable(ChainSQL, payment, resolve, reject) {
     token = token[ChainSQL.connect.scope + ChainSQL.tab];
     if (token && token != '') {
       var secret = decodeToken(ChainSQL, token);
-      const algType = ChainSQL.connect.secret === "gmAlg" ? "gmAlg" : "aes";
+      var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
+
+      let algType = "aes";
+      if (ChainSQL.connect.secret === "gmAlg") {
+        algType = "gmAlg";
+      } else if (regSoftGMSeed.test(ChainSQL.connect.secret)) {
+        algType = "softGMAlg";
+      }
       payment.Raw = crypto.symEncrypt(secret, payment.Raw, algType).toUpperCase();
     } else {
       payment.Raw = convertStringToHex(payment.Raw);
