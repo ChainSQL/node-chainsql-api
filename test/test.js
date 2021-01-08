@@ -34,7 +34,7 @@ main();
 
 async function main(){
 	try {
-		 await c.connect('ws://127.0.0.1:6005');
+		 await c.connect('ws://127.0.0.1:8017');
 		//await c.connect('ws://101.201.40.124:5006');
 		console.log('连接成功');
 
@@ -140,10 +140,10 @@ async function testAccount(){
 }
 
 async function testChainsql(){
-	// await testCreateTable();
+	//await testCreateTable();
 
 	// // //创建另一张表，用来测试rename,drop
-	await testCreateTable1();
+	// await testCreateTable1();
 	// await testInsert();
 	// await testUpdate();
 	// await testDelete();
@@ -161,7 +161,45 @@ async function testChainsql(){
 
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
+
+	//
+	await testSchema();
 }
+
+//创建一个加密的表,table为要创建的表,confidential为是否要加密
+var testSchema = async function() {
+
+	try{
+
+		   // 不继承状态
+		   let schemaInfo = {
+			SchemaName:"hello",
+			WithState:false,
+			SchemaAdmin:user.address,
+			Validators:[
+				{
+					Validator:{PublicKey:"02BD87A95F549ECF607D6AE3AEC4C95D0BFF0F49309B4E7A9F15B842EB62A8ED1B"}
+				}
+			],
+			PeerList:[
+				{
+					Peer:{ Endpoint:"192.168.29.108:5125"}
+				}
+			]
+		}
+	
+		let ret = await c.createSchema(schemaInfo).submit({expect:'validate_success'})
+		//assert.strictEqual(ret.status,'validate_success')  
+		// 继承状态
+	
+		console.log("test CreateSchema" , ret)
+
+
+	}catch(e){
+		console.error(e)
+	}
+
+};
 
 function subTable(tb, owner) {
 	var event = c.event;
