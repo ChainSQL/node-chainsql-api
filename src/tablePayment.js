@@ -82,33 +82,39 @@ function prepareTablePayment(payment, chainsqlApi) {
 
 function prepareTable(ChainSQL, payment, resolve, reject) {
 	prepareTablePayment(payment, ChainSQL.api).then(function (tx_json) {
-		// console.log(tx_json);
-		getTxJson(ChainSQL, JSON.parse(tx_json.txJSON)).then(function (data) {
- 
+
       var dropsPerByte = Math.ceil(1000000.0 / 1024);;
       ChainSQL.api.getServerInfo().then(res => {
 
         if(res.validatedLedger.dropsPerByte != undefined){
-
           dropsPerByte =  parseInt(res.validatedLedger.dropsPerByte);
         }
-           
-        data.tx_json.Fee = calcFee(data.tx_json,dropsPerByte);
-        data.txJSON = data.tx_json;
-        delete data.tx_json;
-        resolve(data);
+
+        // 1 calculate fee
+        var txJson  = JSON.parse(tx_json.txJSON);
+        txJson.Fee  = calcFee(txJson,dropsPerByte);
+    
+        if( txJson.Tables.length === 1 && txJson.Tables[0].Table.NameInDB !== '' ){
+          resolve(txJson);
+          return ;
+        }
+      
+        // 2  get table's NameInDB
+        getTxJson(ChainSQL, txJson).then(function (data) {
+          resolve(data.tx_json);
+        }).catch(function (error) {
+          reject(error);
+        });
 
       }).catch(err => {
           reject(err);
       });
 
+  }).catch(err => {
+      reject(err);
+  });
 
-		}).catch(function (error) {
-			reject(error);
-		});
-	}).catch(function (error) {
-		reject(error);
-	});
+
 }
 
 module.exports = prepareTable;

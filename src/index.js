@@ -507,11 +507,11 @@ ChainsqlAPI.prototype.getAccountTransactions = function (address, opts, cb) {
 	}
 };
 
-ChainsqlAPI.prototype.getTransaction = function (hash, cb) {
+ChainsqlAPI.prototype.getTransaction = function (hash,meta,meta_chain,cb) {
 	if ((typeof cb) != 'function') {
-		return this.api.getTransaction(hash);
+		return this.api.getTransaction(hash,meta,meta_chain);
 	} else {
-		this.api.getTransaction(hash).then(function (data) {
+		this.api.getTransaction(hash,meta,meta_chain).then(function (data) {
 			cb(null, data);
 		}).catch(function (err) {
 			cb(err);

@@ -25,7 +25,7 @@ var issuer = {
 	address: "znbWk4iuz2HL1e1Ux91TzYfFzJHGeYxBA4"	
 }
 
-var sTableName = "fasefa";
+var sTableName = "test666";
 var sTableName2 = "b1";
 var sReName = "boy1234";
 var sTableName3 = "hijack12";
@@ -34,7 +34,7 @@ main();
 
 async function main(){
 	try {
-		 await c.connect('ws://127.0.0.1:6005');
+		 await c.connect('ws://127.0.0.1:6006');
 		//await c.connect('ws://101.201.40.124:5006');
 		console.log('连接成功');
 
@@ -50,7 +50,7 @@ async function main(){
 
 		//await testSubscribe();
 
-		// await testRippleAPI();
+		//await testRippleAPI();
 		// await testAccount();
 		await testChainsql();
 
@@ -60,6 +60,23 @@ async function main(){
 		console.error(e);
 	}
 }
+
+async function testGetTransaction(){
+
+	var txHash =  'DC9782AFF31D495108FFB751E9B32C2DEFBCC7A3846CB1D8CB0E789F1CCC93E8';
+
+	let rs = await c.getTransaction(txHash);
+	console.log( "meta:false ; meta_chain true " , JSON.stringify( rs ) ) ;
+
+	rs = await c.getTransaction(txHash,true);
+	console.log( "meta:true ; meta_chain true " , JSON.stringify( rs ) ) ;
+
+	rs = await c.getTransaction(txHash,false,false);
+	console.log( "meta:false ; meta_chain false " ,JSON.stringify( rs ) ) ;
+}
+
+
+
 
 var testSubscribe = async function(){
 	subTable(sTableName,owner.address);
@@ -99,6 +116,7 @@ async function subTx() {
 		},5000);
 	});
 }
+
 function testSubscribeTx(hash){
 	var event = c.event;
 	event.subscribeTx(hash,function(err, data) {
@@ -126,8 +144,8 @@ async function testRippleAPI(){
 	// await testGetLedgerVersion();
 	// await testGetLedger();
 
-	await testGetAccountTransactions();
-	// await testGetTransaction();
+//	await testGetAccountTransactions();
+	 await testGetTransaction();
 	// await testGetServerInfo();
 	// await testUnlList();
 	// await testEscrow();
@@ -139,11 +157,34 @@ async function testAccount(){
 	await activateAccount(account.address);
 }
 
+
+
+async function testTableSet(){
+
+	var raw = [
+		{'id':12345,'age': 333,'name':'hello'}
+	];
+	try {
+
+		var nameInDB = await c.getTableNameInDB(owner.address,sTableName);
+		var tableProperty          = {};
+		tableProperty.nameInDB     = nameInDB;
+		tableProperty.confidential = false;
+
+		var rs = await c.table(sTableName).tableSet(tableProperty).insert(raw).submit({expect:'db_success'});
+		console.log("testInsert",rs);	
+	} catch (error) {
+		console.error(error);
+	}
+}
+
 async function testChainsql(){
+
+
 	// await testCreateTable();
 
-	// // //创建另一张表，用来测试rename,drop
-	await testCreateTable1();
+	// 创建另一张表，用来测试rename,drop
+	// await testCreateTable1();
 	// await testInsert();
 	// await testUpdate();
 	// await testDelete();
@@ -161,6 +202,8 @@ async function testChainsql(){
 
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
+
+	await testTableSet();
 }
 
 function subTable(tb, owner) {
@@ -191,7 +234,8 @@ var testCreateTable = async function() {
 	var raw = [
 		{'field':'id','type':'int','length':11,'PK':1,'NN':1},
 		{'field':'name','type':'varchar','length':50,'default':""},
-		{'field':'age','type':'int'}
+		{'field':'age','type':'int'},
+		{'field':'age1','type':'longtext'}
 	]
 	var option = {
 		confidential: false
@@ -219,7 +263,7 @@ var testCreateTable1 = async function() {
 	}
 };
 
-//重复插入的情况下报异常
+//重复插入的情况下报异常  
 var testInsert = async function() {
 	var raw = [
 		{'id':1,'age': 333,'name':'hello'},
@@ -400,14 +444,7 @@ async function testGetAccountTransactions(){
 	// var rs = await callback2Promise(c.getTransactions,opt);
 	// console.log(rs);
 }
-async function testGetTransaction(){
-	// let rs = await c.getTransaction('3E02AA296A348F10C1F54D2EF0CBBDA9A6D389F66EFFBA936F1842506FACD4EA');
-	// console.log(rs);
 
-	c.getTransaction('B4FB648883D73D4EB2D3A9E6059F1D0CF97105445F06B763A9DAB9FA66AA2EFC',callback);
-	// var rs = await callback2Promise(c.api.getTransaction,opt);
-	// console.log(rs);
-}
 async function testGetServerInfo(){
 	// let rs = await c.getServerInfo();
 	// console.log(rs);

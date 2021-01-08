@@ -19,7 +19,9 @@ class Table extends Submit {
 		this.exec = '';
 		this.field = null;
 		this.connect = ChainsqlAPI.connect;
-		this.cache = [];
+    this.cache = [];
+    this.nameInDB = '';
+    this.confidential = true;
 	}
 
 	submit (cb) {
@@ -163,6 +165,18 @@ Table.prototype.withFields = function(field) {
 Table.prototype.assert = function(json) {
   this.exec = 't_assert';
   this.query.unshift(json);
+  return this;
+}
+
+Table.prototype.tableSet = function(json) {
+
+  if(json.nameInDB !== undefined){
+    this.nameInDB = json.nameInDB;
+  }
+
+  if(json.confidential !== undefined){
+    this.confidential = json.confidential;
+  }
   return this;
 }
 
@@ -392,7 +406,8 @@ Table.prototype.prepareJson = function() {
 		strictMode: that.strictMode,
 		tables: [{
 			Table: {
-				TableName: convertStringToHex(that.tab),
+        TableName: convertStringToHex(that.tab),
+        NameInDB:  that.nameInDB
 			}
 		}],
 		tsType: 'SQLStatement'
@@ -405,30 +420,61 @@ Table.prototype.prepareJson = function() {
 		prepareTable(that, payment, resolve, reject);
 	});
 }
-function prepareTable(ChainSQL, payment, resolve, reject) {
-	var connect = ChainSQL.connect;
 
-	getUserToken(connect.api.connection, connect.scope, connect.address, ChainSQL.tab).then(function (token) {
-		token = token[ChainSQL.connect.scope + ChainSQL.tab];
-		if (token && token != '') {
-			var secret = decodeToken(ChainSQL, token);
-      var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
 
-      let algType = "aes";
-      if(ChainSQL.connect.secret === "gmAlg"){
-        algType = "gmAlg";
-      }else if(regSoftGMSeed.test(ChainSQL.connect.secret)){
-        algType = "softGMAlg";
+
+function tryEncryptRaw(ChainSQL, payment) {
+
+  var that      = ChainSQL;
+  var raw       = payment.raw;
+  return new Promise(function (resolve, reject) {
+
+    if(! that.confidential){
+      resolve( convertStringToHex(raw) );
+      return ;
+    }
+  
+    // confidential table
+
+    var connect = that.connect;
+    getUserToken(connect.api.connection, connect.scope, connect.address, that.tab).then(function (token) {
+      token = token[that.connect.scope + that.tab];
+      
+      var ciperRaw;
+      if (token && token != '') {
+        var secret = decodeToken(that, token);
+        var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
+  
+        let algType = "aes";
+        if(that.connect.secret === "gmAlg"){
+          algType = "gmAlg";
+        }else if(regSoftGMSeed.test(that.connect.secret)){
+          algType = "softGMAlg";
+        }
+        ciperRaw = crypto.symEncrypt(secret, raw, algType).toUpperCase();
+      } else {
+        ciperRaw = convertStringToHex(raw);
       }
-			payment.raw = crypto.symEncrypt(secret, payment.raw, algType).toUpperCase();
-		} else {
-			payment.raw = convertStringToHex(payment.raw);
-		}
-		
-		connect.api.prepareTable(connect, payment, resolve, reject);
+      
+      resolve(ciperRaw);
+    }).catch(function(error) {
+      reject(error);
+    });
+  
+	});
+}
+
+
+function prepareTable(ChainSQL, payment, resolve, reject) {
+
+  var connect = ChainSQL.connect;
+  tryEncryptRaw(ChainSQL,payment).then(function (raw) {
+      payment.raw = raw;
+		  connect.api.prepareTable(connect, payment, resolve, reject);
 	}).catch(function(error) {
 		reject(error);
 	});
+
 }
 
 function handleGetRecord(ChainSQL, object, resolve, reject) {
