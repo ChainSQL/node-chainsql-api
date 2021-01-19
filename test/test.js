@@ -73,17 +73,16 @@ async function main(){
 
 	try {
 
+		 await c.connect('ws://127.0.0.1:8017');
+
+
 		// let accountInfo = c.generateAddress({algorithm:"softGMAlg",secret:smUser7.secret});
 		// console.log(JSON.stringify(accountInfo))
 		// accountInfo = c.generateAddress({algorithm:"softGMAlg"});
 		// console.log(accountInfo)
 		// accountInfo = c.generateAddress({algorithm:"softGMAlg"});
 		// console.log(accountInfo)
-
-		await c.connect(wsAddr);
-		//await c.connect('ws://127.0.0.1:7017');
 		console.log('连接成功');
-
 		c.as(smRoot);
 
 		// 读取证书文件
@@ -192,9 +191,6 @@ async function testChainsql(){
 	//await testCreateTable();
 
 	// // //创建另一张表，用来测试rename,drop
-//	await testCreateTable1();
-	await testInsert();
-//	await testUpdate();
 	// await testDelete();
 	// await testRename();
 	// await testGet();
@@ -210,7 +206,45 @@ async function testChainsql(){
 
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
+
+	//
+	await testSchema();
 }
+
+//创建一个加密的表,table为要创建的表,confidential为是否要加密
+var testSchema = async function() {
+
+	try{
+
+		   // 不继承状态
+		   let schemaInfo = {
+			SchemaName:"hello",
+			WithState:false,
+			SchemaAdmin:user.address,
+			Validators:[
+				{
+					Validator:{PublicKey:"02BD87A95F549ECF607D6AE3AEC4C95D0BFF0F49309B4E7A9F15B842EB62A8ED1B"}
+				}
+			],
+			PeerList:[
+				{
+					Peer:{ Endpoint:"192.168.29.108:5125"}
+				}
+			]
+		}
+	
+		let ret = await c.createSchema(schemaInfo).submit({expect:'validate_success'})
+		//assert.strictEqual(ret.status,'validate_success')  
+		// 继承状态
+	
+		console.log("test CreateSchema" , ret)
+
+
+	}catch(e){
+		console.error(e)
+	}
+
+};
 
 function subTable(tb, owner) {
 	var event = c.event;

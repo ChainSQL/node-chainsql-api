@@ -73,6 +73,13 @@ Ripple.prototype.prepareJson = function () {
 							txJson.source.maxAmount.value = (FloatOperation.accAdd(parseFloat(value), fee)).toString();
 						}
 					}
+
+					//self.connect
+
+					if(self.ChainsqlAPI.connect.schemaID != undefined){
+						self.ChainsqlAPI.api.schemaID = self.ChainsqlAPI.connect.schemaID;
+					}
+
 					self.ChainsqlAPI.api.preparePayment(self.ChainsqlAPI.connect.address, txJson, instructions)
 						.then(function (data) {
 							resolve(data);

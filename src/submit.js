@@ -83,8 +83,6 @@ Submit.prototype.setCert = function () {
 
 		}
 
-
-
 	}
 };
 

@@ -19,6 +19,7 @@ const Connection = require('./connect');
 const Table = require('./table');
 const Contract = require('./smartContract');
 const util = require('../lib/util');
+const { utils } = require('elliptic');
 const co = require('co');
 const opType = require('../lib/config').opType;
 const convertStringToHex = util.convertStringToHex;
@@ -43,7 +44,10 @@ class ChainsqlAPI extends Submit {
 			select: 'lsfSelect',
 			execute: 'lsfExecute'
 		};
-		this.transaction = false;
+		this.transaction    = false;
+		this.schemaCreateTx = false;
+		this.schemaModifyTx = false;
+
 		this.cache = [];
 		this.strictMode = false;
 		this.needVerify = 1;
@@ -1028,7 +1032,38 @@ ChainsqlAPI.prototype.verify = function (messageHex, signature, publicKey) {
 ChainsqlAPI.prototype.prepareJson = function(){
 	let that = this;
 	return new Promise((resolve, reject) => {
-		if (that.payment.opType === opType['t_grant']) {
+
+		if(that.schemaCreateTx || that.schemaModifyTx){
+			var payment  = that.payment;
+			that.api.prepareTx(payment).then(function (data) {
+
+				var txJson = JSON.parse(data.txJSON);
+				var dropsPerByte = Math.ceil(1000000.0 / 1024);
+				that.api.getServerInfo().then(res => {
+								
+					if(res.validatedLedger.dropsPerByte != undefined){
+						dropsPerByte = parseInt(res.validatedLedger.dropsPerByte);
+					}
+
+					txJson.Fee = util.calcFee(txJson,dropsPerByte);
+					data.txJSON = txJson;
+					that.schemaCreateTx = false;
+					that.schemaModifyTx = false;
+					resolve(data)				
+				}).catch(err => {
+					that.schemaCreateTx = false;
+					that.schemaModifyTx = false;
+					reject(error)
+				});
+			
+			}).catch(function (error) {
+				that.schemaCreateTx = false;
+				that.schemaModifyTx = false;
+				reject(error)
+			});
+
+		}
+		else if (that.payment.opType === opType['t_grant']) {
 			handleGrantPayment(that).then(() => {
 				that.api.prepareTable(that, that.payment, resolve, reject);
 			}).catch(error => {
@@ -1039,6 +1074,193 @@ ChainsqlAPI.prototype.prepareJson = function(){
 		}
 	})
 }
+
+/**
+ * 设置操作链的ID
+ * @param {16进制字符串} schemaID schemaID="" 代表操作的是主链;
+ */
+ChainsqlAPI.prototype.setSchema = function(schemaID){
+	var connection = this.api ? this.api.connection : this.connect.api.connection;
+	if(connection._schema_id === undefined ){
+		throw new Error("The current version does not support setSchema");
+	}
+	connection._schema_id = schemaID;
+}
+
+ChainsqlAPI.prototype.getSchemaList = function(options){
+	var connection = this.api ? this.api.connection : this.connect.api.connection;
+	return new Promise(function(resolve, reject){
+
+		var params = {};
+		params.command = 'schema_list';
+	
+		if(options !== undefined && options.account !== undefined){
+			params.account =  options.account;
+		}
+
+		if(options !== undefined && options.running !== undefined){
+			params.running =  options.running;
+		}
+
+		connection.request(params).then(function(data){
+			resolve(data);
+		}).catch(function(err){
+			reject(err);
+		});
+	});
+};
+
+ChainsqlAPI.prototype.getSchemaInfo = function(schemaID){
+	var connection = this.api ? this.api.connection : this.connect.api.connection;
+	return new Promise(function(resolve, reject){
+		connection.request({
+			command: 'schema_info',
+			schema:schemaID
+		}).then(function(data){
+			resolve(data);
+		}).catch(function(err){
+			reject(err);
+		});
+	});
+};
+
+
+ChainsqlAPI.prototype.createSchema = function(schemaInfo){
+
+	let bValid = (schemaInfo !== undefined) &&  (schemaInfo.SchemaName !== undefined) && (schemaInfo.WithState !== undefined) &&
+				 (schemaInfo.Validators !== undefined) && (schemaInfo.Validators  instanceof Array) &&
+				 (schemaInfo.PeerList   !== undefined) && (schemaInfo.PeerList    instanceof Array);
+	
+
+	if(!bValid){
+		throw new Error("Invalid schemaInfo parameter");
+	} 
+	
+	var peerlists = []
+	var i   = 0;
+	var len = schemaInfo.PeerList.length
+	for(; i < len; i++) {
+		var hexPeer = convertStringToHex(schemaInfo.PeerList[i].Peer.Endpoint)
+
+		var item = {
+			Peer:{
+				Endpoint:hexPeer
+			}
+		}
+		peerlists.push(item)  
+	}
+
+	this.schemaCreateTx = true;
+
+	var schemaCreateTxJson = {
+		Account: this.connect.address,
+		SchemaName:convertStringToHex(schemaInfo.SchemaName),
+		SchemaStrategy: schemaInfo.WithState? 2:1,
+		SchemaAdmin: this.connect.address,
+		Validators: schemaInfo.Validators,
+		PeerList:peerlists,
+		TransactionType: 'SchemaCreate'
+	};
+
+
+	if(schemaCreateTxJson.SchemaStrategy === 2 ){
+		
+		if(schemaInfo.AnchorLedgerHash === undefined ){
+			throw new Error("Missing field AnchorLedgerHash");
+		}
+		schemaCreateTxJson.AnchorLedgerHash = schemaInfo.AnchorLedgerHash;
+	}
+
+	this.payment = schemaCreateTxJson;
+	return this;
+
+};
+
+
+ChainsqlAPI.prototype.modifySchema = function(schemaInfo){
+
+	let bValid = (schemaInfo !== undefined) &&  (schemaInfo.SchemaID !== undefined) && (schemaInfo.ModifyType !== undefined) &&
+				 (schemaInfo.Validators !== undefined) && (schemaInfo.Validators  instanceof Array) &&
+				 (schemaInfo.PeerList   !== undefined) && (schemaInfo.PeerList    instanceof Array);
+
+	if(!bValid){
+		throw new Error("Invalid modifySchema parameter");
+	}       
+	
+	// var validators = []
+	// var i   = 0
+	// var len = schemaInfo.Validators.length
+
+	// for(; i < len; i++) {
+	// 	var hexValidator = convertStringToHex(schemaInfo.Validators[i].Validator.PublicKey)
+
+	// 	var item = {
+	// 		Validator:{
+	// 			PublicKey:hexValidator
+	// 		}
+	// 	}
+	// 	validators.push(item)  
+	// }
+
+	var peerlists = []
+	var i   = 0;
+	var len = schemaInfo.PeerList.length
+	for(; i < len; i++) {
+		var hexPeer = convertStringToHex(schemaInfo.PeerList[i].Peer.Endpoint)
+
+		var item = {
+			Peer:{
+				Endpoint:hexPeer
+			}
+		}
+		peerlists.push(item)  
+	}
+
+	var opType = 1;
+	if(schemaInfo.ModifyType === "schema_del"){
+		opType = 2
+	}else if(schemaInfo.ModifyType === "schema_add"){
+		opType = 1
+	}else{
+		throw new Error("Invalid schemaInfo.ModifyType");
+	}
+
+	var schemaModifyTxJson = {
+		Account: this.connect.address,
+		SchemaID: schemaInfo.SchemaID,
+		OpType: opType,
+		Validators:schemaInfo.Validators,
+		PeerList:peerlists,
+		TransactionType: 'SchemaModify'
+	};
+
+	// 修改子链
+	this.schemaModifyTx = true;
+
+	// let payment = {
+	// 	Account: that.connect.address,
+	// 	SchemaID:"595FC1AA0C73D735C3362A0E9976A64E024C86976E08C02D299DB344CF674650",
+	// 	OpType: 1,
+	// 	Validators:[
+	// 		{
+	// 			Validator:{PublicKey:"02BD87A95F549ECF607D6AE3AEC4C95D0BFF0F49309B4E7A9F15B842EB62A8ED1A"}
+	// 		}
+	// 	],
+	// 	PeerList:[
+	// 		{
+	// 			Peer:{ Endpoint:convertStringToHex("192.168.29.116:7017") }
+	// 		}
+
+  	// 	],
+	// 	TransactionType: 'SchemaModify'
+	// };
+
+	this.payment = schemaModifyTxJson;
+	return this;
+
+};
+
+
 
 function callback(data, callback) {
 
