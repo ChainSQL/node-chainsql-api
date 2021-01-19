@@ -4,7 +4,7 @@ const keypairs = require('chainsql-keypairs-test');
 const EventManager = require('./eventManager')
 const _ = require('lodash');
 
-const RippleAPI = require('chainsql-lib-test').ChainsqlLibAPI;
+const RippleAPI = require('chainsql-lib').ChainsqlLibAPI;
 const Submit = require('./submit');
 const Ripple = require('./ripple');
 const chainsqlError = require('../lib/error');

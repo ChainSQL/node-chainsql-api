@@ -1,6 +1,6 @@
 {
   "name": "chainsql-test",
-  "version": "0.6.71",
+  "version": "1.0.0",
   "description": "An database driver for chainsql ",
   "main": "src/index.js",
   "scripts": {
@@ -9,7 +9,7 @@
   "dependencies": {
     "bignumber.js": "^2.4.0",
     "chainsql-keypairs-test": "^0.10.16",
-    "chainsql-lib-test": "^0.17.52",
+    "chainsql-lib": "~1.0.0",
     "co": "^4.6.0",
     "elliptic": "^5.1.0",
     "hash.js": "^1.0.3",

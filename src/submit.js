@@ -1,6 +1,6 @@
 'use strict'
 var util = require('../lib/util');
-const RippleAPI = require('chainsql-lib-test').ChainsqlLibAPI;
+const RippleAPI = require('chainsql-lib').ChainsqlLibAPI;
 const Connection = require('./connect');
 
 class Submit {
