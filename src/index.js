@@ -1109,14 +1109,12 @@ ChainsqlAPI.prototype.createSchema = function(schemaInfo){
 	let bValid = (schemaInfo !== undefined) &&  (schemaInfo.SchemaName !== undefined) && (schemaInfo.WithState !== undefined) &&
 				 (schemaInfo.Validators !== undefined) && (schemaInfo.Validators  instanceof Array) &&
 				 (schemaInfo.PeerList   !== undefined) && (schemaInfo.PeerList    instanceof Array);
+	
 
 	if(!bValid){
 		throw new Error("Invalid schemaInfo parameter");
-	}       
-
-	// 继承自主链的状态
-	// 锚定区块的hash值
-
+	} 
+	
 	var peerlists = []
 	var i   = 0;
 	var len = schemaInfo.PeerList.length
