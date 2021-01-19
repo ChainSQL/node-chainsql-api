@@ -1,10 +1,10 @@
 'use strict'
 const crypto = require('../lib/crypto');
-const keypairs = require('chainsql-keypairs');
+const keypairs = require('chainsql-keypairs-test');
 const EventManager = require('./eventManager')
 const _ = require('lodash');
 
-const RippleAPI = require('chainsql-lib').ChainsqlLibAPI;
+const RippleAPI = require('chainsql-lib-test').ChainsqlLibAPI;
 const Submit = require('./submit');
 const Ripple = require('./ripple');
 const chainsqlError = require('../lib/error');
@@ -20,6 +20,7 @@ const Table = require('./table');
 const Contract = require('./smartContract');
 const util = require('../lib/util');
 const { utils } = require('elliptic');
+const co = require('co');
 const opType = require('../lib/config').opType;
 const convertStringToHex = util.convertStringToHex;
 const getCryptAlgTypeFromAccout = util.getCryptAlgTypeFromAccout;
@@ -320,6 +321,10 @@ ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
 			var token  = generateToken(that.connect.secret);
 			var symKey = decodeToken(that, token);
 			var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
+
+
+			// 原始的大小
+			console.log("pre :",payment.raw);
 		  
 			if(that.connect.secret === "gmAlg") {
 				payment.raw = crypto.symEncrypt(symKey, payment.raw, "gmAlg").toUpperCase();
@@ -329,7 +334,13 @@ ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
 			else {
 				payment.raw = crypto.symEncrypt(symKey, payment.raw).toUpperCase();
 			}		
+
+			// 
+			console.log("after :",payment.raw);
+
 			payment.token = token.toUpperCase();
+
+			console.log("token :",payment.token);
 		} else {
 			payment.raw = convertStringToHex(payment.raw);
 		}
@@ -685,7 +696,17 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 				var secret = decodeToken(ChainSQL, token);
 				if (cache[i].Raw) {
 					if (cache[i].OpType != opType.t_grant) {
-						const algType = ChainSQL.connect.secret === "gmAlg" ? "gmAlg" : "aes";
+						//const algType = ChainSQL.connect.secret === "gmAlg" ? "gmAlg" : "aes";
+
+
+						var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
+
+						let algType = "aes";
+						if(ChainSQL.connect.secret === "gmAlg"){
+						  algType = "gmAlg";
+						}else if(regSoftGMSeed.test(ChainSQL.connect.secret)){
+						  algType = "softGMAlg";
+						}
 						cache[i].Raw = crypto.symEncrypt(secret, JSON.stringify(cache[i].Raw), algType).toUpperCase();
 					} else {
 						cache[i].Raw = convertStringToHex(JSON.stringify(cache[i].Raw));

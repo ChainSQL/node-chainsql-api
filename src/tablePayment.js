@@ -4,7 +4,7 @@ var _ = require('lodash');
 const path = require('path');
 const getTxJson = require('../lib/util').getTxJson;
 const calcFee = require('../lib/util').calcFee;
-var utils = require('chainsql-lib').ChainsqlLibUtil;
+var utils = require('chainsql-lib-test').ChainsqlLibUtil;
 var validate = utils.common.validate;
 var toRippledAmount = utils.common.toRippledAmount;
 var paymentFlags = utils.common.txFlags.Payment;
@@ -61,7 +61,8 @@ function createPaymentTransaction(paymentArgument) {
     AutoFillField:payment.autoFillField,
     Token:payment.token,
     StrictMode: payment.strictMode,
-    OperationRule: payment.operationRule
+    OperationRule: payment.operationRule,
+    TxsHashFillField:payment.txsHashFillField,
   }
   return txJSON;
 }
