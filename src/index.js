@@ -1156,12 +1156,14 @@ ChainsqlAPI.prototype.createSchema = function(schemaInfo){
 		Account: this.connect.address,
 		SchemaName:convertStringToHex(schemaInfo.SchemaName),
 		SchemaStrategy: schemaInfo.WithState? 2:1,
-		SchemaAdmin: this.connect.address,
 		Validators: schemaInfo.Validators,
 		PeerList:peerlists,
 		TransactionType: 'SchemaCreate'
 	};
 
+	if(schemaInfo.SchemaAdmin !== undefined){
+		schemaCreateTxJson.SchemaAdmin = schemaInfo.SchemaAdmin;
+	}
 
 	if(schemaCreateTxJson.SchemaStrategy === 2 ){
 		
