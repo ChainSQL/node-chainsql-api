@@ -19,7 +19,7 @@ Submit.prototype.submit = function (expectOpt) {
 	return new Promise(function (resolve, reject) {
 		try {
 			self.prepareJson().then(function (preparedJson) {
-				self.txJSON = preparedJson;
+				self.txJSON = preparedJson.txJSON;
 				self.setCert();				
 				let signedRet = self.signTx();
 				self.handleSignedTx(self.ChainsqlAPI, signedRet, expectOpt, resolve, reject);

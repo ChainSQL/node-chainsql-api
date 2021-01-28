@@ -94,14 +94,14 @@ function prepareTable(ChainSQL, payment, resolve, reject) {
         var txJson  = JSON.parse(tx_json.txJSON);
         txJson.Fee  = calcFee(txJson,dropsPerByte);
     
-        if( txJson.Tables.length === 1 && txJson.Tables[0].Table.NameInDB !== '' ){
-          resolve(txJson);
+        if( txJson.Tables.length === 1 && txJson.Tables[0].Table.NameInDB !== undefined ){
+          resolve({txJSON:txJson});
           return ;
         }
       
         // 2  get table's NameInDB
         getTxJson(ChainSQL, txJson).then(function (data) {
-          resolve(data.tx_json);
+          resolve({txJSON:data.tx_json});
         }).catch(function (error) {
           reject(error);
         });
