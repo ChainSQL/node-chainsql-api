@@ -82,20 +82,11 @@ function prepareTablePayment(payment, chainsqlApi) {
 
 function prepareTable(ChainSQL, payment, resolve, reject) {
 
-  if(ChainSQL.connect.schemaID != undefined){
-    ChainSQL.api.schemaID = ChainSQL.connect.schemaID;
-  }
 
 	prepareTablePayment(payment, ChainSQL.api).then(function (tx_json) {
 
       var dropsPerByte = Math.ceil(1000000.0 / 1024);;
-
-      
-      if(ChainSQL.ChainsqlAPI.connect.schemaID != undefined){
-        ChainSQL.ChainsqlAPI.api.schemaID = ChainSQL.ChainsqlAPI.connect.schemaID ;
-      }
-
-
+    
       ChainSQL.api.getServerInfo().then(res => {
 
         if(res.validatedLedger.dropsPerByte != undefined){
@@ -106,7 +97,7 @@ function prepareTable(ChainSQL, payment, resolve, reject) {
         var txJson  = JSON.parse(tx_json.txJSON);
         txJson.Fee  = calcFee(txJson,dropsPerByte);
     
-        if( txJson.Tables.length === 1 && txJson.Tables[0].Table.NameInDB !== undefined ){
+        if( txJson.Tables.length === 1 && txJson.Tables[0].Table.NameInDB !== '' ){
           resolve({txJSON:txJson});
           return ;
         }
