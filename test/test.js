@@ -90,13 +90,13 @@ async function main(){
 
 		// c.setRestrict(true);
 		//激活user账户
-		await activateAccount(user.address);
+		//await activateAccount(user.address);
 
 		//await testSubscribe();
 
 		//await testRippleAPI();
 		// await testAccount();
-		//await testChainsql();
+		await testChainsql();
 
 		//await c.disconnect();
 		console.log('运行结束');
@@ -224,6 +224,7 @@ async function testTableSet(){
 
 async function testChainsql(){
 
+	await testInsert()
 	// await testDelete();
 	// await testRename();
 	// await testGet();
@@ -240,8 +241,8 @@ async function testChainsql(){
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
 
-	await testTableSet();
-  await testSchema();
+	//await testTableSet();
+  //await testSchema();
 }
 
 //创建一个加密的表,table为要创建的表,confidential为是否要加密
