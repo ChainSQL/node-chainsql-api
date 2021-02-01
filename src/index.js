@@ -1,6 +1,6 @@
 'use strict'
 const crypto = require('../lib/crypto');
-const keypairs = require('chainsql-keypairs-test');
+const keypairs = require('chainsql-keypairs');
 const EventManager = require('./eventManager')
 const _ = require('lodash');
 

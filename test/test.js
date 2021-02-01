@@ -7,8 +7,6 @@ const ChainsqlAPI = require('../src/index');
 // ChainsqlAPI.prototype.callback2Promise = require('./callback2Promise');
 const c = new ChainsqlAPI();
 
-const RippleAPI = new require('chainsql-lib-test').RippleAPI;
-
 var user = {
 	secret: "xxeJcpbcFyGTFCxiGjeDEw1RCimFQ",
 	address: "z44fybVuUn8jZxZRHpc3pJ62KQJgSEjzjk",
@@ -72,7 +70,7 @@ main();
 async function main(){
 
 	try {
-		 await c.connect('ws://127.0.0.1:8017');
+		 await c.connect('ws://192.168.29.69:46006');
 
 		// let accountInfo = c.generateAddress({algorithm:"softGMAlg",secret:smUser7.secret});
 		// console.log(JSON.stringify(accountInfo))
@@ -81,7 +79,7 @@ async function main(){
 		// accountInfo = c.generateAddress({algorithm:"softGMAlg"});
 		// console.log(accountInfo)
 		console.log('连接成功');
-		c.as(smRoot);
+		c.as(owner);
 
 		// 读取证书文件
 		// var data = fs.readFileSync('C:\\ca\\userCert.cert');
@@ -92,7 +90,7 @@ async function main(){
 
 		// c.setRestrict(true);
 		//激活user账户
-		await activateAccount(smUser.address);
+		await activateAccount(user.address);
 
 		//await testSubscribe();
 
