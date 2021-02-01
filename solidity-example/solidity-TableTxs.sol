@@ -87,9 +87,9 @@ contract DBTest {
 	
 	function sqlTransaction(address owner,string tableName) public{
 	    db.beginTrans();
-        msg.sender.insert(owner,tableName, "[{\"account\":\"zU42yDW3fzFjGWosdeVjVasyPsF4YHj224\", \"id\":1}, {\"account\":\"zU42yDW3fzFjGWosdeVjVasyPsF4YHj224\",   \"id\":2}]");
-        msg.sender.deletex(owner,tableName, "{\"id\":1}");
-        msg.sender.update(owner,tableName, "{\"account\":\"id==2\"}", "{\"id\": 2}");
+        owner.insert(tableName, "[{\"account\":\"zU42yDW3fzFjGWosdeVjVasyPsF4YHj224\", \"id\":1}, {\"account\":\"zU42yDW3fzFjGWosdeVjVasyPsF4YHj224\",   \"id\":2}]");
+        owner.deletex(tableName, "{\"id\":1}");
+        owner.update(tableName, "{\"account\":\"id==2\"}", "{\"id\": 2}");
         db.commit();
 	}
 

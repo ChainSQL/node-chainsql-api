@@ -522,11 +522,11 @@ ChainsqlAPI.prototype.getAccountTransactions = function (address, opts, cb) {
 	}
 };
 
-ChainsqlAPI.prototype.getTransaction = function (hash, cb) {
+ChainsqlAPI.prototype.getTransaction = function (hash,meta,meta_chain,cb) {
 	if ((typeof cb) != 'function') {
-		return this.api.getTransaction(hash);
+		return this.api.getTransaction(hash,meta,meta_chain);
 	} else {
-		this.api.getTransaction(hash).then(function (data) {
+		this.api.getTransaction(hash,meta,meta_chain).then(function (data) {
 			cb(null, data);
 		}).catch(function (err) {
 			cb(err);
@@ -696,11 +696,7 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 				var secret = decodeToken(ChainSQL, token);
 				if (cache[i].Raw) {
 					if (cache[i].OpType != opType.t_grant) {
-						//const algType = ChainSQL.connect.secret === "gmAlg" ? "gmAlg" : "aes";
-
-
 						var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
-
 						let algType = "aes";
 						if(ChainSQL.connect.secret === "gmAlg"){
 						  algType = "gmAlg";
@@ -982,6 +978,26 @@ ChainsqlAPI.prototype.generatCryptData = function(smAlgType, dataSetCount, plain
 	});
 };
 
+ChainsqlAPI.prototype.setEncTabToSync = function(address, tableName) {
+	const chainsqlCon = this.connect;
+	return chainsqlCon.api.connection.request({
+		command: "g_addEncTabToSync",
+		account: address,
+		tablename: tableName
+	});
+};
+ChainsqlAPI.prototype.getSyncTabAccount = function() {
+	const chainsqlCon = this.connect;
+	return chainsqlCon.api.connection.request({
+		command: "g_getSyncPub"
+	});
+};
+ChainsqlAPI.prototype.getNodeAccount = function() {
+	const chainsqlCon = this.connect;
+	return chainsqlCon.api.connection.request({
+		command: "g_getNodePub"
+	});
+};
 
 ChainsqlAPI.prototype.getLedgerTxs = function(ledgerIndex,includeSuccess,includeFailure){
 
@@ -1131,11 +1147,10 @@ ChainsqlAPI.prototype.createSchema = function(schemaInfo){
 				 (schemaInfo.Validators !== undefined) && (schemaInfo.Validators  instanceof Array) &&
 				 (schemaInfo.PeerList   !== undefined) && (schemaInfo.PeerList    instanceof Array);
 	
-
-	if(!bValid){
+  if(!bValid){
 		throw new Error("Invalid schemaInfo parameter");
-	} 
-	
+	}       
+
 	var peerlists = []
 	var i   = 0;
 	var len = schemaInfo.PeerList.length
