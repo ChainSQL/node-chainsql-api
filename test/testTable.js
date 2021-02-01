@@ -3,9 +3,10 @@ const ChainsqlAPI = require('../src/index');
 const c = new ChainsqlAPI();
 
 var root = {
-	secret: "xnoPBzXtMeMyMHUVTgbuqAfg1SUTb",
-	address: "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh"
-};
+    secret: "xnoPBzXtMeMyMHUVTgbuqAfg1SUTb",
+    address: "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh"
+}
+
 
 var owner = {
     address: "zpMZ2H58HFPB5QTycMGWSXUeF47eA8jyd4",
@@ -23,9 +24,22 @@ var user2 = {
     secret: "xnoHuFw7CcgXD29fv2yi8uGkiqSqm"
 }
 
+var smRoot = {
+	secret: "p97evg5Rht7ZB7DbEpVqmV3yiSBMxR3pRBKJyLcRWt7SL5gEeBb",
+    address: "zN7TwUjJ899xcvNXZkNJ8eFFv2VLKdESsj",
+    publicKey: 'pYvWhW4azFwanovo5MhL71j5PyTWSJi2NVurPYUrE9U…txxQB7xeGvFmdjbtKRzBQ4g9bCW5hjBQSeb7LePMwFM'
+}
+
+
+const smUser7 ={
+    secret:"pwRdHmA4cSUKKtFyo4m2vhiiz5g6ym58Noo9dTsUU97mARNjevj",
+    address: "zMXMtS2C36J1p3uhTxRFWV8pEhHa8AMMSL", 
+    publicKey: "pYvXDbsUUr5dpumrojYApjG8nLfFMXhu3aDvxq5oxEa4ZSeyjrMzisdPsYjfxyg9eN3ZJsNjtNENbzXPL89st39oiSp5yucU"
+}
+
 var grantAddr = "0xzzzzzzzzzzzzzzzzzzzzBZbvji";
 
-var sTableName = "chainsqlTest";
+var sTableName = "hjkz9";
 var sTableNameNew = "table_new"
 var tableRaw = [
     { 'field': 'id', 'type': 'int' },
@@ -57,15 +71,76 @@ var tagStep = {
     table_update: 10, table_get: 11, table_transaction: 12
 }
 
+var wsAddr = 'ws://192.168.29.69:8006'
+
 main();
 async function main() {
-    let res = await c.connect('ws://127.0.0.1:6006');
+    let res = await c.connect(wsAddr);
     console.log("connect successfully.")
     c.setRestrict(true);
 
+    //test
+    c.as(smRoot)
+    try{
+
+        var tableRaw = [
+            { 'field': 'id', 'type': 'int', 'length': 100, 'PK': 1, 'NN': 1 },
+            { 'field': 'name', 'type': 'varchar', 'length': 100 },
+            { 'field': 'age', 'type': 'int' },
+            { 'field': 'account', 'type': 'varchar', 'length': 40 }
+        ];
+    
+        var rule = {
+            'Insert': {
+                'Condition': { 'account': '$account' }, //Condition:指定插入操作可设置的默认值
+                'Count': { 'AccountField': 'account', 'CountLimit': 5 }
+            },
+            'Delete': {
+                'Condition': { 'account': '$account' } //只能删除自己插入的数据
+            },
+            'Get': {
+                'Condition': { 'id': { '$ge': 5 } } //只能查询id大于5的数据
+            },
+            'Update': {
+                'Fields': ['name'] //只能更新name字段
+            }
+        };
+        var option = {
+            confidential: false,
+            operationRule: rule
+        };
+
+        var lll;
+        // lll = await c.createTable(sTableName, tableRaw, option).submit({ expect: 'db_success' });
+        // console.log("    createTable_operationRule", lll);
+    
+        // var insertRaw2 = [
+        //     { 'id': 1, 'name': 'zhangsan', 'age': 123 }
+        // ];
+
+  
+        // lll = await c.table(sTableName).insert(insertRaw2).submit({ expect: 'validate_success' });	
+        // console.log("    insert", lll);
+
+
+        var rs = await  c.table(sTableName).get({ 'id': 1 }).delete().submit({ expect: 'db_success' })
+        console.log("testDelete", rs)
+    }catch(e){
+
+        console.error(e)
+    }
+
+    return ;
+
+   
+
+ 
+
+
+    //t
 
     /**************************************/
-    let nStep = tagStep.table_insert;
+    let nStep = tagStep.table_insert_operationRule;
     // userOperation = user;
     switch (nStep) {
         case tagStep.active: active(); break;
@@ -99,27 +174,41 @@ var active = async function () {
 }
 
 var table_create = async function () {
-    c.as(owner)
+    c.as(smRoot)
 	try {
-		let lll = await c.createTable(sTableName, tableRaw).submit({expect:"db_success"});	
+        var option = {
+            confidential: true
+        };
+		let lll = await c.createTable(sTableName, tableRaw,option).submit({expect:"db_success"});	
 		console.log("    createTable", sTableName, lll);
 	} catch (error) {
 		console.log("    createTable ", sTableName, error);
 	}
 };
 var table_create_operationRule = async function () {
-    c.as(owner)
-    var rule = {
-        'Insert': {
-            'Condition': { 'txHash': '$tx_hash' } //Condition:指定插入操作可设置的默认值
-        }
-    };
-    var option = {
-        confidential: false,
-        operationRule: rule
-    };
-    let lll = await c.createTable(sTableName, tableRaw, option).submit({ expect: 'db_success' });
-    console.log("    createTable_operationRule", lll);
+
+
+    try{
+        c.as(smRoot)
+        var rule = {
+            'Insert': {
+                'Condition': { 'txHash': '$tx_hash' } //Condition:指定插入操作可设置的默认值
+            }
+        };
+        var option = {
+            confidential: false,
+            operationRule: rule
+        };
+        let lll = await c.createTable(sTableName, tableRaw, option).submit({ expect: 'db_success' });
+        console.log("    createTable_operationRule", lll);
+
+    }catch(e){
+
+        console.error(e);
+
+    }
+
+
 }
 var table_rename = async function () {
     c.as(owner)
@@ -138,8 +227,9 @@ var table_drop = async function () {
     console.log("    dropTable", sTableName, lll);
 }
 var table_insert = async function () {
-    c.as(userOperation)
-    c.use(owner.address)
+    c.as(smRoot)
+    // c.as(userOperation)
+    // c.use(owner.address)
 	try {
 		let lll = await c.table(sTableName).insert(insertRaw, "txHash").submit({ expect: 'db_success' });	
 		console.log("    insert", lll);
@@ -148,8 +238,8 @@ var table_insert = async function () {
 	}
 };
 var table_insert_operationRule = async function () {
-    c.as(userOperation)
-    c.use(owner.address)
+    c.as(smRoot)
+   // c.use(owner.address)
     let lll = await c.table(sTableName).insert(insertRaw).submit({ expect: 'db_success' });
     console.log("    insert", lll);
 }

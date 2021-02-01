@@ -22,6 +22,7 @@ class Table extends Submit {
     this.cache = [];
     this.nameInDB = '';
     this.confidential = true;
+    this.txsHashFillField = null;
 	}
 
 	submit (cb) {
@@ -61,13 +62,18 @@ class Table extends Submit {
 	}
 }
 
-Table.prototype.insert = function(raw, field) {
+Table.prototype.insert = function(raw, autoField ,txsHashFillField) {
   if (!this.tab) throw chainsqlError('you must appoint the table name');
   if (this.exec !== '' && this.exec !== 'r_insert') throw chainsqlError('Object can not hava function insert');
   var that = this;
-  if (field) {
-    this.field = field;
+  if (autoField) {
+    this.field = autoField;
   }
+
+  if (txsHashFillField) {
+    this.txsHashFillField = txsHashFillField;
+  }
+
   if (Object.prototype.toString.call(raw) === '[object Array]') {
     raw.forEach(function(item) {
       that.query.push(item);
@@ -92,13 +98,17 @@ Table.prototype.insert = function(raw, field) {
   }
 }
 
-Table.prototype.update = function(raw,field) {
+Table.prototype.update = function(raw,field,txsHashFillField) {
   if (!this.tab) throw chainsqlError('you must appoint the table name');
   if (this.exec !== 'r_get') throw chainsqlError('Object can not hava function update');
   this.query.unshift(raw);
  
   if (field) {
     this.field = field;
+  }
+
+  if (txsHashFillField) {
+    this.txsHashFillField = txsHashFillField;
   }
 
   this.exec = 'r_update';
@@ -412,10 +422,18 @@ Table.prototype.prepareJson = function() {
 		}],
 		tsType: 'SQLStatement'
 	};
-	if ( (that.exec == 'r_insert' || that.exec == 'r_update') && that.field) {
-		payment.autoFillField = convertStringToHex(that.field);
-	}
+	if ( (that.exec == 'r_insert' || that.exec == 'r_update') ) {
 
+    if(that.field){
+      payment.autoFillField = convertStringToHex(that.field);
+    }
+
+    if ( that.txsHashFillField) {
+      payment.txsHashFillField = convertStringToHex(that.txsHashFillField);
+    }
+
+  }
+  
 	return new Promise(function (resolve, reject) {
 		prepareTable(that, payment, resolve, reject);
 	});

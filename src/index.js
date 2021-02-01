@@ -1,6 +1,6 @@
 'use strict'
 const crypto = require('../lib/crypto');
-const keypairs = require('chainsql-keypairs');
+const keypairs = require('chainsql-keypairs-test');
 const EventManager = require('./eventManager')
 const _ = require('lodash');
 
@@ -20,6 +20,7 @@ const Table = require('./table');
 const Contract = require('./smartContract');
 const util = require('../lib/util');
 const { utils } = require('elliptic');
+const co = require('co');
 const opType = require('../lib/config').opType;
 const convertStringToHex = util.convertStringToHex;
 const getCryptAlgTypeFromAccout = util.getCryptAlgTypeFromAccout;
@@ -320,6 +321,10 @@ ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
 			var token  = generateToken(that.connect.secret);
 			var symKey = decodeToken(that, token);
 			var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
+
+
+			// 原始的大小
+			console.log("pre :",payment.raw);
 		  
 			if(that.connect.secret === "gmAlg") {
 				payment.raw = crypto.symEncrypt(symKey, payment.raw, "gmAlg").toUpperCase();
@@ -329,7 +334,13 @@ ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
 			else {
 				payment.raw = crypto.symEncrypt(symKey, payment.raw).toUpperCase();
 			}		
+
+			// 
+			console.log("after :",payment.raw);
+
 			payment.token = token.toUpperCase();
+
+			console.log("token :",payment.token);
 		} else {
 			payment.raw = convertStringToHex(payment.raw);
 		}
@@ -685,7 +696,6 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 				var secret = decodeToken(ChainSQL, token);
 				if (cache[i].Raw) {
 					if (cache[i].OpType != opType.t_grant) {
-
 						var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
 						let algType = "aes";
 						if(ChainSQL.connect.secret === "gmAlg"){
@@ -1136,13 +1146,10 @@ ChainsqlAPI.prototype.createSchema = function(schemaInfo){
 	let bValid = (schemaInfo !== undefined) &&  (schemaInfo.SchemaName !== undefined) && (schemaInfo.WithState !== undefined) &&
 				 (schemaInfo.Validators !== undefined) && (schemaInfo.Validators  instanceof Array) &&
 				 (schemaInfo.PeerList   !== undefined) && (schemaInfo.PeerList    instanceof Array);
-
-	if(!bValid){
+	
+  if(!bValid){
 		throw new Error("Invalid schemaInfo parameter");
 	}       
-
-	// 继承自主链的状态
-	// 锚定区块的hash值
 
 	var peerlists = []
 	var i   = 0;

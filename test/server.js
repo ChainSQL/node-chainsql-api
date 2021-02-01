@@ -5,10 +5,10 @@ const co = require('co')
 const ChainsqlAPI = require('../src/index');
 const r = new ChainsqlAPI();
 var path = require('path');
-var basePath = path.join(require.resolve('chainsql-lib'), '../common');
+var basePath = path.join(require.resolve('chainsql-lib-test'), '../common');
 var common = require(basePath);
 var crypto = require('../lib/crypto');
-const keypairs = require('chainsql-keypairs');
+const keypairs = require('chainsql-keypairs-test');
 
 co(function*() {
 	try {
