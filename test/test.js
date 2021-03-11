@@ -25,7 +25,7 @@ var issuer = {
 	address: "znbWk4iuz2HL1e1Ux91TzYfFzJHGeYxBA4"	
 }
 
-var sTableName = "test666";
+var sTableName = "test888";
 var sTableName2 = "b1";
 var sReName = "boy1234";
 var sTableName3 = "hijack12";
@@ -203,7 +203,9 @@ async function testChainsql(){
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
 
-	await testTableSet();
+	// await testTableSet();
+
+	// await testModifyTable();
 }
 
 function subTable(tb, owner) {
@@ -356,6 +358,61 @@ var insertAfterGrant = async function(){
 	console.log("insertAfterGrant",rs);
 	// 切换回原来的账户
 	c.as(owner);
+}
+
+var testModifyTable = async function(){
+	await testAddFields();
+
+	// await testModifyFields();
+
+	// await testDeleteFields();
+
+	// await testCreateIndex();
+
+	// await testDeleteIndex();
+}
+
+var testAddFields = async function(){
+	var raw = [
+		{'field':'firmname','type':'varchar','length':50,'default':null},
+		{'field':'height','type':'int'}
+	]
+	var rs = await c.addTableFields(sTableName,raw).submit({expect:'db_success'});
+	console.log("addTableFields",rs);
+}
+
+var testModifyFields = async function(){
+	var raw = [
+		{'field':'firmname','type':'text'}
+	]
+	var rs = await c.modifyTableFields(sTableName,raw).submit({expect:'db_success'});
+	console.log("modifyTableFields",rs);
+}
+
+var testDeleteFields = async function(){
+	var raw = [
+		{'field':'firmname'}
+	]
+	var rs = await c.deleteTableFields(sTableName,raw).submit({expect:'db_success'});
+	console.log("deleteTableFields",rs);
+}
+
+var testCreateIndex = async function(){
+	var raw = [
+		{'index':'NameIndex'},
+		{'field':'id'},
+		{'field':'name'}
+	]
+	var rs = await c.createIndex(sTableName,raw).submit({expect:'db_success'});
+	console.log("createIndex",rs);
+}
+
+var testDeleteIndex = async function(){
+	var raw = [
+		{'index':'NameIndex'}
+	]
+	var rs = await c.deleteIndex(sTableName,raw).submit({expect:'db_success'});
+	console.log("deleteIndex",rs);
 }
 
 var testTxs = async function(){

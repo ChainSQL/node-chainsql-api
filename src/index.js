@@ -390,6 +390,45 @@ ChainsqlAPI.prototype.dropTable = function (name) {
 		return this;
 	}
 }
+
+ChainsqlAPI.prototype.addTableFields = function (name, raw){
+	validate.create(name,raw);
+	return modifyTable(this,opType.t_add_fields,name, raw);
+}
+
+ChainsqlAPI.prototype.deleteTableFields = function (name, raw){
+	return modifyTable(this,opType.t_delete_fields,name, raw);
+}
+
+ChainsqlAPI.prototype.modifyTableFields = function (name, raw){
+	validate.create(name,raw);
+	return modifyTable(this,opType.t_modify_fields,name, raw);
+}
+
+ChainsqlAPI.prototype.createIndex = function (name, raw){
+	return modifyTable(this,opType.t_create_index,name, raw);
+}
+
+ChainsqlAPI.prototype.deleteIndex = function (name, raw){
+	return modifyTable(this,opType.t_delete_index,name, raw);
+}
+
+function modifyTable(ChainSQL,optype,name,raw){
+	ChainSQL.payment = {
+		address: ChainSQL.connect.address,
+		opType: optype,
+		tables: [{
+			Table: {
+				TableName: convertStringToHex(name)
+			}
+		}],
+		raw: JSON.stringify(raw),
+		tsType: 'TableListSet',
+	};
+
+	return ChainSQL;
+}
+
 ChainsqlAPI.prototype.renameTable = function (oldName, newName) {
 	if (newName == '' || !newName) {
 		throw chainsqlError("Table new name can not be empty")
@@ -1068,15 +1107,23 @@ ChainsqlAPI.prototype.prepareJson = function(){
 				reject(error)
 			});
 
-		}
-		else if (that.payment.opType === opType['t_grant']) {
-			handleGrantPayment(that).then(() => {
+		}else{
+			if (that.payment.opType === opType['t_grant']) {
+				handleGrantPayment(that).then(() => {
+					that.api.prepareTable(that, that.payment, resolve, reject);
+				}).catch(error => {
+					reject(error);
+				});
+			} else if(that.payment.opType >= opType.t_add_fields && that.payment.opType <= opType.t_delete_index){
+				util.tryEncryptRaw(that,that.payment).then(function (raw) {
+					that.payment.raw = raw;
+					that.api.prepareTable(that, that.payment, resolve, reject);
+				}).catch(function(error) {
+					reject(error);
+				});
+			}else {
 				that.api.prepareTable(that, that.payment, resolve, reject);
-			}).catch(error => {
-				reject(error);
-			});
-		} else {
-			that.api.prepareTable(that, that.payment, resolve, reject);
+			}
 		}
 	})
 }
