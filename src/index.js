@@ -1226,6 +1226,10 @@ ChainsqlAPI.prototype.createSchema = function(schemaInfo){
 			throw new Error("Missing field AnchorLedgerHash");
 		}
 		schemaCreateTxJson.AnchorLedgerHash = schemaInfo.AnchorLedgerHash;
+	}else{
+		if(schemaInfo.AnchorLedgerHash){
+			throw new Error("Field 'AnchorLedgerHash' is unnecessary");
+		}
 	}
 
 	this.payment = schemaCreateTxJson;
