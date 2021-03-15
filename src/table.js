@@ -9,6 +9,7 @@ const getUserToken = util.getUserToken;
 const getTxJson = util.getTxJson;
 const generateToken = util.generateToken;
 const decodeToken = util.decodeToken;
+const tryEncryptRaw = util.tryEncryptRaw;
 const crypto = require('../lib/crypto');
 
 class Table extends Submit {
@@ -438,50 +439,6 @@ Table.prototype.prepareJson = function() {
 		prepareTable(that, payment, resolve, reject);
 	});
 }
-
-
-
-function tryEncryptRaw(ChainSQL, payment) {
-
-  var that      = ChainSQL;
-  var raw       = payment.raw;
-  return new Promise(function (resolve, reject) {
-
-    if(! that.confidential){
-      resolve( convertStringToHex(raw) );
-      return ;
-    }
-  
-    // confidential table
-
-    var connect = that.connect;
-    getUserToken(connect.api.connection, connect.scope, connect.address, that.tab).then(function (token) {
-      token = token[that.connect.scope + that.tab];
-      
-      var ciperRaw;
-      if (token && token != '') {
-        var secret = decodeToken(that, token);
-        var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
-  
-        let algType = "aes";
-        if(that.connect.secret === "gmAlg"){
-          algType = "gmAlg";
-        }else if(regSoftGMSeed.test(that.connect.secret)){
-          algType = "softGMAlg";
-        }
-        ciperRaw = crypto.symEncrypt(secret, raw, algType).toUpperCase();
-      } else {
-        ciperRaw = convertStringToHex(raw);
-      }
-      
-      resolve(ciperRaw);
-    }).catch(function(error) {
-      reject(error);
-    });
-  
-	});
-}
-
 
 function prepareTable(ChainSQL, payment, resolve, reject) {
 
