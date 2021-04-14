@@ -17,10 +17,8 @@ const addressCodec = require('chainsql-address-codec');
 const validate = require('../lib/validate')
 const Connection = require('./connect');
 const Table = require('./table');
-const Contract = require('./smartContract');
 const util = require('../lib/util');
 const { utils } = require('elliptic');
-const co = require('co');
 const opType = require('../lib/config').opType;
 const convertStringToHex = util.convertStringToHex;
 const getCryptAlgTypeFromAccout = util.getCryptAlgTypeFromAccout;
@@ -153,11 +151,6 @@ ChainsqlAPI.prototype.table = function (name) {
 	return this.tab;
 }
 
-ChainsqlAPI.prototype.contract = function(jsonInterface, address, options) {
-  this.contractObj = new Contract(this, jsonInterface, address, options);
-  return this.contractObj;
-}
-
 ChainsqlAPI.prototype.generateAddress = function () {
 
 	var account = {secret:"",address:""};
@@ -276,11 +269,6 @@ ChainsqlAPI.prototype.escrowExecute = function (sOwnerAddr, nCreateEscrowSeq) {
 ChainsqlAPI.prototype.escrowCancel = function (sOwnerAddr, nCreateEscrowSeq) {
 	let ripple = new Ripple(this);
 	return ripple.escrowCancel(sOwnerAddr, nCreateEscrowSeq);
-}
-
-ChainsqlAPI.prototype.payToContract = function (contractAddr, value, gas) {
-	let ripple = new Ripple(this);
-	return ripple.payToContract(contractAddr, value, gas);
 }
 
 ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
