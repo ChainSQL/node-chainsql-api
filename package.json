@@ -4,16 +4,11 @@
   "description": "An database driver for chainsql ",
   "main": "src/index.js",
   "scripts": {
-    "test": "mocha"
   },
   "dependencies": {
     "chainsql-keypairs": "^0.11.1",
-    "chainsql-lib": "^1.0.3",
+    "chainsql-lib-applet": "^1.0.8",
     "lodash": "^4.17.21"
-  },
-  "devDependencies": {
-    "mocha": "~2.3.3",
-    "chai": "^4.2.0"
   },
   "repository": {
     "type": "git",

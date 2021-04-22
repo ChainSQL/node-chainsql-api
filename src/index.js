@@ -10,13 +10,11 @@ const Ripple = require('./ripple');
 const chainsqlError = require('../lib/error');
 
 _.assign(RippleAPI.prototype, {
-	prepareTable: require('./tablePayment'),
 	prepareTx: require('./txPayment')
 })
 const addressCodec = require('chainsql-address-codec');
 const validate = require('../lib/validate')
 const Connection = require('./connect');
-const Table = require('./table');
 const util = require('../lib/util');
 const { utils } = require('elliptic');
 const opType = require('../lib/config').opType;
@@ -140,16 +138,6 @@ ChainsqlAPI.prototype.setRestrict = function (mode) {
 ChainsqlAPI.prototype.setNeedVerify = function (isNeed) {
 	isNeed ? this.needVerify = 1 : this.needVerify = 0;
 }
-ChainsqlAPI.prototype.table = function (name) {
-	this.tab = new Table(name, this);
-	if (this.transaction) {
-		this.tab.transaction = this.transaction;
-		this.tab.cache = this.cache;
-	}
-	this.tab.strictMode = this.strictMode;
-	this.tab.event = this.event;
-	return this.tab;
-}
 
 ChainsqlAPI.prototype.generateAddress = function () {
 
@@ -187,55 +175,6 @@ ChainsqlAPI.prototype.generateAddress = function () {
 	return account;
 }
 
-// active account
-function paymentSetting(ChainSQL, account, resolve, reject) {
-	try {
-		let userInfo = {
-			"domain": "www.peersafe.com",
-			"memos": [{
-				"type": "USERINFO",
-				"format": "plain/text",
-				"data": ""
-			}]
-		};
-		//设置用户信息
-		userInfo.memos[0].data = JSON.stringify(_.omit(data, ['pwd']));
-		ChainSQL.api.prepareSettings(account.address, userInfo)
-			.then(function (data) {
-				//console.log('prepareSettings: ', JSON.stringify(data));
-				try {
-					let signedRet = ChainSQL.api.sign(data.txJSON, account.secret);
-					return ChainSQL.api.submit(signedRet.signedTransaction);
-				}
-				catch (error) {
-					//console.log('sign prepareSettings failure.', JSON.stringify(error));
-					reject(error);
-				}
-			})
-			.then(function (data) {
-				//console.log('sign prepareSetting: ', JSON.stringify(data));
-				if (data.resultCode === 'tesSUCCESS') {
-					resolve({
-						status: 0,
-						message: ''
-					});
-				} else {
-					reject({
-						status: -1,
-						message: data.resultMessage
-					});
-				}
-			})
-			.catch(function (error) {
-				reject(error);
-			});
-	}
-	catch (error) {
-		reject(error);
-	}
-
-}
-
 ChainsqlAPI.prototype.pay = function (account, amount, memos) {
 	let ripple = new Ripple(this);
 	return ripple.preparePayment(account, amount, memos);
@@ -269,228 +208,6 @@ ChainsqlAPI.prototype.escrowExecute = function (sOwnerAddr, nCreateEscrowSeq) {
 ChainsqlAPI.prototype.escrowCancel = function (sOwnerAddr, nCreateEscrowSeq) {
 	let ripple = new Ripple(this);
 	return ripple.escrowCancel(sOwnerAddr, nCreateEscrowSeq);
-}
-
-ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
-	validate.create(name,raw);
-	var opt = inputOpt ? inputOpt : {};
-	let that = this;
-	var confidential = false;
-	if (opt.confidential) {
-		confidential = opt.confidential;
-	}
-	// console.log(JSON.stringify(opt.operationRule));
-	if (that.transaction) {
-		var json = {
-			OpType: opType['t_create'],
-			TableName: name,
-			Raw: raw,
-			confidential: confidential,
-			OperationRule: opt.operationRule ? convertStringToHex(JSON.stringify(opt.operationRule)) : undefined
-		};
-
-		this.cache.push(json);
-		return;
-	} else {
-		let payment = {
-			address: that.connect.address,
-			opType: opType['t_create'],
-			tables: [{
-				Table: {
-					TableName: convertStringToHex(name)
-				}
-			}],
-			raw: JSON.stringify(raw),
-			tsType: 'TableListSet',
-			operationRule: opt.operationRule ? JSON.stringify(opt.operationRule) : undefined
-		};
-
-		if (confidential) {
-			var token  = generateToken(that.connect.secret);
-			var symKey = decodeToken(that, token);
-			var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
-
-
-			// 原始的大小
-			console.log("pre :",payment.raw);
-		  
-			if(that.connect.secret === "gmAlg") {
-				payment.raw = crypto.symEncrypt(symKey, payment.raw, "gmAlg").toUpperCase();
-			}else if( regSoftGMSeed.test(that.connect.secret)){
-				payment.raw = crypto.symEncrypt(symKey, payment.raw, "softGMAlg").toUpperCase();
-			} 
-			else {
-				payment.raw = crypto.symEncrypt(symKey, payment.raw).toUpperCase();
-			}		
-
-			// 
-			console.log("after :",payment.raw);
-
-			payment.token = token.toUpperCase();
-
-			console.log("token :",payment.token);
-		} else {
-			payment.raw = convertStringToHex(payment.raw);
-		}
-		if (payment.operationRule) {
-			payment.operationRule = convertStringToHex(payment.operationRule);
-		}
-		this.payment = payment;
-		return this;
-	}
-}
-
-ChainsqlAPI.prototype.recreateTable = function (name) {
-	let that = this;
-	if (that.transaction) {
-		var json = {
-			OpType: opType['t_recreate'],
-			TableName: name,
-			confidential: confidential
-		};
-		this.cache.push(json);
-		return;
-	} else {
-		let payment = {
-			address: that.connect.address,
-			opType: opType['t_recreate'],
-			tables: [{
-				Table: {
-					TableName: convertStringToHex(name)
-				}
-			}],
-			tsType: 'TableListSet'
-		};
-		this.payment = payment;
-		return this;
-	}
-}
-
-ChainsqlAPI.prototype.dropTable = function (name) {
-	let that = this;
-	if (that.transaction) {
-		this.cache.push({
-			OpType: opType['t_drop'],
-			TableName: name
-		});
-		return;
-	} else {
-		let payment = {
-			address: that.connect.address,
-			opType: opType['t_drop'],
-			tables: [{
-				Table: {
-					TableName: convertStringToHex(name)
-				}
-			}],
-			tsType: 'TableListSet'
-		};
-		this.payment = payment;
-		return this;
-	}
-}
-
-ChainsqlAPI.prototype.addTableFields = function (name, raw){
-	validate.create(name,raw);
-	return modifyTable(this,opType.t_add_fields,name, raw);
-}
-
-ChainsqlAPI.prototype.deleteTableFields = function (name, raw){
-	return modifyTable(this,opType.t_delete_fields,name, raw);
-}
-
-ChainsqlAPI.prototype.modifyTableFields = function (name, raw){
-	validate.create(name,raw);
-	return modifyTable(this,opType.t_modify_fields,name, raw);
-}
-
-ChainsqlAPI.prototype.createIndex = function (name, raw){
-	return modifyTable(this,opType.t_create_index,name, raw);
-}
-
-ChainsqlAPI.prototype.deleteIndex = function (name, raw){
-	return modifyTable(this,opType.t_delete_index,name, raw);
-}
-
-function modifyTable(ChainSQL,optype,name,raw){
-	ChainSQL.payment = {
-		address: ChainSQL.connect.address,
-		opType: optype,
-		tables: [{
-			Table: {
-				TableName: convertStringToHex(name)
-			}
-		}],
-		raw: JSON.stringify(raw),
-		tsType: 'TableListSet',
-	};
-
-	return ChainSQL;
-}
-
-ChainsqlAPI.prototype.renameTable = function (oldName, newName) {
-	if (newName == '' || !newName) {
-		throw chainsqlError("Table new name can not be empty")
-	}
-	let that = this;
-	if (that.transaction) {
-		this.cache.push({
-			OpType: opType['t_rename'],
-			TableName: name,
-			Raw: raw
-		});
-		return;
-	} else {
-		let payment = {
-			address: that.connect.address,
-			opType: opType['t_rename'],
-			tables: [{
-				Table: {
-					TableName: convertStringToHex(oldName),
-					TableNewName: convertStringToHex(newName)
-				}
-			}],
-			tsType: 'TableListSet'
-		}
-
-		this.payment = payment;
-		return this;
-	}
-}
-ChainsqlAPI.prototype.grant = function (name, user, flags, publicKey) {
-	if (!(name && user && flags)) throw chainsqlError('args is not enough');
-	if (!util.checkUserMatchPublicKey(user, publicKey)) {
-		throw chainsqlError('Publickey does not match User');
-	}
-
-	let that = this;
-	if (that.transaction) {
-		this.cache.push({
-			OpType: opType['t_grant'],
-			TableName: name,
-			Raw: [flags],
-			publicKey: publicKey,
-			User: user
-		});
-		return;
-	} else {
-		let payment = {
-			address: that.connect.address,
-			opType: opType['t_grant'],
-			tables: [{
-				Table: {
-					TableName: convertStringToHex(name)
-				}
-			}],
-			raw: convertStringToHex(JSON.stringify([flags])),
-			user: user,
-			tsType: 'TableListSet',
-			name: name,
-			publicKey: publicKey
-		};
-		this.payment = payment;
-		return this;
-	}
 }
 
 ChainsqlAPI.prototype.getAccountInfo = function (address, cb) {
@@ -816,35 +533,6 @@ ChainsqlAPI.prototype.commit = function (cb) {
 	}
 };
 
-function handleGrantPayment(ChainSQL) {
-	return new Promise((resolve, reject) => {
-		if (ChainSQL.payment.opType != opType['t_grant'])
-			reject(chainsqlError('Type of payment must be t_grant'));
-		
-		var name = ChainSQL.payment.name;
-		var publicKey = ChainSQL.payment.publicKey;
-		getUserToken(ChainSQL.api.connection, ChainSQL.connect.address, ChainSQL.connect.address, name).then(function (data) {
-			var token = data[ChainSQL.connect.address + name];
-			if (token != '') {
-				var secret = decodeToken(ChainSQL, token);
-				try {
-					token = generateToken(publicKey, secret).toUpperCase();
-				} catch (e) {
-					reject(chainsqlError('your publicKey is not validate'));
-				}
-				ChainSQL.payment.token = token;
-				console.log("token : ",token)
-			}
-			delete ChainSQL.payment.name;
-			delete ChainSQL.payment.publicKey;
-
-			resolve();
-		}).catch(error => {
-			reject(error);
-		});
-	})
-}
-
 ChainsqlAPI.prototype.sign = function (json, secret, option) {
 	if (!json.Fee) {
 		json.Fee = "50";
@@ -1105,23 +793,6 @@ ChainsqlAPI.prototype.prepareJson = function(){
 				reject(error)
 			});
 
-		}else{
-			if (that.payment.opType === opType['t_grant']) {
-				handleGrantPayment(that).then(() => {
-					that.api.prepareTable(that, that.payment, resolve, reject);
-				}).catch(error => {
-					reject(error);
-				});
-			} else if(that.payment.opType >= opType.t_add_fields && that.payment.opType <= opType.t_delete_index){
-				util.tryEncryptRaw(that,that.payment).then(function (raw) {
-					that.payment.raw = raw;
-					that.api.prepareTable(that, that.payment, resolve, reject);
-				}).catch(function(error) {
-					reject(error);
-				});
-			}else {
-				that.api.prepareTable(that, that.payment, resolve, reject);
-			}
 		}
 	})
 }
@@ -1242,21 +913,6 @@ ChainsqlAPI.prototype.modifySchema = function(schemaInfo){
 	if(!bValid){
 		throw new Error("Invalid modifySchema parameter");
 	}       
-	
-	// var validators = []
-	// var i   = 0
-	// var len = schemaInfo.Validators.length
-
-	// for(; i < len; i++) {
-	// 	var hexValidator = convertStringToHex(schemaInfo.Validators[i].Validator.PublicKey)
-
-	// 	var item = {
-	// 		Validator:{
-	// 			PublicKey:hexValidator
-	// 		}
-	// 	}
-	// 	validators.push(item)  
-	// }
 
 	var peerlists = []
 	var i   = 0;
@@ -1293,30 +949,9 @@ ChainsqlAPI.prototype.modifySchema = function(schemaInfo){
 	// 修改子链
 	this.schemaModifyTx = true;
 
-	// let payment = {
-	// 	Account: that.connect.address,
-	// 	SchemaID:"595FC1AA0C73D735C3362A0E9976A64E024C86976E08C02D299DB344CF674650",
-	// 	OpType: 1,
-	// 	Validators:[
-	// 		{
-	// 			Validator:{PublicKey:"02BD87A95F549ECF607D6AE3AEC4C95D0BFF0F49309B4E7A9F15B842EB62A8ED1A"}
-	// 		}
-	// 	],
-	// 	PeerList:[
-	// 		{
-	// 			Peer:{ Endpoint:convertStringToHex("192.168.29.116:7017") }
-	// 		}
-
-  	// 	],
-	// 	TransactionType: 'SchemaModify'
-	// };
-
 	this.payment = schemaModifyTxJson;
 	return this;
-
 };
-
-
 
 function callback(data, callback) {
 
