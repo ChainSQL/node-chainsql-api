@@ -20,7 +20,6 @@ const Table = require('./table');
 const Contract = require('./smartContract');
 const util = require('../lib/util');
 const { utils } = require('elliptic');
-const co = require('co');
 const opType = require('../lib/config').opType;
 const convertStringToHex = util.convertStringToHex;
 const getCryptAlgTypeFromAccout = util.getCryptAlgTypeFromAccout;
