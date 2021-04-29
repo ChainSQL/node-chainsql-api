@@ -1146,7 +1146,7 @@ ChainsqlAPI.prototype.setSchema = function(schemaID){
 	if(connection._schema_id === undefined ){
 		throw new Error("The current version does not support setSchema");
 	}
-	connection._schema_id = schemaID;
+	return connection.schemaChanged(schemaID)
 }
 
 ChainsqlAPI.prototype.getSchemaList = function(options){
