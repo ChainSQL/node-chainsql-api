@@ -320,6 +320,10 @@ ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
 			var token  = generateToken(that.connect.secret);
 			var symKey = decodeToken(that, token);
 			var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
+
+
+			// 原始的大小
+			console.log("pre :",payment.raw);
 		  
 			if(that.connect.secret === "gmAlg") {
 				payment.raw = crypto.symEncrypt(symKey, payment.raw, "gmAlg").toUpperCase();
@@ -329,7 +333,13 @@ ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
 			else {
 				payment.raw = crypto.symEncrypt(symKey, payment.raw).toUpperCase();
 			}		
+
+			// 
+			console.log("after :",payment.raw);
+
 			payment.token = token.toUpperCase();
+
+			console.log("token :",payment.token);
 		} else {
 			payment.raw = convertStringToHex(payment.raw);
 		}
@@ -724,7 +734,6 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 				var secret = decodeToken(ChainSQL, token);
 				if (cache[i].Raw) {
 					if (cache[i].OpType != opType.t_grant) {
-
 						var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
 						let algType = "aes";
 						if(ChainSQL.connect.secret === "gmAlg"){
@@ -1137,7 +1146,7 @@ ChainsqlAPI.prototype.setSchema = function(schemaID){
 	if(connection._schema_id === undefined ){
 		throw new Error("The current version does not support setSchema");
 	}
-	connection._schema_id = schemaID;
+	return connection.schemaChanged(schemaID)
 }
 
 ChainsqlAPI.prototype.getSchemaList = function(options){
@@ -1183,13 +1192,10 @@ ChainsqlAPI.prototype.createSchema = function(schemaInfo){
 	let bValid = (schemaInfo !== undefined) &&  (schemaInfo.SchemaName !== undefined) && (schemaInfo.WithState !== undefined) &&
 				 (schemaInfo.Validators !== undefined) && (schemaInfo.Validators  instanceof Array) &&
 				 (schemaInfo.PeerList   !== undefined) && (schemaInfo.PeerList    instanceof Array);
-
-	if(!bValid){
+	
+  if(!bValid){
 		throw new Error("Invalid schemaInfo parameter");
 	}       
-
-	// 继承自主链的状态
-	// 锚定区块的hash值
 
 	var peerlists = []
 	var i   = 0;

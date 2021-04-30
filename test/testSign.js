@@ -4,7 +4,6 @@
 // const api = new RippleAPI({server: ""});
 const ChainsqlAPI = require('../src/index');
 const c = new ChainsqlAPI();
-const co = require('co')
 
 var user = {
 	secret: "snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
@@ -12,13 +11,14 @@ var user = {
 	publickKey: "aBQG8RQAzjs1eTKFEAQXr2gS4utcDiEC9wmi7pfUPTi27VCahwgw"
 };
 
-co(function*(){
+main();
+async function main(){
 
-    // yield c.connect('ws://139.198.11.189:6006');
-    yield c.connect('ws://127.0.0.1:6007');
+    // await c.connect('ws://139.198.11.189:6006');
+    await c.connect('ws://127.0.0.1:6007');
     console.log('连接成功')
 
-    let info = yield c.api.getAccountInfo("rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh");
+    let info = await c.api.getAccountInfo("rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh");
     console.log(info);
     c.getLedgerVersion(function(err,data){
         var payment = {
@@ -59,7 +59,7 @@ co(function*(){
 
 
 //     return;
-//     info = yield c.api.getAccountInfo("rsM2GxUgR6jhEDijLTymqrwKZqtGSKj7RQ");
+//     info = await c.api.getAccountInfo("rsM2GxUgR6jhEDijLTymqrwKZqtGSKj7RQ");
 //     var signerListSet = {
 //         "TransactionType": "SignerListSet",
 //         "Account": "rsM2GxUgR6jhEDijLTymqrwKZqtGSKj7RQ",
@@ -91,11 +91,11 @@ co(function*(){
 //    signedRet = c.sign(signerListSet,"snfAitAq37xgeBMBv8YHNsWiczoBP");
 //    console.log("SignerListSet:");
 //    console.log(signedRet);
-//    subRet = yield c.api.submit(signedRet.signedTransaction);
+//    subRet = await c.api.submit(signedRet.signedTransaction);
 //    console.log("submit SignerListSet:");
 //    console.log(subRet);
     
-//    info = yield c.api.getAccountInfo("rB8A3mG8ZarktJte6vnHuDPv9bp3N6Jh42");
+//    info = await c.api.getAccountInfo("rB8A3mG8ZarktJte6vnHuDPv9bp3N6Jh42");
 //    var trustSet = {
 //         "TransactionType": "TrustSet",
 //         "Account": "rB8A3mG8ZarktJte6vnHuDPv9bp3N6Jh42",
@@ -111,7 +111,7 @@ co(function*(){
 //     };
 //     var option = {signAs:"rDsFXt1KRDNNckSh3exyTqkQeBKQCXawb2"};
 //     let signForRet = c.signFor(trustSet,"saNWbrQwrZa9F24zeYZnnK4dPqWkw",option);
-//     subRet = yield c.api.submit(signedRet.signedTransaction);
+//     subRet = await c.api.submit(signedRet.signedTransaction);
 //     console.log("submit multisign:");
 //     console.log(subRet);
-})
+}

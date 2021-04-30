@@ -9,20 +9,19 @@
   "dependencies": {
     "bignumber.js": "^2.4.0",
     "chainsql-keypairs": "^0.11.1",
-    "chainsql-lib": "~1.0.0",
-    "co": "^4.6.0",
+    "chainsql-lib": "^1.0.3",
     "elliptic": "^5.1.0",
     "hash.js": "^1.0.3",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.21",
     "protobufjs": "^6.8.0",
     "sjcl": "~1.0.3",
     "web3-core-helpers": "1.0.0-beta.36",
     "web3-eth-abi": "1.0.0-beta.36",
-    "web3-utils": "1.0.0-beta.36",
-    "ws": "^7.2.0"
+    "web3-utils": "1.0.0-beta.36"
   },
   "devDependencies": {
-    "mocha": "~2.3.3"
+    "mocha": "~2.3.3",
+    "chai": "^4.2.0"
   },
   "repository": {
     "type": "git",
