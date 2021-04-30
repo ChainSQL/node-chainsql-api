@@ -1,7 +1,6 @@
 ﻿'use strict'
 
 
-const co = require('co')
 const ChainsqlAPI = require('../src/index');
 const r = new ChainsqlAPI();
 var path = require('path');
@@ -27,11 +26,11 @@ describe('server', () => {
 			// //字段级加密
 			// console.log("multi encrypt test:");
 			// var listPublic = ["cBP7JPfSVPgqGfGXVJVw168sJU5HhQfPbvDRZyriyKNeYjYLVL8M", "cBPaLRSCwtsJbz4Rq4K2NvoiDZWJyL2RnfdGv5CQ2UFWqyJ7ekHM"];
-			// var cip = yield crypto.encryptText("test",listPublic);
+			// var cip = await crypto.encryptText("test",listPublic);
 			// console.log("cipher:" + cip);
-			// var text = yield crypto.decryptText(cip,"xpvPjSRCtmQ3G99Pfu1VMDMd9ET3W");
+			// var text = await crypto.decryptText(cip,"xpvPjSRCtmQ3G99Pfu1VMDMd9ET3W");
 			// console.log("plain text:" + text);
-			// var text2 = yield crypto.decryptText(cip,"xnHAcvtn1eVLDskhxPKNrhTsYKqde");
+			// var text2 = await crypto.decryptText(cip,"xnHAcvtn1eVLDskhxPKNrhTsYKqde");
 			// console.log("plain text2:" + text2);
 				
 			// console.log("AesPadding Test");
@@ -41,7 +40,7 @@ describe('server', () => {
 			// console.log(aesDecrypted);
 			
 			// // 创建表
-			// let rs = yield r.createTable("abc", [{
+			// let rs = await r.createTable("abc", [{
 			// 	 "field": "id",
 			// 	 "type": "int",
 			// 	 "length": 11,	
@@ -59,47 +58,47 @@ describe('server', () => {
 			// console.log(rs)
 			
 			// 删除表
-			// let rs = yield r.drop(tb);
+			// let rs = await r.drop(tb);
 			
 			// 重命名
-			// let rs = yield r.rename(tb,'users');
+			// let rs = await r.rename(tb,'users');
 			// 授权权限
-			// let rs = yield r.assign(tb, 'rETMNdu2UgPhLZzbnDUVRHhB6NEDahj53c', [r.perm.insert],'0330E7FC9D56BB25D6893BA3F317AE5BCF33B3291BD63DB32654A313222F7FD02');
+			// let rs = await r.assign(tb, 'rETMNdu2UgPhLZzbnDUVRHhB6NEDahj53c', [r.perm.insert],'0330E7FC9D56BB25D6893BA3F317AE5BCF33B3291BD63DB32654A313222F7FD02');
 			// console.log(rs)
 			//取消授权
-			// let rs = yield r.assignCancle('users', 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', ['lsfUpdate']);
+			// let rs = await r.assignCancle('users', 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', ['lsfUpdate']);
 			// 插入数据
-			//let rs = yield r.table(tb).insert({name:'xiaopeng'}).submit();
-			// let rs = yield r.table(tb).insert({name:'feipeng1'}).submit();
+			//let rs = await r.table(tb).insert({name:'xiaopeng'}).submit();
+			// let rs = await r.table(tb).insert({name:'feipeng1'}).submit();
 			//删除数据
-			// let rs = yield r.table(tb).get({id:1}).delete().submit();
+			// let rs = await r.table(tb).get({id:1}).delete().submit();
 			// 获取数据
-			//let rs = yield r.table(tb).get(['id','name']).submit();
+			//let rs = await r.table(tb).get(['id','name']).submit();
 			
 			// 测试一个条件的情况
-			//let rs = yield r.table(tb).get({id:{$ge:1}}).withFields(['id','name']).submit();
+			//let rs = await r.table(tb).get({id:{$ge:1}}).withFields(['id','name']).submit();
 			
 			// // 测试 or 条件
-			//let rs = yield r.table(tb).get({id:{$eq:1}},{name:'feipeng1'}).withFields(['id','name']).submit();
-			//let rs = yield r.table(tb).get({id:{$eq:1}},{name:{$eq:'feipeng1'}}).withFields(['id','name']).submit();
-			//let rs = yield r.table(tb).get({$or:[{id:{$ge:1}},{name:'feipeng1'}]}).withFields(['id','name']).submit();
+			//let rs = await r.table(tb).get({id:{$eq:1}},{name:'feipeng1'}).withFields(['id','name']).submit();
+			//let rs = await r.table(tb).get({id:{$eq:1}},{name:{$eq:'feipeng1'}}).withFields(['id','name']).submit();
+			//let rs = await r.table(tb).get({$or:[{id:{$ge:1}},{name:'feipeng1'}]}).withFields(['id','name']).submit();
 			
 			// 测试 and 条件
-			//let rs = yield r.table(tb).get({$and:[{id:{$ge:1}},{name:'feipeng1'}]}).withFields(['id','name']).submit();
-			//let rs = yield r.table(tb).get([{id:{$ge:1},name:'feipeng1'}]).withFields(['id','name']).submit();
-			//let rs = yield r.table(tb).get([{id:{$ge:1},name:{$eq:'feipeng1'}}]).withFields(['id','name']).submit();
+			//let rs = await r.table(tb).get({$and:[{id:{$ge:1}},{name:'feipeng1'}]}).withFields(['id','name']).submit();
+			//let rs = await r.table(tb).get([{id:{$ge:1},name:'feipeng1'}]).withFields(['id','name']).submit();
+			//let rs = await r.table(tb).get([{id:{$ge:1},name:{$eq:'feipeng1'}}]).withFields(['id','name']).submit();
 			
 			// 测试 limit
-			//let rs = yield r.table(tb).get({id:{$eq:1}},{name:'feipeng1'},{$limit:{index:0,total:1}}).withFields(['id','name']).submit();
+			//let rs = await r.table(tb).get({id:{$eq:1}},{name:'feipeng1'},{$limit:{index:0,total:1}}).withFields(['id','name']).submit();
 			// order by asc
-			//let rs = yield r.table(tb).get({id:{$eq:1}},{name:'feipeng1'},{$limit:{index:0,total:2},$order:[{id:1}]}).withFields(['id','name']).submit();
+			//let rs = await r.table(tb).get({id:{$eq:1}},{name:'feipeng1'},{$limit:{index:0,total:2},$order:[{id:1}]}).withFields(['id','name']).submit();
 			// order by desc
-			// let rs = yield r.table(tb).get({id:{$eq:1}},{name:'feipeng1'},{$limit:{index:0,total:2},$order:[{id:-1}]}).withFields(['id','name']).submit();
+			// let rs = await r.table(tb).get({id:{$eq:1}},{name:'feipeng1'},{$limit:{index:0,total:2},$order:[{id:-1}]}).withFields(['id','name']).submit();
 	
 			//更新数据
-			// let rs = yield r.table(tb).update({name:'xiaopeng'},{id:2}).submit();
+			// let rs = await r.table(tb).update({name:'xiaopeng'},{id:2}).submit();
 			// 获取所有交易
-			// let rs = yield r.getTransactions({limit:10,types:['sqlStatement']});
+			// let rs = await r.getTransactions({limit:10,types:['sqlStatement']});
 			// 
 			// console.log(rs)
 			// 事务操作
@@ -127,7 +126,7 @@ describe('server', () => {
 			// }],{confidential:true});
 			// r.table(tb).insert({id:33,name:'xiaopeng454'});
 			// r.table(tb).insert({id:34,name:'feipeng14544'});
-			// var data = yield r.commit();
+			// var data = await r.commit();
 			// console.log('data',data)
 		} catch (e) {
 			console.log(e)

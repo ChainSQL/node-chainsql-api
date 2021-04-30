@@ -1,10 +1,10 @@
 'use strict'
 const crypto = require('../lib/crypto');
-const keypairs = require('chainsql-keypairs-test');
+const keypairs = require('chainsql-keypairs');
 const EventManager = require('./eventManager')
 const _ = require('lodash');
 
-const RippleAPI = require('chainsql-lib-test').ChainsqlLibAPI;
+const RippleAPI = require('chainsql-lib').ChainsqlLibAPI;
 const Submit = require('./submit');
 const Ripple = require('./ripple');
 const chainsqlError = require('../lib/error');
@@ -20,7 +20,6 @@ const Table = require('./table');
 const Contract = require('./smartContract');
 const util = require('../lib/util');
 const { utils } = require('elliptic');
-const co = require('co');
 const opType = require('../lib/config').opType;
 const convertStringToHex = util.convertStringToHex;
 const getCryptAlgTypeFromAccout = util.getCryptAlgTypeFromAccout;
@@ -401,6 +400,45 @@ ChainsqlAPI.prototype.dropTable = function (name) {
 		return this;
 	}
 }
+
+ChainsqlAPI.prototype.addTableFields = function (name, raw){
+	validate.create(name,raw);
+	return modifyTable(this,opType.t_add_fields,name, raw);
+}
+
+ChainsqlAPI.prototype.deleteTableFields = function (name, raw){
+	return modifyTable(this,opType.t_delete_fields,name, raw);
+}
+
+ChainsqlAPI.prototype.modifyTableFields = function (name, raw){
+	validate.create(name,raw);
+	return modifyTable(this,opType.t_modify_fields,name, raw);
+}
+
+ChainsqlAPI.prototype.createIndex = function (name, raw){
+	return modifyTable(this,opType.t_create_index,name, raw);
+}
+
+ChainsqlAPI.prototype.deleteIndex = function (name, raw){
+	return modifyTable(this,opType.t_delete_index,name, raw);
+}
+
+function modifyTable(ChainSQL,optype,name,raw){
+	ChainSQL.payment = {
+		address: ChainSQL.connect.address,
+		opType: optype,
+		tables: [{
+			Table: {
+				TableName: convertStringToHex(name)
+			}
+		}],
+		raw: JSON.stringify(raw),
+		tsType: 'TableListSet',
+	};
+
+	return ChainSQL;
+}
+
 ChainsqlAPI.prototype.renameTable = function (oldName, newName) {
 	if (newName == '' || !newName) {
 		throw chainsqlError("Table new name can not be empty")
@@ -522,11 +560,11 @@ ChainsqlAPI.prototype.getAccountTransactions = function (address, opts, cb) {
 	}
 };
 
-ChainsqlAPI.prototype.getTransaction = function (hash, cb) {
+ChainsqlAPI.prototype.getTransaction = function (hash,meta,meta_chain,cb) {
 	if ((typeof cb) != 'function') {
-		return this.api.getTransaction(hash);
+		return this.api.getTransaction(hash,meta,meta_chain);
 	} else {
-		this.api.getTransaction(hash).then(function (data) {
+		this.api.getTransaction(hash,meta,meta_chain).then(function (data) {
 			cb(null, data);
 		}).catch(function (err) {
 			cb(err);
@@ -696,11 +734,7 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 				var secret = decodeToken(ChainSQL, token);
 				if (cache[i].Raw) {
 					if (cache[i].OpType != opType.t_grant) {
-						//const algType = ChainSQL.connect.secret === "gmAlg" ? "gmAlg" : "aes";
-
-
 						var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
-
 						let algType = "aes";
 						if(ChainSQL.connect.secret === "gmAlg"){
 						  algType = "gmAlg";
@@ -982,6 +1016,26 @@ ChainsqlAPI.prototype.generatCryptData = function(smAlgType, dataSetCount, plain
 	});
 };
 
+ChainsqlAPI.prototype.setEncTabToSync = function(address, tableName) {
+	const chainsqlCon = this.connect;
+	return chainsqlCon.api.connection.request({
+		command: "g_addEncTabToSync",
+		account: address,
+		tablename: tableName
+	});
+};
+ChainsqlAPI.prototype.getSyncTabAccount = function() {
+	const chainsqlCon = this.connect;
+	return chainsqlCon.api.connection.request({
+		command: "g_getSyncPub"
+	});
+};
+ChainsqlAPI.prototype.getNodeAccount = function() {
+	const chainsqlCon = this.connect;
+	return chainsqlCon.api.connection.request({
+		command: "g_getNodePub"
+	});
+};
 
 ChainsqlAPI.prototype.getLedgerTxs = function(ledgerIndex,includeSuccess,includeFailure){
 
@@ -1062,15 +1116,23 @@ ChainsqlAPI.prototype.prepareJson = function(){
 				reject(error)
 			});
 
-		}
-		else if (that.payment.opType === opType['t_grant']) {
-			handleGrantPayment(that).then(() => {
+		}else{
+			if (that.payment.opType === opType['t_grant']) {
+				handleGrantPayment(that).then(() => {
+					that.api.prepareTable(that, that.payment, resolve, reject);
+				}).catch(error => {
+					reject(error);
+				});
+			} else if(that.payment.opType >= opType.t_add_fields && that.payment.opType <= opType.t_delete_index){
+				util.tryEncryptRaw(that,that.payment).then(function (raw) {
+					that.payment.raw = raw;
+					that.api.prepareTable(that, that.payment, resolve, reject);
+				}).catch(function(error) {
+					reject(error);
+				});
+			}else {
 				that.api.prepareTable(that, that.payment, resolve, reject);
-			}).catch(error => {
-				reject(error);
-			});
-		} else {
-			that.api.prepareTable(that, that.payment, resolve, reject);
+			}
 		}
 	})
 }
@@ -1084,7 +1146,7 @@ ChainsqlAPI.prototype.setSchema = function(schemaID){
 	if(connection._schema_id === undefined ){
 		throw new Error("The current version does not support setSchema");
 	}
-	connection._schema_id = schemaID;
+	return connection.schemaChanged(schemaID)
 }
 
 ChainsqlAPI.prototype.getSchemaList = function(options){
@@ -1131,11 +1193,10 @@ ChainsqlAPI.prototype.createSchema = function(schemaInfo){
 				 (schemaInfo.Validators !== undefined) && (schemaInfo.Validators  instanceof Array) &&
 				 (schemaInfo.PeerList   !== undefined) && (schemaInfo.PeerList    instanceof Array);
 	
-
-	if(!bValid){
+  if(!bValid){
 		throw new Error("Invalid schemaInfo parameter");
-	} 
-	
+	}       
+
 	var peerlists = []
 	var i   = 0;
 	var len = schemaInfo.PeerList.length
@@ -1171,6 +1232,10 @@ ChainsqlAPI.prototype.createSchema = function(schemaInfo){
 			throw new Error("Missing field AnchorLedgerHash");
 		}
 		schemaCreateTxJson.AnchorLedgerHash = schemaInfo.AnchorLedgerHash;
+	}else{
+		if(schemaInfo.AnchorLedgerHash){
+			throw new Error("Field 'AnchorLedgerHash' is unnecessary");
+		}
 	}
 
 	this.payment = schemaCreateTxJson;

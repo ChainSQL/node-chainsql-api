@@ -1,6 +1,6 @@
 'use strict'
 var util = require('../lib/util');
-const RippleAPI = require('chainsql-lib-test').ChainsqlLibAPI;
+const RippleAPI = require('chainsql-lib').ChainsqlLibAPI;
 const Connection = require('./connect');
 
 class Submit {
@@ -18,8 +18,8 @@ Submit.prototype.submit = function (expectOpt) {
 	let self = this;
 	return new Promise(function (resolve, reject) {
 		try {
-			self.prepareJson().then(function (prepared) {
-				self.txJSON = prepared.txJSON;
+			self.prepareJson().then(function (preparedJson) {
+				self.txJSON = preparedJson.txJSON;
 				self.setCert();				
 				let signedRet = self.signTx();
 				self.handleSignedTx(self.ChainsqlAPI, signedRet, expectOpt, resolve, reject);

@@ -1,13 +1,10 @@
 'use strict'
 
 const fs   = require("fs");
-const co = require('co')
 
 const ChainsqlAPI = require('../src/index');
 // ChainsqlAPI.prototype.callback2Promise = require('./callback2Promise');
 const c = new ChainsqlAPI();
-
-const RippleAPI = new require('chainsql-lib-test').RippleAPI;
 
 var user = {
 	secret: "xxeJcpbcFyGTFCxiGjeDEw1RCimFQ",
@@ -72,9 +69,7 @@ main();
 async function main(){
 
 	try {
-
-		 await c.connect('ws://127.0.0.1:8017');
-
+		 await c.connect('ws://192.168.29.69:46006');
 
 		// let accountInfo = c.generateAddress({algorithm:"softGMAlg",secret:smUser7.secret});
 		// console.log(JSON.stringify(accountInfo))
@@ -83,7 +78,7 @@ async function main(){
 		// accountInfo = c.generateAddress({algorithm:"softGMAlg"});
 		// console.log(accountInfo)
 		console.log('连接成功');
-		c.as(smRoot);
+		c.as(owner);
 
 		// 读取证书文件
 		// var data = fs.readFileSync('C:\\ca\\userCert.cert');
@@ -94,13 +89,13 @@ async function main(){
 
 		// c.setRestrict(true);
 		//激活user账户
-		await activateAccount(smUser.address);
+		//await activateAccount(user.address);
 
 		//await testSubscribe();
 
-		// await testRippleAPI();
+		//await testRippleAPI();
 		// await testAccount();
-		//await testChainsql();
+		await testChainsql();
 
 		//await c.disconnect();
 		console.log('运行结束');
@@ -108,6 +103,23 @@ async function main(){
 		console.error(e);
 	}
 }
+
+async function testGetTransaction(){
+
+	var txHash =  'DC9782AFF31D495108FFB751E9B32C2DEFBCC7A3846CB1D8CB0E789F1CCC93E8';
+
+	let rs = await c.getTransaction(txHash);
+	console.log( "meta:false ; meta_chain true " , JSON.stringify( rs ) ) ;
+
+	rs = await c.getTransaction(txHash,true);
+	console.log( "meta:true ; meta_chain true " , JSON.stringify( rs ) ) ;
+
+	rs = await c.getTransaction(txHash,false,false);
+	console.log( "meta:false ; meta_chain false " ,JSON.stringify( rs ) ) ;
+}
+
+
+
 
 var testSubscribe = async function(){
 	subTable(sTableName,owner.address);
@@ -147,6 +159,7 @@ async function subTx() {
 		},5000);
 	});
 }
+
 function testSubscribeTx(hash){
 	var event = c.event;
 	event.subscribeTx(hash,function(err, data) {
@@ -174,8 +187,8 @@ async function testRippleAPI(){
 	// await testGetLedgerVersion();
 	// await testGetLedger();
 
-	await testGetAccountTransactions();
-	// await testGetTransaction();
+//	await testGetAccountTransactions();
+	 await testGetTransaction();
 	// await testGetServerInfo();
 	// await testUnlList();
 	// await testEscrow();
@@ -187,10 +200,30 @@ async function testAccount(){
 	await activateAccount(account.address);
 }
 
-async function testChainsql(){
-	//await testCreateTable();
 
-	// // //创建另一张表，用来测试rename,drop
+
+async function testTableSet(){
+
+	var raw = [
+		{'id':12345,'age': 333,'name':'hello'}
+	];
+	try {
+
+		var nameInDB = await c.getTableNameInDB(owner.address,sTableName);
+		var tableProperty          = {};
+		tableProperty.nameInDB     = nameInDB;
+		tableProperty.confidential = false;
+
+		var rs = await c.table(sTableName).tableSet(tableProperty).insert(raw).submit({expect:'db_success'});
+		console.log("testInsert",rs);	
+	} catch (error) {
+		console.error(error);
+	}
+}
+
+async function testChainsql(){
+
+	await testInsert()
 	// await testDelete();
 	// await testRename();
 	// await testGet();
@@ -207,8 +240,9 @@ async function testChainsql(){
 	//现在底层不允许直接删除所有记录这种操作了
 	// await testDeleteAll();
 
-	//
-	await testSchema();
+	// await testTableSet();
+
+	// await testModifyTable();
 }
 
 //创建一个加密的表,table为要创建的表,confidential为是否要加密
@@ -274,7 +308,8 @@ var testCreateTable = async function() {
 	var raw = [
 		{'field':'id','type':'int','length':11,'PK':1,'NN':1},
 		{'field':'name','type':'varchar','length':50,'default':""},
-		{'field':'age','type':'int'}
+		{'field':'age','type':'int'},
+		{'field':'age1','type':'longtext'}
 	]
 	var option = {
 		confidential: true
@@ -324,11 +359,6 @@ var testCreateTable1 = async function() {
 	}
 };
 
-// {'age': 333,'name':'hello'},
-// {'age': 444,'name':'sss'},
-// {'age': 555,'name':'rrr'}
-
-//重复插入的情况下报异常
 var testInsert = async function() {
 	var raw = [
 		{'id':7},
@@ -423,6 +453,61 @@ var insertAfterGrant = async function(){
 	c.as(owner);
 }
 
+var testModifyTable = async function(){
+	await testAddFields();
+
+	// await testModifyFields();
+
+	// await testDeleteFields();
+
+	// await testCreateIndex();
+
+	// await testDeleteIndex();
+}
+
+var testAddFields = async function(){
+	var raw = [
+		{'field':'firmname','type':'varchar','length':50,'default':null},
+		{'field':'height','type':'int'}
+	]
+	var rs = await c.addTableFields(sTableName,raw).submit({expect:'db_success'});
+	console.log("addTableFields",rs);
+}
+
+var testModifyFields = async function(){
+	var raw = [
+		{'field':'firmname','type':'text'}
+	]
+	var rs = await c.modifyTableFields(sTableName,raw).submit({expect:'db_success'});
+	console.log("modifyTableFields",rs);
+}
+
+var testDeleteFields = async function(){
+	var raw = [
+		{'field':'firmname'}
+	]
+	var rs = await c.deleteTableFields(sTableName,raw).submit({expect:'db_success'});
+	console.log("deleteTableFields",rs);
+}
+
+var testCreateIndex = async function(){
+	var raw = [
+		{'index':'NameIndex'},
+		{'field':'id'},
+		{'field':'name'}
+	]
+	var rs = await c.createIndex(sTableName,raw).submit({expect:'db_success'});
+	console.log("createIndex",rs);
+}
+
+var testDeleteIndex = async function(){
+	var raw = [
+		{'index':'NameIndex'}
+	]
+	var rs = await c.deleteIndex(sTableName,raw).submit({expect:'db_success'});
+	console.log("deleteIndex",rs);
+}
+
 var testTxs = async function(){
 	try {
 		c.as(smRoot)
@@ -510,14 +595,7 @@ async function testGetAccountTransactions(){
 	// var rs = await callback2Promise(c.getTransactions,opt);
 	// console.log(rs);
 }
-async function testGetTransaction(){
-	// let rs = await c.getTransaction('3E02AA296A348F10C1F54D2EF0CBBDA9A6D389F66EFFBA936F1842506FACD4EA');
-	// console.log(rs);
 
-	c.getTransaction('B4FB648883D73D4EB2D3A9E6059F1D0CF97105445F06B763A9DAB9FA66AA2EFC',callback);
-	// var rs = await callback2Promise(c.api.getTransaction,opt);
-	// console.log(rs);
-}
 async function testGetServerInfo(){
 	// let rs = await c.getServerInfo();
 	// console.log(rs);

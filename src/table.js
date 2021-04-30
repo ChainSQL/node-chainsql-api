@@ -9,6 +9,7 @@ const getUserToken = util.getUserToken;
 const getTxJson = util.getTxJson;
 const generateToken = util.generateToken;
 const decodeToken = util.decodeToken;
+const tryEncryptRaw = util.tryEncryptRaw;
 const crypto = require('../lib/crypto');
 
 class Table extends Submit {
@@ -20,6 +21,8 @@ class Table extends Submit {
 		this.field = null;
 		this.connect = ChainsqlAPI.connect;
     this.cache = [];
+    this.nameInDB = '';
+    this.confidential = true;
     this.txsHashFillField = null;
 	}
 
@@ -173,6 +176,18 @@ Table.prototype.withFields = function(field) {
 Table.prototype.assert = function(json) {
   this.exec = 't_assert';
   this.query.unshift(json);
+  return this;
+}
+
+Table.prototype.tableSet = function(json) {
+
+  if(json.nameInDB !== undefined){
+    this.nameInDB = json.nameInDB;
+  }
+
+  if(json.confidential !== undefined){
+    this.confidential = json.confidential;
+  }
   return this;
 }
 
@@ -402,7 +417,8 @@ Table.prototype.prepareJson = function() {
 		strictMode: that.strictMode,
 		tables: [{
 			Table: {
-				TableName: convertStringToHex(that.tab),
+        TableName: convertStringToHex(that.tab),
+        NameInDB:  that.nameInDB
 			}
 		}],
 		tsType: 'SQLStatement'
@@ -423,30 +439,17 @@ Table.prototype.prepareJson = function() {
 		prepareTable(that, payment, resolve, reject);
 	});
 }
+
 function prepareTable(ChainSQL, payment, resolve, reject) {
-	var connect = ChainSQL.connect;
 
-	getUserToken(connect.api.connection, connect.scope, connect.address, ChainSQL.tab).then(function (token) {
-		token = token[ChainSQL.connect.scope + ChainSQL.tab];
-		if (token && token != '') {
-			var secret = decodeToken(ChainSQL, token);
-      var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
-
-      let algType = "aes";
-      if(ChainSQL.connect.secret === "gmAlg"){
-        algType = "gmAlg";
-      }else if(regSoftGMSeed.test(ChainSQL.connect.secret)){
-        algType = "softGMAlg";
-      }
-			payment.raw = crypto.symEncrypt(secret, payment.raw, algType).toUpperCase();
-		} else {
-			payment.raw = convertStringToHex(payment.raw);
-		}
-		
-		connect.api.prepareTable(connect, payment, resolve, reject);
+  var connect = ChainSQL.connect;
+  tryEncryptRaw(ChainSQL,payment).then(function (raw) {
+      payment.raw = raw;
+		  connect.api.prepareTable(connect, payment, resolve, reject);
 	}).catch(function(error) {
 		reject(error);
 	});
+
 }
 
 function handleGetRecord(ChainSQL, object, resolve, reject) {
