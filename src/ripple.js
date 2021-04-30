@@ -74,12 +74,6 @@ Ripple.prototype.prepareJson = function () {
 						}
 					}
 
-					//self.connect
-
-					if(self.ChainsqlAPI.connect.schemaID != undefined){
-						self.ChainsqlAPI.api.schemaID = self.ChainsqlAPI.connect.schemaID;
-					}
-
 					self.ChainsqlAPI.api.preparePayment(self.ChainsqlAPI.connect.address, txJson, instructions)
 						.then(function (data) {
 							resolve(data);

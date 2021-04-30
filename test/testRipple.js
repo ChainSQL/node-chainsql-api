@@ -39,12 +39,13 @@ var sCurrency = "aaa"
 main();
 async function main() {
     // let res = await c.connect('ws://101.201.40.124:5006');
-    let res = await c.connect('ws://127.0.0.1:6006');
+    let res = await c.connect('ws://192.168.29.69:6305');
+    await c.setSchema("8B0BA6D8848C76E19433EE90E2A88210E403339F2C5AC750271EFC862A173894");
 
     c.as(root);
     c.setRestrict(true);
     /**************************************/
-    let nStep = tagStep.escrow;
+    let nStep = tagStep.gateWay;
     switch (nStep) {
         case tagStep.active: testActive(); break;// 激活若干账户
         case tagStep.gateWay: testGateWay(); break;//部署网管，信任，发行币转账

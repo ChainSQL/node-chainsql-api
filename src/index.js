@@ -1254,21 +1254,6 @@ ChainsqlAPI.prototype.modifySchema = function(schemaInfo){
 		throw new Error("Invalid modifySchema parameter");
 	}       
 	
-	// var validators = []
-	// var i   = 0
-	// var len = schemaInfo.Validators.length
-
-	// for(; i < len; i++) {
-	// 	var hexValidator = convertStringToHex(schemaInfo.Validators[i].Validator.PublicKey)
-
-	// 	var item = {
-	// 		Validator:{
-	// 			PublicKey:hexValidator
-	// 		}
-	// 	}
-	// 	validators.push(item)  
-	// }
-
 	var peerlists = []
 	var i   = 0;
 	var len = schemaInfo.PeerList.length
@@ -1303,25 +1288,6 @@ ChainsqlAPI.prototype.modifySchema = function(schemaInfo){
 
 	// 修改子链
 	this.schemaModifyTx = true;
-
-	// let payment = {
-	// 	Account: that.connect.address,
-	// 	SchemaID:"595FC1AA0C73D735C3362A0E9976A64E024C86976E08C02D299DB344CF674650",
-	// 	OpType: 1,
-	// 	Validators:[
-	// 		{
-	// 			Validator:{PublicKey:"02BD87A95F549ECF607D6AE3AEC4C95D0BFF0F49309B4E7A9F15B842EB62A8ED1A"}
-	// 		}
-	// 	],
-	// 	PeerList:[
-	// 		{
-	// 			Peer:{ Endpoint:convertStringToHex("192.168.29.116:7017") }
-	// 		}
-
-  	// 	],
-	// 	TransactionType: 'SchemaModify'
-	// };
-
 	this.payment = schemaModifyTxJson;
 	return this;
 
