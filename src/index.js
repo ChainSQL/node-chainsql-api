@@ -572,6 +572,13 @@ ChainsqlAPI.prototype.getTransaction = function (hash,meta,meta_chain,cb) {
 	}
 }
 
+ChainsqlAPI.prototype.getTransactionResult = function (hash) {
+	return this.api.connection.request({
+		command: 'tx_result',
+		transaction: hash
+	  });
+}
+
 ChainsqlAPI.prototype.getServerInfo = function (cb) {
 	if ((typeof cb) != 'function') {
 		return this.api.getServerInfo();

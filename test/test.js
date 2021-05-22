@@ -118,6 +118,12 @@ async function testGetTransaction(){
 	console.log( "meta:false ; meta_chain false " ,JSON.stringify( rs ) ) ;
 }
 
+async function testGetTransactionResult(){
+	console.time("t2")
+	let rs = await c.getTransactionResult("3C6A343D64BDEF0E45C38AFCB8D9574391EEEA61397E5FFA2D61C18CDD635032");
+	console.log( "tx_result: " , JSON.stringify( rs )) ;
+	console.timeEnd("t2")
+}
 
 
 
@@ -187,6 +193,7 @@ async function testRippleAPI(){
 	// await testGetLedgerVersion();
 	// await testGetLedger();
 
+	await testGetTransactionResult();
 //	await testGetAccountTransactions();
 	 await testGetTransaction();
 	// await testGetServerInfo();
