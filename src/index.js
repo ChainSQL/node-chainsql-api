@@ -320,10 +320,6 @@ ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
 			var token  = generateToken(that.connect.secret);
 			var symKey = decodeToken(that, token);
 			var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
-
-
-			// 原始的大小
-			console.log("pre :",payment.raw);
 		  
 			if(that.connect.secret === "gmAlg") {
 				payment.raw = crypto.symEncrypt(symKey, payment.raw, "gmAlg").toUpperCase();
@@ -333,13 +329,7 @@ ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
 			else {
 				payment.raw = crypto.symEncrypt(symKey, payment.raw).toUpperCase();
 			}		
-
-			// 
-			console.log("after :",payment.raw);
-
 			payment.token = token.toUpperCase();
-
-			console.log("token :",payment.token);
 		} else {
 			payment.raw = convertStringToHex(payment.raw);
 		}
