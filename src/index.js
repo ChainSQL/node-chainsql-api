@@ -251,7 +251,16 @@ ChainsqlAPI.prototype.accountSet = function (opt) {
 	let ripple = new Ripple(this);
 	return ripple.accountSet(opt);
 }
-
+ChainsqlAPI.prototype.addWhitelistSet = function (whitelists) {
+	let ripple = new Ripple(this);
+	var flag = 10;
+	return ripple.whitelistSet(whitelists, flag);
+}
+ChainsqlAPI.prototype.delWhitelistSet = function (whitelists) {
+	let ripple = new Ripple(this);
+	var flag = 11;
+	return ripple.whitelistSet(whitelists, flag);
+}
 ChainsqlAPI.prototype.getTransferFee = function (issuerAddr) {
 	let ripple = new Ripple(this);
 	return ripple.getTransferFee(issuerAddr);

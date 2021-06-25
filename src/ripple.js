@@ -213,6 +213,16 @@ Ripple.prototype.accountSet = function (opt) {
 	this.txJSON = setting;
 	return this;
 }
+Ripple.prototype.whitelistSet = function (whitelists, flag) {
+	var self = this;
+	var setting = {};
+	setting.whitelists = whitelists;
+	setting.setFlag = flag;
+	
+	this.txType = "AccountSet";
+	this.txJSON = setting;
+	return this;
+}
 
 Ripple.prototype.getTransferFee = function (issuerAddr) {
 	var self = this;

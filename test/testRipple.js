@@ -35,11 +35,16 @@ var tagStep = {
     balances: 4, getLedger: 5, getTxs: 6
 }
 var sCurrency = "aaa"
+var whiteLists = [
+    {
+        user: "zKQwdkkzpUQC9haHFEe2EwUsKHvvwwPHsv"
+    }
+]
 
 main();
 async function main() {
     // let res = await c.connect('ws://101.201.40.124:5006');
-    let res = await c.connect('ws://192.168.29.69:6305');
+    let res = await c.connect('ws://localhost:5510');
     await c.setSchema("8B0BA6D8848C76E19433EE90E2A88210E403339F2C5AC750271EFC862A173894");
 
     c.as(root);
@@ -75,43 +80,55 @@ var testActive = async function () {
 }
 
 var testGateWay = async function () {
-    let res;
-    console.log("----------- GateWay >>>>>>>>>>>>>");
-    var opt = {
-        enableRippling: true,
-        rate: 1.002,
-        min: 1,
-        max: 1.5
-    }
-    c.as(issuer);
-    res = await c.accountSet(opt).submit({ expect: 'validate_success' });
-    console.log("\n   accountSet issuer", issuer.address, ":", res)
-    //
-    var amount = {
-        value: 20000,
-        currency: sCurrency,
-        issuer: issuer.address
-    }
-    //
-    c.as(user);
-    res = await c.trustSet(amount).submit({ expect: 'validate_success' });
-    console.log("\n   trustSet user", user.address, ":", res)
-    c.as(user1);
-    res = await c.trustSet(amount).submit({ expect: 'validate_success' });
-    console.log("\n   trustSet user1", user1.address, ":", res)
-    //
-    res = await c.api.getTrustlines(issuer.address);
-    console.log("\n   getTrustlines issuer", issuer.address, ":", res)
+    try {
+        let res;
+        console.log("----------- GateWay >>>>>>>>>>>>>");
+        var opt = {
+            enableRippling: true,
+            rate: 1.002,
+            min: 1,
+            max: 1.5
+        }
+        c.as(issuer);
+        res = await c.accountSet(opt).submit({ expect: 'validate_success' });
+        console.log("\n   accountSet issuer", issuer.address, ":", res)
+        //
+        var amount = {
+            value: 20000,
+            currency: sCurrency,
+            issuer: issuer.address
+        }
+        //
+        c.as(user);
+        res = await c.trustSet(amount).submit({ expect: 'validate_success' });
+        console.log("\n   trustSet user", user.address, ":", res)
+        c.as(user1);
+        res = await c.trustSet(amount).submit({ expect: 'validate_success' });
+        console.log("\n   trustSet user1", user1.address, ":", res)
+        //
+        res = await c.api.getTrustlines(issuer.address);
+        console.log("\n   getTrustlines issuer", issuer.address, ":", res)
+        //
+        c.as(issuer);
+        res = await c.addWhitelistSet(whiteLists).submit({ expect: 'validate_success' });
+        console.log("\n   whitelistSet user", user.address, ":", res)
 
-    //
-    c.as(issuer);
-    res = await c.pay(user.address, amount).submit({ expect: 'validate_success' })
-    console.log("\n   transfer currency(issuer 2 user)", issuer.address, user.address, ":", res)
-    c.as(user);
-    amount.value = 10000;
-    res = await c.pay(user1.address, amount).submit({ expect: 'validate_success' })
-    console.log("\n   transfer currency(user 2 user1)", user.address, user1.address, ":", res)
-    console.log("\n----------- GateWay <<<<<<<<<<<<<");
+        // res = await c.delWhitelistSet(whiteLists).submit({ expect: 'validate_success' });
+        // console.log("\n   whitelistSet user", user.address, ":", res)
+
+        //
+        c.as(issuer);
+        res = await c.pay(user.address, amount).submit({ expect: 'validate_success' })
+        console.log("\n   transfer currency(issuer 2 user)", issuer.address, user.address, ":", res)
+        c.as(user);
+        amount.value = 10000;
+        res = await c.pay(user1.address, amount).submit({ expect: 'validate_success' })
+        console.log("\n   transfer currency(user 2 user1)", user.address, user1.address, ":", res)
+        console.log("\n----------- GateWay <<<<<<<<<<<<<");
+    } catch (error) {
+        
+    }
+    
 }
 
 var testEscrow = async function () {
