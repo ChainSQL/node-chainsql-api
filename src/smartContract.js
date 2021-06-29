@@ -550,27 +550,30 @@ Contract.prototype.getPastEvent = function(options, callback) {
     }
     let chainsqlObj = this.chainsql;
     chainsqlObj.getTransaction(params.txHash).then(data => {
-        let contractLogs = util.convertHexToString(data.specification.meta.ContractLogs).replace(/\s+/g, '');
-        contractLogs = contractLogs.substring(1, contractLogs.length-1).replace(/,{/g, '-{');
-        let ctrLogsArray = contractLogs.split('-');
-        let newCtrLogs = {};
-        for(let i = 0; i < ctrLogsArray.length; i++)
+        if(data.specification.meta.hasOwnProperty("ContractLogs"))
         {
-            let ctrLog = JSON.parse(ctrLogsArray[i]);
-            let key = ctrLog.contract_topics[0].toLowerCase();
-            let ctrLogInfo = {};
-            ctrLogInfo.ContractEventInfo = ctrLog.contract_data;
-            ctrLogInfo.ContractEventTopics = ctrLog.contract_topics;
-            let currentEvent = this.options.jsonInterface.find(function (json) {
-				return (json.type === 'event' && json.signature === '0x' + key.replace('0x', ''));
-			});
-			let output = this._decodeEventABI(currentEvent, ctrLogInfo);
-            newCtrLogs[currentEvent.name] = output;
-        }
-        // data.specification.meta.ContractLogs = newCtrLogs;
-        data.specification.ContractLogs = newCtrLogs;
-        delete data.specification.meta;
-        callback(null, data.specification);
+            let contractLogs = util.convertHexToString(data.specification.meta.ContractLogs).replace(/\s+/g, '');
+            contractLogs = contractLogs.substring(1, contractLogs.length-1).replace(/,{/g, '-{');
+            let ctrLogsArray = contractLogs.split('-');
+            let newCtrLogs = {};
+            for(let i = 0; i < ctrLogsArray.length; i++)
+            {
+                let ctrLog = JSON.parse(ctrLogsArray[i]);
+                let key = ctrLog.contract_topics[0].toLowerCase();
+                let ctrLogInfo = {};
+                ctrLogInfo.ContractEventInfo = ctrLog.contract_data;
+                ctrLogInfo.ContractEventTopics = ctrLog.contract_topics;
+                let currentEvent = this.options.jsonInterface.find(function (json) {
+                    return (json.type === 'event' && json.signature === '0x' + key.replace('0x', ''));
+                });
+                let output = this._decodeEventABI(currentEvent, ctrLogInfo);
+                newCtrLogs[currentEvent.name] = output;
+            }
+            // data.specification.meta.ContractLogs = newCtrLogs;
+            data.specification.ContractLogs = newCtrLogs;
+            delete data.specification.meta;
+            callback(null, data.specification);
+        } else callback(null, {ContractLogs:""});
     }).catch(err => {
         callback(err, null);
     })
