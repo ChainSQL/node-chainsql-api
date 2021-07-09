@@ -718,12 +718,12 @@ Contract.prototype._executeMethod = function _executeMethod(){
             txCallbackProperty.callbackExpect = "send_success";
             if(args.options.isDeploy) {
                 sendTxPayment.ContractOpType = 1;
-                if (args.options.expect === "send_success")
+                if (args.options.hasOwnProperty("expect") && (args.options.expect === "send_success"))
                 {
                     errorMsg = "Contract deploy tx expect must be validate_success or db_success";
                     return errFuncGlobal(errorMsg, args.callback);
                 }
-                txCallbackProperty.callbackExpect = args.options.expect;
+                txCallbackProperty.callbackExpect = args.options.hasOwnProperty("expect") ? args.options.expect : "validate_success";
             }
             else {
                 sendTxPayment.ContractOpType = 2;
