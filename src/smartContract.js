@@ -907,6 +907,9 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
                     if (data.hasOwnProperty("error_message")) {
                         resultObj.error_message = data.error_message;
                     }
+                    if(data.hasOwnProperty("error")){
+                        resultObj.resultCode = data.error;
+                    }
                     return errFunc(resultObj);
                 }
             }

@@ -119,7 +119,7 @@ Submit.prototype.handleSignedTx = function (ChainSQL, signed, expectOpt, resolve
 						error.error_message = data.error_message;
 					}
 					if(data.hasOwnProperty("error")){
-						error.error_code = data.error;
+						error.resultCode = data.error;
 					}
 					reject(error);
 				}
