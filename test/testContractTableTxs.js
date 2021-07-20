@@ -378,24 +378,18 @@ var table_get = async function () {
         });
         var str = await myContract.methods.get(owner.address, sTableName, "", "name").call();
         console.log("    get with field:", str);
+        //var raw = "[[],{\"id\":\"1\"}]";
+        //var raw = "[[],{\"$or\":[{\"email\":\"123\"}, {\"name\": \"zhangsan\"}]}]";
+        var raw = "{\"name\": { \"$regex\": \"/wangwu/\" }}";
+        var str = await myContract.methods.get(owner.address, sTableName, raw).call();
+        console.log("    get with field:", str);
+        var str = await myContract.methods.get(owner.address, sTableName, raw, "time").call();
+        console.log("    get with field:", str);
+
     } catch (error) {
         console.log(error)
     }
-    // myContract.methods.table(sTableName).get().submit();
-    // console.log("    all record:", lll);
-    // myContract.methods.table(sTableName).get({ $or: [{ email: "123" }, { name: "zhangsan" }] }).submit();
-    // console.log("    record (or)", lll);
-    // myContract.methods.table(sTableName).get({ name: { $regex: '/s/' } }).submit();
-    // console.log("    regex record:", lll);
-    // myContract.methods.table(sTableName).get({ name: { $regex: '/s/' } }).withFields(["COUNT(*) as count"]).submit();
-    // console.log("    record count:", lll);
-    // myContract.methods.table(sTableName).get({ name: { $regex: '/s/' } }).withFields([]).submit();
-    // console.log("    record count:", lll);
-    // myContract.methods.table(sTableName).get({ name: { $regex: '/s/' } }).limit({ index: 0, total: 1 }).withFields([]).submit();
-    // console.log("    record count(limit):", lll);
-    // myContract.methods.table(sTableName).get({ name: { $regex: '/s/' } }).withFields(["account"]).submit();
-    // console.log("    record with fields:", lll);
-}
+    }
 var table_transaction = async function () {
     c.as(smUser)
     c.use(smRoot.address)
