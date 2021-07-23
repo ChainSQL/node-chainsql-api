@@ -40,7 +40,7 @@ var rawInsert = "[ \
 var rawDelete = "{\"id\":1}"
 var rawUpdate = "{ \"account\": \"134\" }"
 var rawGet = "{\"id\": 2}"
-var autoFillField = "dddd";
+var autoFillField = "txHash";
 
 var myContract;
 
@@ -154,7 +154,7 @@ var drop_by_contract = async function () {
             Gas: 500000,
             expect: "db_success"
         }, (err, res) => {
-            err ? console.log("    CreateTable res:", err) : console.log("    CreateTable res:", res);
+            err ? console.log("    dropTable res:", err) : console.log("    dropTable res:", res);
         });
     
     } catch (error) {
@@ -183,7 +183,7 @@ var table_insert_by_contract = async function () {
                 Gas: 5000000,
                 expect: "db_success"
             }, (err, res) => {
-                err ? console.log("    insert res:", err) : console.log("    dropTable res:", res);
+                err ? console.log("    insert res:", err) : console.log("    insertTable res:", res);
             });
     } catch (error) {
         console.log(error);
@@ -211,7 +211,7 @@ var table_insert_hash_by_contract = async function () {
             Gas: 500000,
             expect: "validate_success"
         }, (err, res) => {
-            err ? console.log("grant res:", err) : console.log("grant res:", res);
+            err ? console.log("insert_hash res:", err) : console.log("insert_hash res:", res);
         });
     } catch (error) {
         console.log(error);
@@ -297,7 +297,7 @@ var drop = async function () {
             Gas: 500000,
             expect: "db_success"
         }, (err, res) => {
-            err ? console.log("    CreateTable res:", err) : console.log("    CreateTable res:", res);
+            err ? console.log("    dropTable res:", err) : console.log("    dropTable res:", res);
         });
     
     } catch (error) {
@@ -326,7 +326,7 @@ var table_insert = async function () {
                 Gas: 5000000,
                 expect: "db_success"
             }, (err, res) => {
-                err ? console.log("    insert res:", err) : console.log("    dropTable res:", res);
+                err ? console.log("    insert res:", err) : console.log("    insertTable res:", res);
             });
     } catch (error) {
         console.log(error);
@@ -354,7 +354,7 @@ var table_insert_hash = async function () {
             Gas: 500000,
             expect: "validate_success"
         }, (err, res) => {
-            err ? console.log("grant res:", err) : console.log("grant res:", res);
+            err ? console.log("insert_hash res:", err) : console.log("insert_hash res:", res);
         });
     } catch (error) {
         console.log(error);
