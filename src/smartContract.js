@@ -363,7 +363,7 @@ Contract.prototype._encodeMethodABI = function _encodeMethodABI() {
                 signature = json.signature;
             }
             return _.isArray(json.inputs) ? json.inputs.map(function (input) { 
-                if (input.type === "tuple[]") return input;
+                if (input.type === "tuple[]" || input.type === "tuple") return input;
                 return input.type; }) : [];
         }).map(function (types) {
             let newArgs = decodeChainsqlAddrParam(types, args);
