@@ -4,13 +4,7 @@ const chainsqlError = require('../lib/error');
 var Submit = require('./submit');
 const util = require('../lib/util');
 const convertStringToHex = util.convertStringToHex;
-const getTableSequence = util.getTableSequence;
-const getUserToken = util.getUserToken;
-const getTxJson = util.getTxJson;
-const generateToken = util.generateToken;
-const decodeToken = util.decodeToken;
 const tryEncryptRaw = util.tryEncryptRaw;
-const crypto = require('../lib/crypto');
 
 class Table extends Submit {
 	constructor(name, ChainsqlAPI) {
@@ -18,12 +12,14 @@ class Table extends Submit {
 		this.tab = name;
 		this.query = [];
 		this.exec = '';
-		this.field = null;
 		this.connect = ChainsqlAPI.connect;
     this.cache = [];
     this.nameInDB = '';
     this.confidential = true;
     this.txsHashFillField = null;
+		this.txHashField = null;
+    this.ledgerSeqField = null;
+    this.ledgerTimeField = null;
 	}
 
 	submit (cb) {
@@ -68,7 +64,7 @@ Table.prototype.insert = function(raw, autoField ,txsHashFillField) {
   if (this.exec !== '' && this.exec !== 'r_insert') throw chainsqlError('Object can not hava function insert');
   var that = this;
   if (autoField) {
-    this.field = autoField;
+    this.txHashField = autoField;
   }
 
   if (txsHashFillField) {
@@ -105,7 +101,7 @@ Table.prototype.update = function(raw,field,txsHashFillField) {
   this.query.unshift(raw);
  
   if (field) {
-    this.field = field;
+    this.txHashField = field;
   }
 
   if (txsHashFillField) {
@@ -409,7 +405,7 @@ Table.prototype.prepareJson = function() {
 	var connect = this.connect;
 	var that = this;
 
-	var payment = {
+	var tx_json = {
 		address: connect.address,
 		owner: connect.scope,
 		opType: opType[that.exec],
@@ -423,20 +419,18 @@ Table.prototype.prepareJson = function() {
 		}],
 		tsType: 'SQLStatement'
 	};
-	if ( (that.exec == 'r_insert' || that.exec == 'r_update') ) {
-
-    if(that.field){
-      payment.autoFillField = convertStringToHex(that.field);
-    }
-
-    if ( that.txsHashFillField) {
-      payment.txsHashFillField = convertStringToHex(that.txsHashFillField);
-    }
-
-  }
   
 	return new Promise(function (resolve, reject) {
-		prepareTable(that, payment, resolve, reject);
+    if ( (that.exec == 'r_insert' || that.exec == 'r_update') ) {
+      if(that.txHashField){
+        tx_json.autoFillField = convertStringToHex(that.txHashField);
+      }
+  
+      if ( that.txsHashFillField) {
+        tx_json.txsHashFillField = convertStringToHex(that.txsHashFillField);
+      }
+    }
+		prepareTable(that, tx_json, resolve, reject);
 	});
 }
 
