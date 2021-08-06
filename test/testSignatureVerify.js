@@ -3,6 +3,7 @@
 const ChainsqlAPI = require('../src/index');
 
 const assert = require('assert');
+const { sign } = require('chainsql-keypairs/distrib/npm');
 const c = new ChainsqlAPI();
 
 var user = {
@@ -17,10 +18,13 @@ main();
 
     var secret = "xnoz9Le8yENN7U3fWxoeMymnT31XD";
     var hexMsg = Buffer.from("hello world").toString('hex');
-    var signature = c.signFromString(hexMsg,secret);
+    var signature = c.signFromHexString(hexMsg,secret);
 
-
-    assert.equal(signature,"3045022100BDC5E1154B68B6A9FFD7F7CA36CF3B79D0BF0EDF186D09D460E537EAB9BEB31002204F54BCE76918B4F7415319E62B19A2B1F7200234F049FBD524C61EB5DD4965AA");
+    var signatureRight = "3045022100BDC5E1154B68B6A9FFD7F7CA36CF3B79D0BF0EDF186D09D460E537EAB9BEB31002204F54BCE76918B4F7415319E62B19A2B1F7200234F049FBD524C61EB5DD4965AA";
+    assert.equal(signature,signatureRight);
+    var bytes = Buffer.from("hello world").toString("ascii");
+    signature = c.signBytes(bytes,secret);
+    assert.equal(signature,signatureRight);
  }
 
  function testVerify(){
