@@ -57,7 +57,7 @@ var smUser7 ={
 // 	publicKey: 'pYvhKdDqBnGzXc4Ff1wutzc7z3z2UcN4aPxMPN1pW66…hkDLmoHFRkGmBaz2fzdjZsXW85FCgHFVw3VqeGGVfQt'
 // }
 
-var sTableName = "jmtable6";
+var sTableName = "jmtable7";
 var sTableName2 = "b1";
 var sReName = "jmtable2";
 var sTableName3 = "hijack12";
@@ -316,6 +316,7 @@ var testCreateTable = async function() {
 	var raw = [
 		{'field':'id','type':'int','length':11,'PK':1,'NN':1},
 		{'field':'name','type':'varchar','length':50,'default':""},
+		{'field':'seq','type':'int','length':10},
 		{'field':'txhash','type':'varchar','length':64},
 		{'field':'txhashes','type':'varchar','length':640},
 		{'field':'createTime','type':'datetime'},
@@ -372,12 +373,13 @@ var testCreateTable1 = async function() {
 var testInsert = async function() {
 	var raw = [
 		{
-			'id':8,
+			'id':9,
 			'name':'hello'
 		}
 	];
 	var opt = {
-		ledgerTimeField:"createTime"
+		ledgerTimeField:"createTime",
+		ledgerSeqField:"seq"
 	}
 	try {
 		var rs = await c.table(sTableName).insert(raw,'txhash','txhashes',opt).submit({expect:'db_success'});
