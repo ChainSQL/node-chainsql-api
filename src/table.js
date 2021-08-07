@@ -59,16 +59,24 @@ class Table extends Submit {
 	}
 }
 
-Table.prototype.insert = function(raw, autoField ,txsHashFillField) {
+
+Table.prototype.insert = function(raw, autoField ,txsHashFillField,optFields) {
   if (!this.tab) throw chainsqlError('you must appoint the table name');
   if (this.exec !== '' && this.exec !== 'r_insert') throw chainsqlError('Object can not hava function insert');
   var that = this;
   if (autoField) {
     this.txHashField = autoField;
   }
-
   if (txsHashFillField) {
     this.txsHashFillField = txsHashFillField;
+  }
+  if(optFields){
+    if(optFields.ledgerSeqField){
+      this.ledgerSeqField = optFields.ledgerSeqField;
+    }
+    if(optFields.ledgerTimeField){
+      this.ledgerTimeField = optFields.ledgerTimeField;
+    }
   }
 
   if (Object.prototype.toString.call(raw) === '[object Array]') {
@@ -95,7 +103,7 @@ Table.prototype.insert = function(raw, autoField ,txsHashFillField) {
   }
 }
 
-Table.prototype.update = function(raw,field,txsHashFillField) {
+Table.prototype.update = function(raw,field,txsHashFillField,optFields) {
   if (!this.tab) throw chainsqlError('you must appoint the table name');
   if (this.exec !== 'r_get') throw chainsqlError('Object can not hava function update');
   this.query.unshift(raw);
@@ -103,11 +111,17 @@ Table.prototype.update = function(raw,field,txsHashFillField) {
   if (field) {
     this.txHashField = field;
   }
-
   if (txsHashFillField) {
     this.txsHashFillField = txsHashFillField;
   }
-
+  if(optFields){
+    if(optFields.ledgerSeqField){
+      this.ledgerSeqField = optFields.ledgerSeqField;
+    }
+    if(optFields.ledgerTimeField){
+      this.ledgerTimeField = optFields.ledgerTimeField;
+    }
+  }
   this.exec = 'r_update';
   if (this.transaction) {
     this.cache.push({
@@ -425,9 +439,14 @@ Table.prototype.prepareJson = function() {
       if(that.txHashField){
         tx_json.autoFillField = convertStringToHex(that.txHashField);
       }
-  
-      if ( that.txsHashFillField) {
+      if (that.txsHashFillField) {
         tx_json.txsHashFillField = convertStringToHex(that.txsHashFillField);
+      }
+      if(that.ledgerSeqField){
+        tx_json.ledgerSeqField = convertStringToHex(that.ledgerSeqField);
+      }
+      if(that.ledgerTimeField){
+        tx_json.ledgerTimeField = convertStringToHex(that.ledgerTimeField);
       }
     }
 		prepareTable(that, tx_json, resolve, reject);

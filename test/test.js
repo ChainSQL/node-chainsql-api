@@ -57,7 +57,7 @@ var smUser7 ={
 // 	publicKey: 'pYvhKdDqBnGzXc4Ff1wutzc7z3z2UcN4aPxMPN1pW66…hkDLmoHFRkGmBaz2fzdjZsXW85FCgHFVw3VqeGGVfQt'
 // }
 
-var sTableName = "jmtable5";
+var sTableName = "jmtable6";
 var sTableName2 = "b1";
 var sReName = "jmtable2";
 var sTableName3 = "hijack12";
@@ -69,7 +69,7 @@ main();
 async function main(){
 
 	try {
-		 await c.connect('ws://192.168.29.69:46006');
+		 await c.connect('ws://127.0.0.1:6006');
 
 		// let accountInfo = c.generateAddress({algorithm:"softGMAlg",secret:smUser7.secret});
 		// console.log(JSON.stringify(accountInfo))
@@ -229,8 +229,9 @@ async function testTableSet(){
 }
 
 async function testChainsql(){
-
-	await testInsert()
+	// await testCreateTable();
+	await testInsert();
+	// await testUpdate();
 	// await testDelete();
 	// await testRename();
 	// await testGet();
@@ -315,11 +316,13 @@ var testCreateTable = async function() {
 	var raw = [
 		{'field':'id','type':'int','length':11,'PK':1,'NN':1},
 		{'field':'name','type':'varchar','length':50,'default':""},
-		{'field':'age','type':'int'},
-		{'field':'age1','type':'longtext'}
+		{'field':'txhash','type':'varchar','length':64},
+		{'field':'txhashes','type':'varchar','length':640},
+		{'field':'createTime','type':'datetime'},
+		{'field':'updateTime','type':'datetime'}
 	]
 	var option = {
-		confidential: true
+		confidential: false
 	}
 	// 创建表
 	let rs = await c.createTable(sTableName, raw, option).submit({expect:'db_success'});
@@ -368,12 +371,16 @@ var testCreateTable1 = async function() {
 
 var testInsert = async function() {
 	var raw = [
-		{'id':7},
-		{'id':8},
-		{'id':9}
+		{
+			'id':8,
+			'name':'hello'
+		}
 	];
+	var opt = {
+		ledgerTimeField:"createTime"
+	}
 	try {
-		var rs = await c.table(sTableName).insert(raw).submit({expect:'db_success'});
+		var rs = await c.table(sTableName).insert(raw,'txhash','txhashes',opt).submit({expect:'db_success'});
 		console.log("testInsert ",rs);	
 	} catch (error) {
 		console.error(error);
@@ -382,7 +389,10 @@ var testInsert = async function() {
 
 var testUpdate = async function(){
 	try {
-		var rs = await c.table(sTableName).get({'id': 7}).update({'name':"28"},"name","txnField").submit({expect:'db_success'});
+		var opt = {
+			ledgerTimeField:"updateTime"
+		}
+		var rs = await c.table(sTableName).get({'id': 7}).update({'name':"28"},"txhash","txhashes",opt).submit({expect:'db_success'});
 		console.log("testUpdate",rs);	
 	} catch (error) {
 		console.error(error);

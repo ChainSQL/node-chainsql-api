@@ -63,6 +63,8 @@ function createPaymentTransaction(paymentArgument) {
     StrictMode: payment.strictMode,
     OperationRule: payment.operationRule,
     TxsHashFillField:payment.txsHashFillField,
+    LedgerSeqField:payment.ledgerSeqField,
+    LedgerTimeField:payment.ledgerTimeField
   }
   return txJSON;
 }
