@@ -249,7 +249,7 @@ function _decryptData(pass,tx){
 
 	if(tx.Raw){
 		if(pass){
-			const algType = tx.publicKey.slice(0,2) === "47" ? "gmAlg" : "aes";
+			const algType = tx.SigningPubKey.slice(0,2) === "47" ? "gmAlg" : "aes";
 			tx.Raw = crypto.symDecrypt(pass, tx.Raw, algType);
 		}else{
 			tx.Raw = util.convertHexToString(tx.Raw);
