@@ -36,13 +36,6 @@ class ChainsqlAPI extends Submit {
 		this.query = {};
 		this.exec = '';
 		this.token = '';
-		this.perm = {
-			insert: 'lsfInsert',
-			delete: 'lsfDelete',
-			update: 'lsfUpdate',
-			select: 'lsfSelect',
-			execute: 'lsfExecute'
-		};
 		this.transaction    = false;
 		this.schemaCreateTx = false;
 		this.schemaModifyTx = false;
@@ -432,7 +425,7 @@ function modifyTable(ChainSQL,optype,name,raw){
 			}
 		}],
 		raw: JSON.stringify(raw),
-		tsType: 'TableListSet',
+		tsType: 'TableListSet'
 	};
 
 	return ChainSQL;

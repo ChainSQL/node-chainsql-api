@@ -31,7 +31,7 @@ EventManager.prototype.subscribeTx = function(id, cb) {
 		
 	var messageTx = {
 		"command": "subscribe",
-		"transaction": id,
+		"transaction": id
 	};
 	if (!that.onMessage) {
 		_onMessage(that);
