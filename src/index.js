@@ -1056,7 +1056,7 @@ ChainsqlAPI.prototype.getLedgerTxs = function(ledgerIndex,includeSuccess,include
 };
 
 
-ChainsqlAPI.prototype.signFromHexString = function (messageHex, secret) {
+ChainsqlAPI.prototype.signFromString = function (messageHex, secret) {
 
 	var keypair   = keypairs.deriveKeypair(secret);
 	var signatue  = keypairs.sign(messageHex,keypair.privateKey);
