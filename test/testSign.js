@@ -1,7 +1,6 @@
 "use strict";
 
-// const RippleAPI = new require('ripple-lib').RippleAPI;
-// const api = new RippleAPI({server: ""});
+const binary = require('chainsql-binary-codec')
 const ChainsqlAPI = require('../src/index');
 const c = new ChainsqlAPI();
 
@@ -56,7 +55,9 @@ async function main(){
     });
     
 
-
+    var signed = "1200002400000006201B0000001061400000003B9ACA0068400000000000003273210330E7FC9D56BB25D6893BA3F317AE5BCF33B3291BD63DB32654A313222F7FD02074473045022100E684319763A47F8E4AA590ECBB4F16D4392E4DAB312A19ACC7E69F273DCD5FE702204DBBF8CB14FA8B723E35FB2659936DF6635BA4C80616B2563885AF5D91610B848114B5F762798A53D543A014CAF8B297CFF8F2F937E8831493CAB3CA5AA1B46E5A2A55BB8AA934A720ECD7A5";
+    var decoded = binary.decode(signed);
+    console.log(decoded);
 
 //     return;
 //     info = await c.api.getAccountInfo("rsM2GxUgR6jhEDijLTymqrwKZqtGSKj7RQ");

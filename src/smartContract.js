@@ -1,12 +1,12 @@
 "use strict";
 
-var util = require('../lib/util');
+var util = require('./lib/util');
 
 const _ = require('lodash');
 var chainsqlLibUtils = require('chainsql-lib').ChainsqlLibUtil;
 const keypairs = require('chainsql-keypairs');
-const chainsqlUtils = require('../lib/util');
-const chainsqlError = require('../lib/error');
+const chainsqlUtils = require('./lib/util');
+const chainsqlError = require('./lib/error');
 var abi = require('web3-eth-abi');
 var utils = require('web3-utils');
 var formatters = require('web3-core-helpers').formatters;

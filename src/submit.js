@@ -1,5 +1,5 @@
 'use strict'
-var util = require('../lib/util');
+var util = require('./lib/util');
 const RippleAPI = require('chainsql-lib').ChainsqlLibAPI;
 const Connection = require('./connect');
 

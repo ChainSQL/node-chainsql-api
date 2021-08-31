@@ -1,7 +1,7 @@
 'use strict'
-var util = require('../lib/util');
+var util = require('./lib/util');
 var Submit = require('./submit');
-const FloatOperation = require('../lib/floatOperation');
+const FloatOperation = require('./lib/floatOperation');
 var chainsqlLibUtils = require('chainsql-lib').ChainsqlLibUtil;
 
 class Ripple extends Submit {

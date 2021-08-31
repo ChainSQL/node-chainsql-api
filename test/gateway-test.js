@@ -90,7 +90,7 @@ describe('gateway', () => {
 
 
 // 'use strict'
-// const ChainsqlAPI = require('chainsql');
+// const ChainsqlAPI = require('../src/index');
 // const c = new ChainsqlAPI();
 
 // var root = {

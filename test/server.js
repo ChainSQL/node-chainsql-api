@@ -1,21 +1,19 @@
 ﻿'use strict'
 
-
-
 const ChainsqlAPI = require('../src/index');
 const r = new ChainsqlAPI();
-var path = require('path');
-var basePath = path.join(require.resolve('chainsql-lib-test'), '../common');
-var common = require(basePath);
-var crypto = require('../lib/crypto');
-const keypairs = require('chainsql-keypairs-test');
+// var path = require('path');
+// var basePath = path.join(require.resolve('chainsql-lib-test'), '../common');
+// var common = require(basePath);
+var crypto = require('../src/lib/crypto');
+const keypairs = require('chainsql-keypairs');
 
 main();
 async function main(){
 	try {
 		//  await r.connect('ws://127.0.0.1:6007');
 		//await r.connect('ws://139.198.11.189:6006');
-		await r.connect('ws://192.168.0.14:6006');
+		// await r.connect('ws://192.168.0.14:6006');
         // console.log('连接成功')
 		// var tb = 'test13323333';
 
@@ -34,10 +32,10 @@ async function main(){
 		// });
 		
 
-		var cipher = crypto.eciesEncrypt("hello","03B7FBF1AC149B0D297B7407CAB9636792333B8D8B8A4036B2D4DE2E6D69D435B5");
-		var keypair = keypairs.deriveKeypair("xxHgHoRAHdGZxy5gWUdMeUK7hWrgr");
-		var plain = crypto.eciesDecrypt(cipher,keypair.privateKey);
-		console.log(plain);
+		// var cipher = crypto.eciesEncrypt("hello","03B7FBF1AC149B0D297B7407CAB9636792333B8D8B8A4036B2D4DE2E6D69D435B5");
+		// var keypair = keypairs.deriveKeypair("xxHgHoRAHdGZxy5gWUdMeUK7hWrgr");
+		// var plain = crypto.eciesDecrypt(cipher,keypair.privateKey);
+		// console.log(plain);
 		
 		//字段级加密
 		console.log("multi encrypt test:");
@@ -51,9 +49,9 @@ async function main(){
 		
 
 		console.log("AesPadding Test");
-		var aesCipher = crypto.aesEncrypt("abcdefg","hello,world");
+		var aesCipher = crypto.symEncrypt("abcdefg","hello,world");
 		console.log(aesCipher);
-		var aesDecrypted = crypto.aesDecrypt("abcdefg",aesCipher);
+		var aesDecrypted = crypto.symDecrypt("abcdefg",aesCipher);
 		console.log(aesDecrypted);
 		
 

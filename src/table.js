@@ -1,8 +1,8 @@
 'use strict'
-const opType = require('../lib/config').opType;
-const chainsqlError = require('../lib/error');
+const opType = require('./lib/config').opType;
+const chainsqlError = require('./lib/error');
 var Submit = require('./submit');
-const util = require('../lib/util');
+const util = require('./lib/util');
 const convertStringToHex = util.convertStringToHex;
 const tryEncryptRaw = util.tryEncryptRaw;
 

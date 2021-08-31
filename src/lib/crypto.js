@@ -15,6 +15,7 @@ var ProtoBuf = require("protobufjs")
 var zlib = require('zlib');  
 
 const _ = require('lodash');
+const multiProto = require('../proto/MultiEncrypt')
 
 var AESKeyLength = 32;
 var AESBlockLength = 16;
@@ -357,7 +358,7 @@ var encryptText = function(plainText,listPublic){
         }
         //publickey -hash
         var pubKey = Secp256k1.keyFromPublic(publicKey, 'hex');
-        var pubHash = quarterSha512(new Buffer(publicKey, 'hex'));
+        var pubHash = quarterSha512(Buffer.from(publicKey, 'hex'));
         listPubHash.push(pubHash);
 
         //encrypt
@@ -366,30 +367,26 @@ var encryptText = function(plainText,listPublic){
     }
 
     return new Promise(function(resolve,reject){
-        ProtoBuf.load("proto/MultiEncrypt.proto",function(err,root){
-            if (err) throw err;  
-            var MultiEncrypt = root.lookup("MultiEncrypt");
-            //create a new message
-            var data = {};
-            data.publicOther =Buffer.from(ephPublicKey,'hex');
-            data.cipher = Buffer.from(aesCipher,'hex');
-            data.hashTokenPair = [];
-            for(var i=0; i<listPubHash.length; i++){
-                var tokenPair = {
-                    publicHash : listPubHash[i],
-                    token : listPassCipher[i]
-                }
-                data.hashTokenPair.push(tokenPair);
+        //create a new message
+        var data = {};
+        data.publicOther =Buffer.from(ephPublicKey,'hex');
+        data.cipher = Buffer.from(aesCipher,'hex');
+        data.hashTokenPair = [];
+        for(var i=0; i<listPubHash.length; i++){
+            var tokenPair = {
+                publicHash : listPubHash[i],
+                token : listPassCipher[i]
             }
-            var message = MultiEncrypt.create(data);  
-            var buffer = MultiEncrypt.encode(message).finish();
-            
-            zlibCompressText(buffer).then(function(res){
-                // if(err) reject(err);
-                resolve(res.toString('hex'));
-            }).catch(function(err){
-                reject(err);
-            })
+            data.hashTokenPair.push(tokenPair);
+        }
+        var message = multiProto.MultiEncrypt.create(data);  
+        var buffer = multiProto.MultiEncrypt.encode(message).finish();
+        
+        zlibCompressText(buffer).then(function(res){
+            // if(err) reject(err);
+            resolve(res.toString('hex'));
+        }).catch(function(err){
+            reject(err);
         })
     })
 }
@@ -399,33 +396,29 @@ var decryptText = function(cipherText,secret){
         //Zlib-decompress
         var cipherBytes = Buffer.from(cipherText,'hex');
         zlibDeCompressText(cipherBytes).then(function(res){
-            ProtoBuf.load("proto/MultiEncrypt.proto",function(err,root){
-                if (err) throw err;  
-                var MultiEncrypt = root.lookup("MultiEncrypt");
-                var message = MultiEncrypt.decode(res);
-                var keypair = keypairs.deriveKeypair(secret);
-                var privateKey = keypair.privateKey;
-                var sPubHashSelf = quarterSha512(new Buffer(keypair.publicKey,'hex'));
-                
-                var password;
-                var pubOther = message.publicOther;
-                var listPubHashToken = message.hashTokenPair;
-                for(var i=0; i<listPubHashToken.length; i++){
-                    var hashTokenPair = listPubHashToken[i];
-                    if(_.isEqual(hashTokenPair.publicHash, Buffer.from(sPubHashSelf))){
-                        var ephPrivKey = Secp256k1.keyFromPrivate(privateKey, 'hex');
-                        var pubKey = Secp256k1.keyFromPublic(pubOther);
-                        password = simpleDecrypt(hashTokenPair.token,ephPrivKey,pubKey);
-                        break;
-                    }
+            var message = multiProto.MultiEncrypt.decode(res);
+            var keypair = keypairs.deriveKeypair(secret);
+            var privateKey = keypair.privateKey;
+            var sPubHashSelf = quarterSha512(Buffer.from(keypair.publicKey,'hex'));
+            
+            var password;
+            var pubOther = message.publicOther;
+            var listPubHashToken = message.hashTokenPair;
+            for(var i=0; i<listPubHashToken.length; i++){
+                var hashTokenPair = listPubHashToken[i];
+                if(_.isEqual(hashTokenPair.publicHash, Buffer.from(sPubHashSelf))){
+                    var ephPrivKey = Secp256k1.keyFromPrivate(privateKey, 'hex');
+                    var pubKey = Secp256k1.keyFromPublic(pubOther);
+                    password = simpleDecrypt(hashTokenPair.token,ephPrivKey,pubKey);
+                    break;
                 }
-                if(password){
-                    var plain = aesDecrypt(password,message.cipher);
-                    resolve(plain);
-                }else{
-                    reject('error when get aesKey')
-                }
-            })
+            }
+            if(password){
+                var plain = aesDecrypt(password,message.cipher);
+                resolve(plain);
+            }else{
+                reject('error when get aesKey')
+            }
         }).catch(function(err){
             reject(err);
         })

@@ -1,11 +1,16 @@
 {
   "name": "chainsql",
-  "version": "0.70.14",
+  "version": "0.70.16",
   "description": "An database driver for chainsql ",
-  "main": "src/index.js",
-  "scripts": {
-    "test": "mocha"
+  "main": "dist/npm/",
+  "directories": {
+    "test": "test"
   },
+  "files": [
+    "dist/npm/*",
+    "bin/*",
+    "test/*"
+  ],
   "dependencies": {
     "bignumber.js": "^2.4.0",
     "chainsql-keypairs": "^0.11.1",
@@ -20,8 +25,27 @@
     "web3-utils": "1.0.0-beta.36"
   },
   "devDependencies": {
-    "mocha": "~2.3.3",
-    "chai": "^4.2.0"
+    "assert-diff": "^1.0.1",
+    "babel-cli": "^6.4.0",
+    "babel-core": "^6.4.0",
+    "babel-eslint": "^6.0.4",
+    "babel-loader": "^6.2.1",
+    "babel-plugin-syntax-flow": "^6.3.13",
+    "babel-plugin-transform-flow-strip-types": "^6.4.0",
+    "babel-preset-es2015": "^6.3.13",
+    "babel-preset-stage-1": "^6.3.13",
+    "babel-register": "^6.3.13"
+  },
+  "scripts": {
+    "build": "gulp",
+    "doctoc": "doctoc docs/index.md --title '# ChainsqlAPI Reference' --github --maxlevel 2",
+    "docgen": "node --harmony scripts/build_docs.js",
+    "clean": "rm -rf dist/npm && rm -rf build/flow",
+    "typecheck": "babel --optional runtime --blacklist flow -d build/flow/ src/ && flow check",
+    "compile": "babel -D --optional runtime -d dist/npm/ src/",
+    "watch": "babel -w -D --optional runtime -d dist/npm/ src/",
+    "compile-with-source-maps": "babel -D --optional runtime -s -t -d dist/npm/ src/",
+    "prepublish": "npm run clean && npm run compile"
   },
   "repository": {
     "type": "git",

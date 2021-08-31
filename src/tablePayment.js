@@ -2,8 +2,8 @@
 
 var _ = require('lodash');
 const path = require('path');
-const getTxJson = require('../lib/util').getTxJson;
-const calcFee = require('../lib/util').calcFee;
+const getTxJson = require('./lib/util').getTxJson;
+const calcFee = require('./lib/util').calcFee;
 var utils = require('chainsql-lib').ChainsqlLibUtil;
 var validate = utils.common.validate;
 var toRippledAmount = utils.common.toRippledAmount;

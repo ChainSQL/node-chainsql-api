@@ -1,7 +1,7 @@
 'use strict';
 const EventEmitter = require('events');
-const util = require('../lib/util');
-const crypto = require('../lib/crypto');
+const util = require('./lib/util');
+const crypto = require('./lib/crypto');
 
 function EventManager(chainsql) {
 	this.connect = chainsql.connect.api.connection;

@@ -2,7 +2,7 @@
 
 //const fs = require ('fs');
 //const solc = require('solc');
-const ChainsqlAPI = require("../src/index");
+const ChainsqlAPI = require("chainsql");
 const chainsql = new ChainsqlAPI();
 
 const RootUser = {
