@@ -6,7 +6,7 @@ const hashjs = require('hash.js');
 const elliptic = require('elliptic');
 const Secp256k1 = elliptic.ec('secp256k1');
 const addressCodec = require('chainsql-address-codec');
-
+const utils = require('chainsql-keypairs/distrib/npm/utils');
 //var debug = require('debug')('crypto');
 var crypto = require('crypto');
 var sjcl = require('sjcl');
@@ -238,6 +238,23 @@ var symEncrypt = function(symKey, plaintext, algType = 'aes') {
 	}
 };
 
+/**
+ * 非对称加密方法
+ * @param plaintext 明文
+ * @param publicKey     公钥
+ * @returns string 加密后的十六进制格式
+ */
+ var asymEncrypt = function(plaintext, publicKey, algType = 'ecies') {
+    if ( algType === "gmAlg" ) {
+		token = keypairs.gmAlgSm2Enc(publicKey, plaintext);
+  }else if(algType === "softGMAlg") {
+    var plaintextHex = Buffer.from(plaintext, 'utf8').toString("hex");
+    return keypairs.softGMAlgSm2Enc(plaintextHex,publicKey);
+  }else {
+		return eciesEncrypt(plaintext, publicKey);
+	}
+};
+
 var aesEncrypt = function(secret, plaintext) {
     var secretPadded = paddingPass(secret,AESKeyLength);
     var aesKey =Buffer.from(secretPadded, 'utf8');
@@ -259,11 +276,30 @@ var symDecrypt = function(symKey, encryptedHex, algType = 'aes') {
 	if(algType === "gmAlg") {
 		return keypairs.gmAlgSymDec(symKey, encryptedHex);
     } else if(algType === "softGMAlg"){
-	    return keypairs.softGMAlgSymDec(symKey, encryptedHex);
+        return keypairs.softGMAlgSymDec(symKey, encryptedHex);
 	}else {
 		return aesDecrypt(symKey, encryptedHex);
 	}
 };
+
+/**
+ * 解密方法
+ * @param encryptedHex      密文十六进制格式
+ * @param privateKey   私钥
+ * @returns string 解密后的明文
+ */
+ var asymDecrypt = function(encryptedHex, privateKey, algType = 'ecies') {
+
+    if(algType === "gmAlg") {
+        return symKey = keypairs.gmAlgSm2Dec(privateKey, encryptedHex);
+    }else if(algType === "softGMAlg"){
+        var plainhex = keypairs.softGMAlgSm2Dec(privateKey, encryptedHex);
+        return Buffer.from(plainhex, 'hex');
+    }else {
+        return eciesDecrypt(encryptedHex, privateKey);
+      }
+};
+
 
 var aesDecrypt = function(secret, encryptedHex) {
     var secretPadded = paddingPass(secret,AESKeyLength);
@@ -431,5 +467,7 @@ module.exports = {
     symEncrypt,
     symDecrypt,
     encryptText,
-    decryptText
+    decryptText,
+    asymEncrypt,
+    asymDecrypt
 };

@@ -7,7 +7,7 @@ const r = new ChainsqlAPI();
 // var common = require(basePath);
 var crypto = require('../src/lib/crypto');
 const keypairs = require('chainsql-keypairs');
-
+const utils = require('chainsql-keypairs/distrib/npm/utils');
 main();
 async function main(){
 	try {
@@ -32,10 +32,10 @@ async function main(){
 		// });
 		
 
-		// var cipher = crypto.eciesEncrypt("hello","03B7FBF1AC149B0D297B7407CAB9636792333B8D8B8A4036B2D4DE2E6D69D435B5");
-		// var keypair = keypairs.deriveKeypair("xxHgHoRAHdGZxy5gWUdMeUK7hWrgr");
-		// var plain = crypto.eciesDecrypt(cipher,keypair.privateKey);
-		// console.log(plain);
+		var cipher = crypto.eciesEncrypt("hello","03B7FBF1AC149B0D297B7407CAB9636792333B8D8B8A4036B2D4DE2E6D69D435B5");
+		var keypair = keypairs.deriveKeypair("xxHgHoRAHdGZxy5gWUdMeUK7hWrgr");
+		var plain = crypto.eciesDecrypt(cipher,keypair.privateKey);
+		console.log(plain.toString());
 		
 		//字段级加密
 		console.log("multi encrypt test:");
@@ -47,6 +47,32 @@ async function main(){
 		var text2 = await crypto.decryptText(cip,"xnHAcvtn1eVLDskhxPKNrhTsYKqde");
 		console.log("plain text2:" + text2);
 		
+		console.log("Symmetric encryption Test");
+		var symCipher = crypto.symEncrypt("abcdefghqwertyui","hello,world", "softGMAlg");
+		console.log(symCipher);
+		var plainhex = crypto.symDecrypt("abcdefghqwertyui",symCipher, "softGMAlg");
+		var symDecrypted = utils.arrayToUtf8(utils.hexToArray(plainhex));
+		console.log(symDecrypted);
+
+		var symCipher = crypto.symEncrypt("abcdefghqwertyui","hello,world", "aes");
+		console.log(symCipher);
+		var symDecrypted = crypto.symDecrypt("abcdefghqwertyui",symCipher, "aes");
+		console.log(symDecrypted);
+
+	
+		console.log("Asymmetry encryption Test");
+		var symCipher = crypto.asymEncrypt("hello,world","pYvXDbsUUr5dpumrojYApjG8nLfFMXhu3aDvxq5oxEa4ZSeyjrMzisdPsYjfxyg9eN3ZJsNjtNENbzXPL89st39oiSp5yucU", "softGMAlg");
+		console.log(symCipher);
+		var symDecrypted = crypto.asymDecrypt(symCipher,"pwRdHmA4cSUKKtFyo4m2vhiiz5g6ym58Noo9dTsUU97mARNjevj", "softGMAlg");
+		console.log(symDecrypted.toString());
+
+	
+		console.log("Asymmetry encryption Test");
+		var keypair = keypairs.deriveKeypair("xpvPjSRCtmQ3G99Pfu1VMDMd9ET3W");
+		var symCipher = crypto.asymEncrypt("hello,world",keypair.publicKey, "ecies");
+		console.log(symCipher);
+		var symDecrypted = crypto.asymDecrypt(symCipher,keypair.privateKey, "ecies");
+		console.log(symDecrypted.toString());
 
 		console.log("AesPadding Test");
 		var aesCipher = crypto.symEncrypt("abcdefg","hello,world");
