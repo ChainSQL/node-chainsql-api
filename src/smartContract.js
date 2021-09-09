@@ -1,17 +1,19 @@
 "use strict";
 
 var util = require('../lib/util');
+const crypto = require('../lib/crypto');
 
 const _ = require('lodash');
 var chainsqlLibUtils = require('chainsql-lib').ChainsqlLibUtil;
 const keypairs = require('chainsql-keypairs');
+const addressCodec = require('chainsql-address-codec');
 const chainsqlUtils = require('../lib/util');
 const chainsqlError = require('../lib/error');
 var abi = require('web3-eth-abi');
 var utils = require('web3-utils');
 var formatters = require('web3-core-helpers').formatters;
 
-const preDefOptions = ["ContractData", "arguments", "ContractValue", "Gas", "expect"];
+const preDefOptions = ["ContractData", "arguments", "ContractValue", "Gas", "expect", "ContractTaint", "Confidential"];
 /**
  * Contract constructor for creating new contract instance
  *
@@ -703,49 +705,14 @@ Contract.prototype._executeMethod = function _executeMethod(){
             if(args.options.hasOwnProperty("ContractValue")){
                 contractValue = args.options.ContractValue;
             }
-            let sendTxPayment = {
-                TransactionType : "Contract",
-                Account : this._parent.connect.address,
-                ContractAddress : args.options.to,
-                Gas : args.options.Gas,
-                ContractValue : contractValue,
-                ContractData : contractData.toUpperCase()
-            };
 
-            
-            let txCallbackProperty = {};
-            txCallbackProperty.callbackFunc = args.callback;
-            txCallbackProperty.callbackExpect = "send_success";
-            if(args.options.isDeploy) {
-                sendTxPayment.ContractOpType = 1;
-                if (args.options.hasOwnProperty("expect") && (args.options.expect === "send_success"))
-                {
-                    errorMsg = "Contract deploy tx expect must be validate_success or db_success";
-                    return errFuncGlobal(errorMsg, args.callback);
-                }
-                txCallbackProperty.callbackExpect = args.options.hasOwnProperty("expect") ? args.options.expect : "validate_success";
-            }
-            else {
-                sendTxPayment.ContractOpType = 2;
-                if(args.options.hasOwnProperty("expect")) {
-                    if(chainsqlUtils.checkExpect(args.options)) {
-                        txCallbackProperty.callbackExpect = args.options.expect;
-                    }
-                    else {
-                        errorMsg = "Unknown 'expect' value, please check!";
-                        return errFuncGlobal(errorMsg, args.callback);
-                    }
-                }
-            }
-            
             let contractObj = this._parent;
-            contractObj.options.isDeploy = args.options.isDeploy;
             if ((typeof args.callback) != 'function') {
                 return new Promise(function (resolve, reject) {
-                    handleContractPayment(contractObj, sendTxPayment, txCallbackProperty, resolve, reject);
+                    preRequestContractSubmit(contractObj, args, contractValue, contractData, resolve, reject);
                 });
             } else {
-                handleContractPayment(contractObj, sendTxPayment, txCallbackProperty, null, null);
+                preRequestContractSubmit(contractObj, args, contractValue, contractData, null, null);
             }
             break;
         }
@@ -756,6 +723,87 @@ Contract.prototype._executeMethod = function _executeMethod(){
         }
     }
 };
+
+function preRequestContractSubmit(contractObj, args, contractValue, contractData, resolve, reject) {
+    if(args.options.hasOwnProperty("Confidential") && args.options.Confidential) {
+        let getGlobalPubObj = {
+            command: "enclave_gpub"
+        }
+        // let contractObj = this._parent;
+        contractObj.connect.api.connection.request(getGlobalPubObj).then(function(data) {
+            let symKey = util.generateSymKey();
+            let token = util.generateToken(data.public_key, symKey);
+            let userPub = keypairs.deriveKeypair(contractObj.connect.secret).publicKey;
+            let userPubBase58 = addressCodec.encode(Buffer.from(userPub, 'hex'), {version: 35});
+            let userToken = util.generateToken(userPubBase58, symKey);
+            let encCtrData = crypto.symEncrypt(symKey, contractData);
+            args.options.token = token;
+            args.options.userToken = userToken;
+            requestContractSubmit(contractObj, args, contractValue, encCtrData, resolve, reject);
+        }).catch(function(err){
+            errFuncGlobal(err, args.callback);
+        });
+    } else {
+        requestContractSubmit(this._parent, args, contractValue, contractData, resolve, reject);
+    }
+}
+function requestContractSubmit(contractObj, args, contractValue, contractData, resolve, reject) {
+    let sendTxPayment = {
+        TransactionType : "Contract",
+        Account : contractObj.connect.address,
+        ContractAddress : args.options.to,
+        Gas : args.options.Gas,
+        ContractValue : contractValue,
+        ContractData : contractData.toUpperCase()
+    };
+    if (args.options.hasOwnProperty("ContractTaint")) {
+        sendTxPayment.ContractTaint = args.options.ContractTaint;
+    }
+    if(args.options.hasOwnProperty("token")) {
+        sendTxPayment.ContractToken = args.options.token.toUpperCase();
+        if(args.options.hasOwnProperty("userToken")) {
+            sendTxPayment.ContractUserToken = args.options.userToken.toUpperCase();
+        }
+        else {
+            return errFuncGlobal("Missing UserToken", args.callback);
+        }
+    }
+    
+    let txCallbackProperty = {};
+    txCallbackProperty.callbackFunc = args.callback;
+    txCallbackProperty.callbackExpect = "send_success";
+    if(args.options.isDeploy) {
+        sendTxPayment.ContractOpType = 1;
+        if (args.options.hasOwnProperty("expect") && (args.options.expect === "send_success"))
+        {
+            errorMsg = "Contract deploy tx expect must be validate_success or db_success";
+            return errFuncGlobal(errorMsg, args.callback);
+        }
+        txCallbackProperty.callbackExpect = args.options.hasOwnProperty("expect") ? args.options.expect : "validate_success";
+    }
+    else {
+        sendTxPayment.ContractOpType = 2;
+        if(args.options.hasOwnProperty("expect")) {
+            if(chainsqlUtils.checkExpect(args.options)) {
+                txCallbackProperty.callbackExpect = args.options.expect;
+            }
+            else {
+                errorMsg = "Unknown 'expect' value, please check!";
+                return errFuncGlobal(errorMsg, args.callback);
+            }
+        }
+    }
+    
+    contractObj.options.isDeploy = args.options.isDeploy;
+    handleContractPayment(contractObj, sendTxPayment, txCallbackProperty, resolve, reject);
+    // if ((typeof args.callback) != 'function') {
+    //     return new Promise(function (resolve, reject) {
+    //         handleContractPayment(contractObj, sendTxPayment, txCallbackProperty, resolve, reject);
+    //     });
+    // } else {
+    //     handleContractPayment(contractObj, sendTxPayment, txCallbackProperty, null, null);
+    // }
+}
 
 function errFuncGlobal(errMsg, callback){
     if ((typeof callback) != 'function') {
@@ -786,18 +834,54 @@ function handleContractCall(curFunObj, callObj, callBack, resolve, reject) {
     const contractObj = curFunObj._parent;
     var connect = contractObj.connect;
     const contractData = callObj.data.length >= 2 ? callObj.data.slice(2) : callObj.data;
-    connect.api.connection.request({
+    if(callObj.hasOwnProperty("Confidential") && callObj.Confidential)
+    {
+        let getGlobalPubObj = {
+            command: "enclave_gpub"
+        }
+        connect.api.connection.request(getGlobalPubObj).then(function(data) {
+            let symKey = util.generateSymKey();
+            let token = util.generateToken(data.public_key, symKey);
+            let encCtrData = crypto.symEncrypt(symKey, contractData);
+            callObj.symKey = symKey;
+            callObj.token = token;
+            requestContractCall(connect.api.connection, contractObj, curFunObj._method.outputs,
+                connect.address, encCtrData, callObj, callBackFun);
+        }).catch(function(err){
+            callBackFun(err, null);
+        });
+    } else {
+        requestContractCall(connect.api.connection, contractObj, curFunObj._method.outputs,
+                            connect.address, contractData, callObj, callBackFun);
+    }
+}
+function requestContractCall(conn, contractObj, OutputAbi, userAddr, ctrData, callObj, callBackFun) {
+    let ctrCallObj = {
         command: 'contract_call',
-        account : connect.address,
+        account : userAddr,
         contract_address : callObj.to,
-        contract_data : contractData.toUpperCase()
-    }).then(function(data) {
+        contract_data : ctrData.toUpperCase()
+    };
+    if(callObj.hasOwnProperty("ContractTaint"))
+    {
+        ctrCallObj.contract_taint = callObj.ContractTaint;
+    }
+    if(callObj.hasOwnProperty("token"))
+    {
+        ctrCallObj.contract_token = callObj.token;
+    }
+    conn.request(ctrCallObj).then(function(data) {
         // if (data.status != 'success'){
         //     callBackFun(new Error(data), null);
         // }
         //begin to decode return value,then get result and set to callBack
         var resultStr = data.contract_call_result;
-        var localcallResult = contractObj._decodeMethodReturn(curFunObj._method.outputs, resultStr);
+        if(callObj.hasOwnProperty("symKey"))
+        {
+            //let encRetStr = Buffer.from(data.contract_call_result, 'hex');
+            resultStr = "0x" + crypto.symDecrypt(callObj.symKey, data.contract_call_result.slice(2), 'aes', 'hex');
+        }
+        var localcallResult = contractObj._decodeMethodReturn(OutputAbi, resultStr);
         callBackFun(null, localcallResult);
     }).catch(function(err) {
         callBackFun(err, null);
@@ -844,6 +928,13 @@ function createContractPayment(contractPayment){
         ContractValue : newContractPayment.ContractValue,
         Gas : newContractPayment.Gas
     };
+    if (newContractPayment.hasOwnProperty("ContractTaint")) {
+        txJSON.ContractTaint = newContractPayment.ContractTaint;
+    }
+    if (newContractPayment.hasOwnProperty("ContractToken")) {
+        txJSON.ContractToken = newContractPayment.ContractToken;
+        txJSON.ContractUserToken = newContractPayment.ContractUserToken;
+    }
     if(/*!isDeploy && */newContractPayment.hasOwnProperty("ContractAddress")){
         txJSON.ContractAddress = newContractPayment.ContractAddress;
     }

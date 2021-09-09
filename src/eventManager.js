@@ -211,7 +211,7 @@ function _onChainsqlMessage(that,key,data,owner,name){
 			util.getUserToken(that.connect,owner,that.chainsql.connect.address,name).then(function(tokenData){
 				var token = tokenData[owner + name];
 				if (token != '') {
-					var secret = util.decodeToken(that.chainsql, token);
+					var secret = util.decodeToken(that.chainsql.connect.secret, token);
 					that.cachePass[key] = secret;
 					_makeCallback(that,key,data);
 				}else{
@@ -249,7 +249,7 @@ function _decryptData(pass,tx){
 
 	if(tx.Raw){
 		if(pass){
-			const algType = tx.publicKey.slice(0,2) === "47" ? "gmAlg" : "aes";
+			const algType = tx.SigningPubKey.slice(0,2) === "47" ? "gmAlg" : "aes";
 			tx.Raw = crypto.symDecrypt(pass, tx.Raw, algType);
 		}else{
 			tx.Raw = util.convertHexToString(tx.Raw);

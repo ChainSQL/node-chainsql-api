@@ -327,7 +327,7 @@ ChainsqlAPI.prototype.createTable = function (name, raw, inputOpt) {
 
 		if (confidential) {
 			var token  = generateToken(that.connect.secret);
-			var symKey = decodeToken(that, token);
+			var symKey = decodeToken(that.connect.secret, token);
 			var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
 		  
 			if(that.connect.secret === "gmAlg") {
@@ -737,7 +737,7 @@ function handleCommit(ChainSQL, object, resolve, reject) {
 			if (secretMap[key] && secretMap[key] != " ") {
 				var token = secretMap[key];
 
-				var secret = decodeToken(ChainSQL, token);
+				var secret = decodeToken(ChainSQL.connect.secret, token);
 				if (cache[i].Raw) {
 					if (cache[i].OpType != opType.t_grant) {
 						var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
@@ -843,7 +843,7 @@ function handleGrantPayment(ChainSQL) {
 		getUserToken(ChainSQL.api.connection, ChainSQL.connect.address, ChainSQL.connect.address, name).then(function (data) {
 			var token = data[ChainSQL.connect.address + name];
 			if (token != '') {
-				var secret = decodeToken(ChainSQL, token);
+				var secret = decodeToken(ChainSQL.connect.secret, token);
 				try {
 					token = generateToken(publicKey, secret).toUpperCase();
 				} catch (e) {
