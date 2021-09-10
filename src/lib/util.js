@@ -344,7 +344,8 @@ function checkSubError(data){
       || data.status == 'db_noDbConfig'
       || data.status == 'db_noSyncConfig'
       || data.status == 'db_noAutoSync'
-      || data.status == 'db_noTableExistInDB'){
+      || data.status == 'db_noTableExistInDB'
+      || data.status == 'db_acctSecretError'){
         return true;
       }else{
         return false;
