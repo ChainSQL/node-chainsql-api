@@ -171,7 +171,13 @@ function onMessage(that,dataRes){
 			});
 		}
 		if (data.hasOwnProperty("ContractEventInfo") && data.ContractEventInfo !== "") {
-			data.ContractEventInfo = "0x" + data.ContractEventInfo;
+            let plainCtrEventInfo = data.ContractEventInfo;
+            if(data.hasOwnProperty("ContractUserToken")) {
+                let symKey = util.decodeToken(that.chainsql.connect.secret, data.ContractUserToken);
+                plainCtrEventInfo = crypto.symDecrypt(symKey, data.ContractEventInfo, "aes", "hex");
+            }
+			// data.ContractEventInfo = "0x" + data.ContractEventInfo;
+			data.ContractEventInfo = "0x" + plainCtrEventInfo;
 		}
 		let key = data.ContractEventTopics[0];
 		if (that.cache[key]) {

@@ -554,7 +554,13 @@ Contract.prototype.getPastEvent = function(options, callback) {
     chainsqlObj.getTransaction(params.txHash).then(data => {
         if(data.specification.meta.hasOwnProperty("ContractLogs"))
         {
-            let contractLogs = util.convertHexToString(data.specification.meta.ContractLogs).replace(/\s+/g, '');
+            let ctrLogs = data.specification.meta.ContractLogs;
+            let userSymKey = "";
+            if(data.specification.hasOwnProperty("ContractUserToken")) {
+                let userToken = data.specification.ContractUserToken;
+                userSymKey = util.decodeToken(chainsqlObj.connect.secret, userToken);
+            }
+            let contractLogs = util.convertHexToString(ctrLogs).replace(/\s+/g, '');
             contractLogs = contractLogs.substring(1, contractLogs.length-1).replace(/,{/g, '-{');
             let ctrLogsArray = contractLogs.split('-');
             let newCtrLogs = {};
@@ -563,7 +569,11 @@ Contract.prototype.getPastEvent = function(options, callback) {
                 let ctrLog = JSON.parse(ctrLogsArray[i]);
                 let key = ctrLog.contract_topics[0].toLowerCase();
                 let ctrLogInfo = {};
-                ctrLogInfo.ContractEventInfo = ctrLog.contract_data;
+                if (userSymKey !== "") {
+                    ctrLogInfo.ContractEventInfo = crypto.symDecrypt(userSymKey, ctrLog.contract_data, "aes", "hex");
+                } else {
+                    ctrLogInfo.ContractEventInfo = ctrLog.contract_data;
+                }
                 ctrLogInfo.ContractEventTopics = ctrLog.contract_topics;
                 let currentEvent = this.options.jsonInterface.find(function (json) {
                     return (json.type === 'event' && json.signature === '0x' + key.replace('0x', ''));
