@@ -21,6 +21,8 @@ const Contract = require('./smartContract');
 const util = require('./lib/util');
 const { utils } = require('elliptic');
 const opType = require('./lib/config').opType;
+const SEAL  = require('node-seal')
+
 const convertStringToHex = util.convertStringToHex;
 const getCryptAlgTypeFromAccout = util.getCryptAlgTypeFromAccout;
 
@@ -1299,7 +1301,221 @@ ChainsqlAPI.prototype.modifySchema = function(schemaInfo){
 
 };
 
+ChainsqlAPI.prototype.genHomEncryptKeypair= function(encryptParams){
 
+	return new Promise(function(resolve, reject){
+
+		let bValid = (encryptParams !== undefined) &&  (encryptParams.schemeType !== undefined) && (encryptParams.polyModulusDegree !== undefined)
+		if(!bValid){
+			reject('Invalid parameter')
+		}
+
+		SEAL().then(function(seal){
+
+            const securityLevel     = seal.SecurityLevel.tc128
+            const polyModulusDegree = encryptParams.polyModulusDegree
+
+			var schemeType
+			var encryptionParameters
+			
+
+			if( encryptParams.schemeType === 'ckks'){
+				
+				schemeType = seal.SchemeType.ckks
+				var ckksParms = seal.EncryptionParameters(schemeType)
+				ckksParms.setPolyModulusDegree(polyModulusDegree)
+
+				var  maxBitCount = seal.CoeffModulus.MaxBitCount(polyModulusDegree)
+				if ( maxBitCount >= 80 ){
+					ckksParms.setCoeffModulus(
+						seal.CoeffModulus.Create(polyModulusDegree,Int32Array.from([50,30]))
+					)
+				}else{	
+					ckksParms.setCoeffModulus(
+						seal.CoeffModulus.Create(polyModulusDegree,Int32Array.from([50]))
+					)
+				}
+			
+				encryptionParameters = ckksParms
+
+			}else if( encryptParams.schemeType === 'bfv' ) {
+
+				schemeType = seal.SchemeType.bfv
+				var bfvParms = seal.EncryptionParameters(schemeType)
+				bfvParms.setPolyModulusDegree(polyModulusDegree)
+
+				bfvParms.setCoeffModulus(
+					seal.CoeffModulus.BFVDefault(polyModulusDegree)
+				)
+			
+				bfvParms.setPlainModulus(
+					seal.PlainModulus.Batching(polyModulusDegree, 20)
+				)
+
+				encryptionParameters = bfvParms
+
+			}else{
+				reject('Invalid schemeType')
+			}
+
+            const sealContext = seal.Context(
+                encryptionParameters, // Encryption Parameters
+                true, // ExpandModChain
+                securityLevel // Enforce a security level
+            )     
+            
+            if (!sealContext.parametersSet()) {
+                reject(
+                    'Could not set the parameters in the given context. Please try different encryption parameters.'
+                )
+            }    
+
+            const keyGenerator = seal.KeyGenerator(sealContext)
+            const publicKey    = keyGenerator.createPublicKey()
+            const secretKey    = keyGenerator.secretKey()
+
+			var  homEncryptParams = encryptionParameters.save();
+			var  homPublicKey     = publicKey.save();
+			var  homPrivateKey    = secretKey.save();
+			resolve({homEncryptParams,homPublicKey,homPrivateKey})
+		}).catch(function(err){
+			reject(err);
+		});
+
+	});
+
+};
+
+
+ChainsqlAPI.prototype.homEncrypt= function(encryptParams){
+
+	return new Promise(function(resolve, reject){
+
+		let bValid = (encryptParams !== undefined) &&  (encryptParams.homEncryptParams !== undefined) && (encryptParams.homPublicKey !== undefined)
+		             && (encryptParams.homPlainValue !== undefined)
+		if(!bValid){
+			reject('Invalid parameter')
+		}
+
+		SEAL().then(function(seal){
+
+			const encryptrParms = seal.EncryptionParameters()
+			encryptrParms.load(encryptParams.homEncryptParams)
+	
+			const context = seal.Context(
+				encryptrParms, // Encryption Parameters
+				true, // ExpandModChain
+				seal.SecurityLevel.tc128 // Enforce a security level
+			) 
+	
+			if (!context.parametersSet()) {
+				reject(
+					'Could not set the parameters in the given context. Please try different encryption parameters.'
+				)
+			}
+
+			var pub = seal.PublicKey();
+            pub.load(context,encryptParams.homPublicKey)  
+            const encryptor = seal.Encryptor(context, pub)
+
+			var plainText
+			var cipherText
+
+            if ( encryptrParms.scheme === seal.SchemeType.bfv){
+    
+              // bfv模式
+              var bfvValue =   Number(encryptParams.homPlainValue)
+              const array = Int32Array.from([bfvValue])
+              const encoder = seal.BatchEncoder(context)
+    
+              plainText  = encoder.encode(array)  
+              cipherText = encryptor.encrypt(plainText)
+    
+            }else if(encryptrParms.scheme === seal.SchemeType.ckks){
+    
+                // ckks 模式
+                var ckksValue   =   Number(encryptParams.homPlainValue)
+                var ckksEncoder = seal.CKKSEncoder(context)
+        
+                const arrFloat = Float64Array.from(
+                    { length: ckksEncoder.slotCount },
+                    (_, i) => ckksValue
+                )
+        
+                plainText = seal.PlainText()
+                ckksEncoder.encode(arrFloat, Math.pow(2, 20), plainText)      
+                
+                cipherText = encryptor.encrypt(plainText)  
+            }
+    
+			resolve( cipherText.save())		
+		}).catch(function(err){
+			reject(err);
+		});
+	});
+
+};
+
+ChainsqlAPI.prototype.homDecrypt= function(decryptParams){
+
+	return new Promise(function(resolve, reject){
+
+		let bValid = (decryptParams !== undefined) &&  (decryptParams.homEncryptParams !== undefined) && (decryptParams.homPrivateKey !== undefined)
+		             && (decryptParams.homCipherText !== undefined)
+		if(!bValid){
+			reject('Invalid parameter')
+		}
+
+		SEAL().then(function(seal){
+
+			const encryptrParms = seal.EncryptionParameters()
+			encryptrParms.load(decryptParams.homEncryptParams)
+	
+			const context = seal.Context(
+				encryptrParms, // Encryption Parameters
+				true, // ExpandModChain
+				seal.SecurityLevel.tc128 // Enforce a security level
+			) 
+	
+			if (!context.parametersSet()) {
+				reject(
+					'Could not set the parameters in the given context. Please try different encryption parameters.'
+				)
+			}
+
+			var secretKey = seal.SecretKey()
+            secretKey.load(context,decryptParams.homPrivateKey)  
+
+			const decryptor = seal.Decryptor(context, secretKey)
+
+			var cipherLoad = seal.CipherText()
+			cipherLoad.load(context,decryptParams.homCipherText)
+
+			// 解密密文
+			const plainText = decryptor.decrypt(cipherLoad)
+			if ( encryptrParms.scheme === seal.SchemeType.bfv ){
+		
+				// bfv模式
+				var bfvEncoder = seal.BatchEncoder(context)  
+				const decodedArray = bfvEncoder.decode(plainText)  
+				
+				resolve(decodedArray[0])
+	
+			}else if(encryptrParms.scheme === seal.SchemeType.ckks){
+
+				// ckks 模式
+				var ckksEncoder = seal.CKKSEncoder(context)        
+				const decodedArray = ckksEncoder.decode(plainText)        
+				resolve(decodedArray[0])
+			}        
+    		
+		}).catch(function(err){
+			reject(err);
+		});
+
+	});
+
+};
 
 function callback(data, callback) {
 
