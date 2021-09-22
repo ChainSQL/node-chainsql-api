@@ -396,10 +396,10 @@ Contract.prototype._encodeMethodABI = function _encodeMethodABI() {
  */
 Contract.prototype.decodeMethodParams = function decodeMethodParams(contractData) {
     let methodSignature = contractData.slice(0,10);
-    let actualEncodeParams = contractData.slice(10);
+    let actualEncodeParams = methodSignature === "0x60806040" ? contractData.slice(contractData.length - 64) : contractData.slice(10);
 
     let paramsABIJson = this.options.jsonInterface.filter(function (json) {
-            return ((methodSignature === '60806040' /*&& json.type === methodSignature*/) ||
+            return ((methodSignature === '0x60806040' /*&& json.type === methodSignature*/) ||
                 ((json.signature === methodSignature || json.signature === methodSignature.replace('0x','') || json.name === methodSignature) && json.type === 'function'));
         })[0];
     
