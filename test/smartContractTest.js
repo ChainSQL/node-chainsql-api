@@ -2,7 +2,7 @@
 
 //const fs = require ('fs');
 //const solc = require('solc');
-const ChainsqlAPI = require("chainsql");
+const ChainsqlAPI = require("../src/index");
 const chainsql = new ChainsqlAPI();
 
 const RootUser = {
@@ -56,6 +56,8 @@ function callContract(){
 
 	/*get function encodeABI*/
 	// getFuncEncodeABI(myContract);
+
+    getFuncActualParams(myContract);
 	
 	/*methods.function.auto*/
 	// contractAuto(myContract);
@@ -118,6 +120,11 @@ function getFuncEncodeABI(contractObj){
 	/*methods.function.encodeABI*/
 	let funInputData = contractObj.methods.setMem(16).encodeABI();
 	console.log(funInputData);
+}
+function getFuncActualParams(contractObj){
+    let contractData = "0xa9059cbb00000000000000000000000046ced18b2a3814f134378efd144cea58709a68c1000000000000000000000000000000000000000000000000000000000000007b";
+    let actualParams = contractObj.decodeMethodParams(contractData);
+    console.log(actualParams);
 }
 
 function deployContract(){

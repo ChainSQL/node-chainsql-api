@@ -389,6 +389,41 @@ Contract.prototype._encodeMethodABI = function _encodeMethodABI() {
 };
 
 /**
+ * Decodes an contractData for a method, including signature or the method.
+ *
+ * @method decodeMethodABI
+ * @param {String} contractData encoded params
+ */
+Contract.prototype.decodeMethodParams = function decodeMethodParams(contractData) {
+    let methodSignature = contractData.slice(0,10);
+    let actualEncodeParams = contractData.slice(10);
+
+    let paramsABIJson = this.options.jsonInterface.filter(function (json) {
+            return ((methodSignature === '60806040' /*&& json.type === methodSignature*/) ||
+                ((json.signature === methodSignature || json.signature === methodSignature.replace('0x','') || json.name === methodSignature) && json.type === 'function'));
+        })[0];
+    
+    let paramsTypes = _.isArray(paramsABIJson.inputs) ? paramsABIJson.inputs.map(function (input) { 
+                if (input.type === "tuple[]" || input.type === "tuple") return input;
+                return input.type; }) : [];
+
+    let result = abi.decodeParameters(paramsTypes, actualEncodeParams);
+    let returnJson = {};
+    returnJson["funName"] = paramsABIJson.name;
+    if(_.isArray(paramsABIJson.inputs)){
+        paramsABIJson.inputs.map(function (input, index) {
+            returnJson[input.type] = input.name;
+            if(input.type === "address"){
+                returnJson[input.name] = chainsqlUtils.encodeChainsqlAddr(result[index].slice(2));
+            } else {
+                returnJson[input.name] = result[index];
+            }
+        });
+    }
+    return returnJson;
+};
+
+/**
  * Decode method return values
  *
  * @method _decodeMethodReturn
