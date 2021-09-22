@@ -1,7 +1,7 @@
 {
   "name": "chainsql",
   "version": "0.70.16",
-  "description": "An database driver for chainsql ",
+  "description": "A database driver for chainsql ",
   "main": "dist/npm/",
   "directories": {
     "test": "test"
@@ -22,7 +22,8 @@
     "sjcl": "~1.0.3",
     "web3-core-helpers": "1.0.0-beta.36",
     "web3-eth-abi": "1.0.0-beta.36",
-    "web3-utils": "1.0.0-beta.36"
+    "web3-utils": "1.0.0-beta.36",
+    "rimraf": "^3.0.0"
   },
   "devDependencies": {
     "assert-diff": "^1.0.1",
@@ -40,7 +41,7 @@
     "build": "gulp",
     "doctoc": "doctoc docs/index.md --title '# ChainsqlAPI Reference' --github --maxlevel 2",
     "docgen": "node --harmony scripts/build_docs.js",
-    "clean": "rm -rf dist/npm && rm -rf build/flow",
+    "clean": "rimraf dist/npm && rimraf build/flow",
     "typecheck": "babel --optional runtime --blacklist flow -d build/flow/ src/ && flow check",
     "compile": "babel -D --optional runtime -d dist/npm/ src/",
     "watch": "babel -w -D --optional runtime -d dist/npm/ src/",
