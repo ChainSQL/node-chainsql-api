@@ -1299,7 +1299,55 @@ ChainsqlAPI.prototype.modifySchema = function(schemaInfo){
 
 };
 
+ChainsqlAPI.prototype.getContractList = function(){
+	var connection = this.api ? this.api.connection : this.connect.api.connection;
+	return new Promise(function(resolve, reject){
 
+		var params = {};
+		params.command = 'contract_list';
+
+		connection.request(params).then(function(data){
+			resolve(data);
+		}).catch(function(err){
+			reject(err);
+		});
+	});
+};
+
+
+ChainsqlAPI.prototype.getLedgerSize = function(option){
+	var connection = this.api ? this.api.connection : this.connect.api.connection;
+	return new Promise(function(resolve, reject){
+
+		var params = {};
+		params.command = 'ledger_size';
+
+		if(option != undefined && option.ledger_index != undefined){
+			params.ledger_index = option.ledger_index;
+		}
+		connection.request(params).then(function(data){
+			resolve(data);
+		}).catch(function(err){
+			reject(err);
+		});
+	});
+};
+
+
+ChainsqlAPI.prototype.monitorStatis = function(){
+	var connection = this.api ? this.api.connection : this.connect.api.connection;
+	return new Promise(function(resolve, reject){
+
+		var params = {};
+		params.command = 'monitor_statis';
+
+		connection.request(params).then(function(data){
+			resolve(data);
+		}).catch(function(err){
+			reject(err);
+		});
+	});
+};
 
 function callback(data, callback) {
 

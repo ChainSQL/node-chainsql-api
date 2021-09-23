@@ -79,6 +79,9 @@ async function main(){
 		// console.log(accountInfo)
 		console.log('连接成功');
 		c.as(owner);
+		// await testContractList();
+		await testMonitorStatis();
+		await testGetLedgerSize();
 
 		// 读取证书文件
 		// var data = fs.readFileSync('C:\\ca\\userCert.cert');
@@ -95,7 +98,7 @@ async function main(){
 
 		//await testRippleAPI();
 		// await testAccount();
-		await testChainsql();
+		// await testChainsql();
 
 		//await c.disconnect();
 		console.log('运行结束');
@@ -207,7 +210,26 @@ async function testAccount(){
 	await activateAccount(account.address);
 }
 
+async function testContractList(){
+	let ret = await c.getContractList();
+	console.log("contract list:" , JSON.stringify(ret))
+}
 
+async function testMonitorStatis(){
+	let ret = await c.monitorStatis();
+	console.log("monitor param:" , JSON.stringify(ret))
+}
+
+async function testGetLedgerSize(){
+	let ret = await c.getLedgerSize();
+	console.log("ledger size mb:" , ret)
+
+	var option = {
+		ledger_index:4
+	}
+	ret = await c.getLedgerSize(option)
+	console.log("ledger size:" , ret)
+}
 
 async function testTableSet(){
 
