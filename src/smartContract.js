@@ -394,12 +394,12 @@ Contract.prototype._encodeMethodABI = function _encodeMethodABI() {
  * @method decodeMethodABI
  * @param {String} contractData encoded params
  */
-Contract.prototype.decodeMethodParams = function decodeMethodParams(contractData) {
-    let methodSignature = contractData.slice(0,10);
-    let actualEncodeParams = methodSignature === "0x60806040" ? contractData.slice(contractData.length - 64) : contractData.slice(10);
+Contract.prototype.decodeMethodParams = function decodeMethodParams(contractData, bytecode = "") {
+    let methodSignature = contractData.slice(0,10).toLowerCase();
+    let actualEncodeParams = methodSignature === "0x60806040" ? contractData.slice(bytecode.length) : contractData.slice(10);
 
     let paramsABIJson = this.options.jsonInterface.filter(function (json) {
-            return ((methodSignature === '0x60806040' /*&& json.type === methodSignature*/) ||
+            return ((methodSignature === '0x60806040' && json.type === "constructor") ||
                 ((json.signature === methodSignature || json.signature === methodSignature.replace('0x','') || json.name === methodSignature) && json.type === 'function'));
         })[0];
     
