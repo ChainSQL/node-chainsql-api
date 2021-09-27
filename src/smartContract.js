@@ -391,6 +391,41 @@ Contract.prototype._encodeMethodABI = function _encodeMethodABI() {
 };
 
 /**
+ * Decodes an contractData for a method, including signature or the method.
+ *
+ * @method decodeMethodABI
+ * @param {String} contractData encoded params
+ */
+ Contract.prototype.decodeMethodParams = function decodeMethodParams(contractData, bytecode = "") {
+    let methodSignature = contractData.slice(0,10).toLowerCase();
+    let actualEncodeParams = methodSignature === "0x60806040" ? contractData.slice(bytecode.length) : contractData.slice(10);
+
+    let paramsABIJson = this.options.jsonInterface.filter(function (json) {
+            return ((methodSignature === '0x60806040' && json.type === "constructor") ||
+                ((json.signature === methodSignature || json.signature === methodSignature.replace('0x','') || json.name === methodSignature) && json.type === 'function'));
+        })[0];
+    
+    let paramsTypes = _.isArray(paramsABIJson.inputs) ? paramsABIJson.inputs.map(function (input) { 
+                if (input.type === "tuple[]" || input.type === "tuple") return input;
+                return input.type; }) : [];
+
+    let result = abi.decodeParameters(paramsTypes, actualEncodeParams);
+    let returnJson = {};
+    returnJson["funName"] = paramsABIJson.name;
+    if(_.isArray(paramsABIJson.inputs)){
+        paramsABIJson.inputs.map(function (input, index) {
+            returnJson[input.type] = input.name;
+            if(input.type === "address"){
+                returnJson[input.name] = chainsqlUtils.encodeChainsqlAddr(result[index].slice(2));
+            } else {
+                returnJson[input.name] = result[index];
+            }
+        });
+    }
+    return returnJson;
+};
+
+/**
  * Decode method return values
  *
  * @method _decodeMethodReturn
@@ -749,6 +784,7 @@ function preRequestContractSubmit(contractObj, args, contractValue, contractData
             let encCtrData = crypto.symEncrypt(symKey, contractData);
             args.options.token = token;
             args.options.userToken = userToken;
+            args.options.enclaveGPub = util.Bytes2HexString(addressCodec.decode(data.public_key, 35).slice(1,1+33));
             requestContractSubmit(contractObj, args, contractValue, encCtrData, resolve, reject);
         }).catch(function(err){
             errFuncGlobal(err, args.callback);
@@ -776,6 +812,9 @@ function requestContractSubmit(contractObj, args, contractValue, contractData, r
         }
         else {
             return errFuncGlobal("Missing UserToken", args.callback);
+        }
+        if (args.options.hasOwnProperty("enclaveGPub")) {
+            sendTxPayment.EnclaveGPub = args.options.enclaveGPub.toUpperCase();
         }
     }
     
@@ -855,6 +894,7 @@ function handleContractCall(curFunObj, callObj, callBack, resolve, reject) {
             let encCtrData = crypto.symEncrypt(symKey, contractData);
             callObj.symKey = symKey;
             callObj.token = token;
+            callObj.enclaveGPub = util.Bytes2HexString(addressCodec.decode(data.public_key, 35).slice(1,1+33));
             requestContractCall(connect.api.connection, contractObj, curFunObj._method.outputs,
                 connect.address, encCtrData, callObj, callBackFun);
         }).catch(function(err){
@@ -879,6 +919,10 @@ function requestContractCall(conn, contractObj, OutputAbi, userAddr, ctrData, ca
     if(callObj.hasOwnProperty("token"))
     {
         ctrCallObj.contract_token = callObj.token;
+        if(callObj.hasOwnProperty("enclaveGPub"))
+        {
+            ctrCallObj.contract_enclave_gpub = callObj.enclaveGPub;
+        }
     }
     conn.request(ctrCallObj).then(function(data) {
         // if (data.status != 'success'){
@@ -944,6 +988,7 @@ function createContractPayment(contractPayment){
     if (newContractPayment.hasOwnProperty("ContractToken")) {
         txJSON.ContractToken = newContractPayment.ContractToken;
         txJSON.ContractUserToken = newContractPayment.ContractUserToken;
+        txJSON.EnclaveGPub = newContractPayment.EnclaveGPub;
     }
     if(/*!isDeploy && */newContractPayment.hasOwnProperty("ContractAddress")){
         txJSON.ContractAddress = newContractPayment.ContractAddress;
