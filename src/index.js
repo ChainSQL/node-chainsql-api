@@ -1299,12 +1299,19 @@ ChainsqlAPI.prototype.modifySchema = function(schemaInfo){
 
 };
 
-ChainsqlAPI.prototype.getContractList = function(){
+ChainsqlAPI.prototype.getContractList = function(option){
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
 	return new Promise(function(resolve, reject){
 
 		var params = {};
 		params.command = 'contract_list';
+
+		if(option != undefined && option.limit != undefined){
+			params.limit = option.limit;
+		}
+		if(option != undefined && option.marker != undefined){
+			params.marker = option.marker;
+		}
 
 		connection.request(params).then(function(data){
 			resolve(data);

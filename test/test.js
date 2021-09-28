@@ -79,7 +79,7 @@ async function main(){
 		// console.log(accountInfo)
 		console.log('连接成功');
 		c.as(owner);
-		// await testContractList();
+		await testContractList();
 		await testMonitorStatis();
 		await testGetLedgerSize();
 
@@ -211,7 +211,11 @@ async function testAccount(){
 }
 
 async function testContractList(){
-	let ret = await c.getContractList();
+	var option = {
+		limit : 10,
+		marker:"zBYt5uW62XvWCwEWsLsR78oP89DmTBNp8f"
+	}
+	let ret = await c.getContractList(option);
 	console.log("contract list:" , JSON.stringify(ret))
 }
 
