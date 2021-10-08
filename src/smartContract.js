@@ -309,12 +309,7 @@ Contract.prototype._decodeEventABI = function (currentEvent, data) {
     result.returnValues = abi.decodeLog(event.inputs, data.data, argTopics);
     delete result.returnValues.__length__;
     if(_.isArray(event.inputs)){
-        event.inputs.map(function (input, index) {
-            if(input.type === "address"){
-                result.returnValues[index] = chainsqlUtils.encodeChainsqlAddr(result.returnValues[index].slice(2));
-                result.returnValues[input.name] = result.returnValues[index];
-            }
-        });
+        encodeChainsqlAddrParam(event.inputs, result.returnValues);
     }
     else{
         //not array,what todo?
@@ -411,9 +406,7 @@ Contract.prototype.decodeMethodParams = function decodeMethodParams(contractData
         return returnJson;
     }
     
-    let paramsTypes = _.isArray(paramsABIJson.inputs) ? paramsABIJson.inputs.map(function (input) { 
-                if (input.type === "tuple[]" || input.type === "tuple") return input;
-                return input.type; }) : [];
+    let paramsTypes = paramsABIJson.inputs;
     
     returnJson["funName"] = methodSignature === "0x60806040" ? "constructor" : paramsABIJson.name;
     if(0 === paramsTypes.length && "" === actualEncodeParams)
@@ -426,16 +419,10 @@ Contract.prototype.decodeMethodParams = function decodeMethodParams(contractData
         try {
             let result = abi.decodeParameters(paramsTypes, actualEncodeParams);
 
-            if(_.isArray(paramsABIJson.inputs)){
-                paramsABIJson.inputs.map(function (input, index) {
-                    returnJson[input.type] = input.name;
-                    if(input.type === "address"){
-                        returnJson[input.name] = chainsqlUtils.encodeChainsqlAddr(result[index].slice(2));
-                    } else {
-                        returnJson[input.name] = result[index];
-                    }
-                });
+            if(_.isArray(paramsTypes)){
+                encodeChainsqlAddrParam(paramsTypes, result);
             }
+            returnJson["detail"] = result;
             returnJson.status = true;
         } catch (error) {
             returnJson["errMsg"] = error.message;
@@ -464,7 +451,7 @@ Contract.prototype._decodeMethodReturn = function (outputs, returnValues) {
 
     returnValues = returnValues.length >= 2 ? returnValues.slice(2) : returnValues;
     var result = abi.decodeParameters(outputs, returnValues);
-    let newOutputs = _.isArray(outputs) ? outputs.map(function (output) { return output.type; }) : [];
+    let newOutputs = _.isArray(outputs) ? outputs : [];
     encodeChainsqlAddrParam(newOutputs, result);
 
     if (result.__length__ === 1) {
@@ -1063,16 +1050,70 @@ function dec2FixLenHex(decVal, fixedLen){
 
 function encodeChainsqlAddrParam(types, result){
     types.map(function(item, index) {
-        if(item === "address"){
+        if(item.type === "address"){
             result[index] = chainsqlUtils.encodeChainsqlAddr(result[index].slice(2));
+            result[item.name] = result[index];
+        }
+        else if(typeof(item) === "object" &&
+                (item.type === "tuple" || item.type === "tuple[]")) {
+            let tupleTypes = item.components;
+            let tupleRet = result[index];
+            if(item.type === "tuple")
+            {
+                tupleTypes.map((tupleItem, tupleIndex) => {
+                    if(tupleItem.type === "address"){
+                        tupleRet[tupleIndex] = chainsqlUtils.encodeChainsqlAddr(tupleRet[tupleIndex].slice(2));
+                        tupleRet[tupleItem.name] = tupleRet[tupleIndex];
+                    }
+                });
+            }
+            else if(item.type === "tuple[]")
+            {
+                tupleTypes.map((tupleItem, tupleIndex) => {
+                    if(tupleItem.type === "address"){
+                        tupleRet = tupleRet.map((tupleRetItem, innerIndex) => {
+                            tupleRetItem[tupleIndex] = chainsqlUtils.encodeChainsqlAddr(tupleRetItem[tupleIndex].slice(2));
+                            tupleRetItem[tupleItem.name] = tupleRetItem[tupleIndex];
+                            return tupleRetItem;
+                        })
+                    }
+                });
+            }
+            result[index] = tupleRet;
+            if(item.name) result[item.name] = result[index];
         }
     });
 }
 
 function decodeChainsqlAddrParam(types, args){
-    let newArgs = args.map(function(item, index) { 
+    let newArgs = args.map(function(item, index) {
         if(types[index] === "address"){
             item = chainsqlUtils.decodeChainsqlAddr(item).toUpperCase();
+        }
+        else if(typeof(types[index]) === "object" && 
+                (types[index].type === "tuple" || types[index].type === "tuple[]")) {
+            let tupleTypes = types[index].components;
+            if(types[index].type === "tuple")
+            {
+                item = item.map((tupleItem, index) => {
+                    if(tupleTypes[index].type === "address"){
+                        tupleItem = chainsqlUtils.decodeChainsqlAddr(tupleItem).toUpperCase();
+                    }
+                    return tupleItem;
+                });
+            }
+            else if(types[index].type === "tuple[]")
+            {
+                item = item.map((tupleItem, index) => {
+                    let newTupleItem = tupleItem.map((innerItem, innerIndex) => {
+                        if(tupleTypes[innerIndex].type === "address"){
+                            innerItem = chainsqlUtils.decodeChainsqlAddr(innerItem).toUpperCase();
+                        }
+                        return innerItem;
+                    });
+                    return newTupleItem;
+                });
+            }
         }
         return item;
     });
