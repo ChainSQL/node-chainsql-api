@@ -1,6 +1,6 @@
 {
   "name": "chainsql-test",
-  "version": "0.70.19",
+  "version": "0.70.20",
   "description": "A database driver for chainsql ",
   "main": "dist/npm/",
   "directories": {
