@@ -1054,6 +1054,11 @@ function encodeChainsqlAddrParam(types, result){
             result[index] = chainsqlUtils.encodeChainsqlAddr(result[index].slice(2));
             result[item.name] = result[index];
         }
+        else if(item.type === "address[]") {
+            result[index] = result[index].map((retItem, index) => {
+                return chainsqlUtils.encodeChainsqlAddr(retItem.slice(2));
+            })
+        }
         else if(typeof(item) === "object" &&
                 (item.type === "tuple" || item.type === "tuple[]")) {
             let tupleTypes = item.components;
@@ -1089,6 +1094,11 @@ function decodeChainsqlAddrParam(types, args){
     let newArgs = args.map(function(item, index) {
         if(types[index] === "address"){
             item = chainsqlUtils.decodeChainsqlAddr(item).toUpperCase();
+        }
+        else if(types[index] === "address[]") {
+            item = item.map((subItem, index) => {
+                return chainsqlUtils.decodeChainsqlAddr(subItem).toUpperCase();
+            })
         }
         else if(typeof(types[index]) === "object" && 
                 (types[index].type === "tuple" || types[index].type === "tuple[]")) {
