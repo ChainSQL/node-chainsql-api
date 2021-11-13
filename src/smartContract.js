@@ -397,29 +397,55 @@ Contract.prototype._encodeMethodABI = function _encodeMethodABI() {
 Contract.prototype.decodeMethodParams = function decodeMethodParams(contractData, bytecode = "") {
     let methodSignature = contractData.slice(0,10).toLowerCase();
     let actualEncodeParams = methodSignature === "0x60806040" ? contractData.slice(bytecode.length) : contractData.slice(10);
+    let returnJson = {};
+    returnJson.status = false;
 
     let paramsABIJson = this.options.jsonInterface.filter(function (json) {
             return ((methodSignature === '0x60806040' && json.type === "constructor") ||
                 ((json.signature === methodSignature || json.signature === methodSignature.replace('0x','') || json.name === methodSignature) && json.type === 'function'));
         })[0];
+    if(undefined == paramsABIJson)
+    {
+        returnJson.status = true;
+        returnJson["funName"] = "Can not find corresponding SmartContract function"
+        return returnJson;
+    }
     
     let paramsTypes = _.isArray(paramsABIJson.inputs) ? paramsABIJson.inputs.map(function (input) { 
                 if (input.type === "tuple[]" || input.type === "tuple") return input;
                 return input.type; }) : [];
-
-    let result = abi.decodeParameters(paramsTypes, actualEncodeParams);
-    let returnJson = {};
-    returnJson["funName"] = paramsABIJson.name;
-    if(_.isArray(paramsABIJson.inputs)){
-        paramsABIJson.inputs.map(function (input, index) {
-            returnJson[input.type] = input.name;
-            if(input.type === "address"){
-                returnJson[input.name] = chainsqlUtils.encodeChainsqlAddr(result[index].slice(2));
-            } else {
-                returnJson[input.name] = result[index];
-            }
-        });
+    
+    returnJson["funName"] = methodSignature === "0x60806040" ? "constructor" : paramsABIJson.name;
+    if(0 === paramsTypes.length && "" === actualEncodeParams)
+    {
+        returnJson.status = true;
+        return returnJson;
     }
+    else if(0 !== paramsTypes.length && "" !== actualEncodeParams)
+    {
+        try {
+            let result = abi.decodeParameters(paramsTypes, actualEncodeParams);
+
+            if(_.isArray(paramsABIJson.inputs)){
+                paramsABIJson.inputs.map(function (input, index) {
+                    returnJson[input.type] = input.name;
+                    if(input.type === "address"){
+                        returnJson[input.name] = chainsqlUtils.encodeChainsqlAddr(result[index].slice(2));
+                    } else {
+                        returnJson[input.name] = result[index];
+                    }
+                });
+            }
+            returnJson.status = true;
+        } catch (error) {
+            returnJson["errMsg"] = error.message;
+        } 
+    }
+    else
+    {
+        returnJson["errMsg"] = "Function info don't match contactData";
+    }
+
     return returnJson;
 };
 
