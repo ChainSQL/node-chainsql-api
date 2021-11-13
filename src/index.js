@@ -1321,6 +1321,21 @@ ChainsqlAPI.prototype.getContractList = function(option){
 	});
 };
 
+ChainsqlAPI.prototype.getAccountList = function(option){
+	var connection = this.api ? this.api.connection : this.connect.api.connection;
+	return new Promise(function(resolve, reject){
+
+		var params = {};
+		params.command = 'account_list';
+
+		connection.request(params).then(function(data){
+			resolve(data);
+		}).catch(function(err){
+			reject(err);
+		});
+	});
+};
+
 
 ChainsqlAPI.prototype.getLedgerSize = function(option){
 	var connection = this.api ? this.api.connection : this.connect.api.connection;

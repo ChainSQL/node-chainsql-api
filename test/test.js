@@ -79,6 +79,7 @@ async function main(){
 		// console.log(accountInfo)
 		console.log('连接成功');
 		c.as(owner);
+		await testAccountList();
 		await testContractList();
 		await testMonitorStatis();
 		await testGetLedgerSize();
@@ -210,10 +211,15 @@ async function testAccount(){
 	await activateAccount(account.address);
 }
 
+async function testAccountList(){
+	let ret = await c.getAccountList();
+	console.log("account list:" , JSON.stringify(ret))
+}
+
 async function testContractList(){
 	var option = {
 		limit : 10,
-		marker:"zBYt5uW62XvWCwEWsLsR78oP89DmTBNp8f"
+		marker: 9
 	}
 	let ret = await c.getContractList(option);
 	console.log("contract list:" , JSON.stringify(ret))
