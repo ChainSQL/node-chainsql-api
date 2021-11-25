@@ -456,7 +456,7 @@ Table.prototype.prepareJson = function() {
 function prepareTable(ChainSQL, payment, resolve, reject) {
 
   var connect = ChainSQL.connect;
-  tryEncryptRaw(ChainSQL,payment).then(function (raw) {
+  tryEncryptRaw(ChainSQL,payment,ChainSQL.tab).then(function (raw) {
       payment.raw = raw;
 		  connect.api.prepareTable(connect, payment, resolve, reject);
 	}).catch(function(error) {

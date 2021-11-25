@@ -1130,7 +1130,10 @@ ChainsqlAPI.prototype.prepareJson = function(){
 					reject(error);
 				});
 			} else if(that.payment.opType >= opType.t_add_fields && that.payment.opType <= opType.t_delete_index){
-				util.tryEncryptRaw(that,that.payment).then(function (raw) {
+				//default:confidential
+				that.confidential = true;
+				var tableName = util.convertHexToString(that.payment.tables[0].Table.TableName)
+				util.tryEncryptRaw(that,that.payment,tableName).then(function (raw) {
 					that.payment.raw = raw;
 					that.api.prepareTable(that, that.payment, resolve, reject);
 				}).catch(function(error) {

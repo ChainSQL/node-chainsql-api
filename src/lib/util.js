@@ -430,10 +430,11 @@ function getCryptAlgTypeFromAccout(account){
       return cryptoAlg;
 }
 
-function tryEncryptRaw(ChainSQL, payment) {
+function tryEncryptRaw(ChainSQL, payment, tableName) {
 
   var that      = ChainSQL;
   var raw       = payment.raw;
+  var name      = tableName;
   return new Promise(function (resolve, reject) {
 
     if(! that.confidential){
@@ -444,8 +445,8 @@ function tryEncryptRaw(ChainSQL, payment) {
     // confidential table
 
     var connect = that.connect;
-    getUserToken(connect.api.connection, connect.scope, connect.address, that.tab).then(function (token) {
-      token = token[that.connect.scope + that.tab];
+    getUserToken(connect.api.connection, connect.scope, connect.address, name).then(function (token) {
+      token = token[that.connect.scope + name];
       
       var ciperRaw;
       if (token && token != '') {
