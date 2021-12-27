@@ -20,6 +20,7 @@ class Table extends Submit {
 		this.txHashField = null;
     this.ledgerSeqField = null;
     this.ledgerTimeField = null;
+		this.instructions = ChainsqlAPI.instructions;
 	}
 
 	submit (cb) {

@@ -7,6 +7,7 @@ var chainsqlLibUtils = require('chainsql-lib').ChainsqlLibUtil;
 class Ripple extends Submit {
 	constructor(ChainsqlAPI) {
 		super().ChainsqlAPI = ChainsqlAPI;
+		this.instructions = ChainsqlAPI.instructions;
 	}
 
 	submit(cb) {
