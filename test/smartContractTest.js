@@ -51,6 +51,8 @@ function callContract(){
 	
 	/*use contract submit way*/
 	// contractSubmit(myContract);
+
+    getTxSign(myContract);
 	
 	// callContractWithMsgValue(myContract);
 
@@ -61,6 +63,11 @@ function callContract(){
 	
 	/*methods.function.auto*/
 	// contractAuto(myContract);
+}
+function getTxSign(myContract) {
+    myContract.methods.set(123).txSign((err, res) => {
+        err ? console.log(err) : console.log(res);
+    })
 }
 
 function contractSubmit(myContract){

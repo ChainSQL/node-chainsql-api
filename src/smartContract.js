@@ -647,6 +647,7 @@ Contract.prototype._createTxObject =  function _createTxObject(){
     // txObject.send.request = this.parent._executeMethod.bind(txObject, 'send', true); // to make batch requests
     txObject.submit = this.parent._executeMethod.bind(txObject, 'submit');
     txObject.submit.request = this.parent._executeMethod.bind(txObject, 'submit', true); // to make batch requests
+    txObject.txSign = this.parent._executeMethod.bind(txObject, 'txSign');
     txObject.encodeABI = this.parent._encodeMethodABI.bind(txObject);
     txObject.estimateGas = this.parent._executeMethod.bind(txObject, 'estimate');
 
@@ -708,6 +709,7 @@ Contract.prototype._executeMethod = function _executeMethod(){
         return payload;
     } else {
         let errorMsg = "";
+        let onlyTxSign = false;
         switch (args.type) {
         // case 'estimate':
         //     var estimateGas = (new Method({
@@ -745,6 +747,8 @@ Contract.prototype._executeMethod = function _executeMethod(){
             }
             break;
             // TODO check errors: missing "from" should give error on deploy and send, call ?
+        case 'txSign':
+            onlyTxSign = true;
         case 'submit':{
             let contractData = args.options.data.length >= 2 ? args.options.data.slice(2) : args.options.data;
             let contractValue = "0";
@@ -790,10 +794,10 @@ Contract.prototype._executeMethod = function _executeMethod(){
             contractObj.options.isDeploy = args.options.isDeploy;
             if ((typeof args.callback) != 'function') {
                 return new Promise(function (resolve, reject) {
-                    handleContractPayment(contractObj, sendTxPayment, txCallbackProperty, resolve, reject);
+                    handleContractPayment(contractObj, sendTxPayment, onlyTxSign, txCallbackProperty, resolve, reject);
                 });
             } else {
-                handleContractPayment(contractObj, sendTxPayment, txCallbackProperty, null, null);
+                handleContractPayment(contractObj, sendTxPayment, onlyTxSign, txCallbackProperty, null, null);
             }
             break;
         }
@@ -852,16 +856,28 @@ function handleContractCall(curFunObj, callObj, callBack, resolve, reject) {
     });
 }
 
-function handleContractPayment(contractObj, contractPaymet, callbackProperty, resolve, reject){
+function handleContractPayment(contractObj, contractPaymet, onlyTxSign = false, callbackProperty, resolve, reject){
     let chainSQL = contractObj.chainsql;
     var callBack = callbackProperty.callbackFunc;
+    var isFunction = false;
+    if ((typeof callBack) === 'function')
+        isFunction = true;
+    
     var errFunc = function(error) {
-        if ((typeof callBack) == 'function') {
+        if (isFunction) {
             callBack(error, null);
         } else {
             reject(error);
         }
     };
+    var sucFunc = function(data){
+        if(isFunction){
+            callBack(null,data);
+        }else{
+            resolve(data);
+        }
+    };
+
     prepareContractPayment(chainSQL, contractPaymet).then(data => {
         if(chainSQL.connect.userCert != undefined && (typeof(data.txJSON) == "string")  ){    
                 var txJson = JSON.parse(data.txJSON);
@@ -871,7 +887,11 @@ function handleContractPayment(contractObj, contractPaymet, callbackProperty, re
         }
 
         let signedRet = chainSQL.api.sign(data.txJSON, chainSQL.connect.secret);
-        submitContractTx(contractObj, signedRet, callbackProperty, resolve, reject);
+        if(onlyTxSign === true) {
+            sucFunc(signedRet);
+        } else {
+            submitContractTx(contractObj, signedRet, callbackProperty.callbackExpect, errFunc, sucFunc);
+        }
     }).catch(err => {
         errFunc(err);
     });
@@ -897,29 +917,11 @@ function createContractPayment(contractPayment){
     }
     return txJSON;
 }
-function submitContractTx(contractObj, signedVal, callbackProperty, resolve, reject){
+function submitContractTx(contractObj, signedVal, callbackExpect, errFunc, sucFunc){
     let chainSQL = contractObj.chainsql;
-    var callBack = callbackProperty.callbackFunc;
-    var isFunction = false;
-    if ((typeof callBack) == 'function')
-        isFunction = true;
     
-    var errFunc = function(error) {
-        if (isFunction) {
-            callBack(error, null);
-        } else {
-            reject(error);
-        }
-    };
-    var sucFunc = function(data){
-        if(isFunction){
-            callBack(null,data);
-        }else{
-            resolve(data);
-        }
-    };
     //according to callbackProperty to subscribe event
-    if(callbackProperty.callbackExpect !== "send_success"){
+    if(callbackExpect !== "send_success"){
         chainSQL.event.subscribeTx(signedVal.id, function(err, data) {
             if (err) {
                 errFunc(err);
@@ -930,7 +932,7 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
                 resultObj.status = data.status;
                 resultObj.tx_hash = data.transaction.hash;
 
-                if (callbackProperty.callbackExpect === data.status && data.type === 'singleTransaction') {
+                if (callbackExpect === data.status && data.type === 'singleTransaction') {
                     if(contractObj.options.isDeploy) {
                         return getNewDeployCtrAddr(chainSQL, data.transaction.hash).then(contractAddr => {
                             if (contractAddr === "") {
@@ -973,14 +975,14 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
     chainSQL.api.submit(signedVal.signedTransaction).then(function(result) {
         //console.log('submit ', JSON.stringify(result));
         if (result.resultCode !== 'tesSUCCESS') {
-            if(callbackProperty.callbackExpect !== "send_success"){
-                unsubscribeTx(callbackProperty.callbackExpect, chainSQL, signedVal, errFunc);
+            if(callbackExpect !== "send_success"){
+                unsubscribeTx(callbackExpect, chainSQL, signedVal, errFunc);
             }
             //return error message
             errFunc(result);
         } else {
             // submit successfully
-            if(callbackProperty.callbackExpect === "send_success"){
+            if(callbackExpect === "send_success"){
                 sucFunc({
                     status: "send_success",
                     tx_hash: signedVal.id
@@ -988,7 +990,7 @@ function submitContractTx(contractObj, signedVal, callbackProperty, resolve, rej
             }
         }
     }).catch(function(error) {
-        unsubscribeTx(callbackProperty.callbackExpect, chainSQL, signedVal, errFunc);
+        unsubscribeTx(callbackExpect, chainSQL, signedVal, errFunc);
         errFunc(error);
     });
 }
