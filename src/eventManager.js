@@ -1,7 +1,7 @@
 'use strict';
 const EventEmitter = require('events');
-const util = require('../lib/util');
-const crypto = require('../lib/crypto');
+const util = require('./lib/util');
+const crypto = require('./lib/crypto');
 
 function EventManager(chainsql) {
 	this.connect = chainsql.connect.api.connection;
@@ -28,16 +28,10 @@ EventManager.prototype.subscribeTable = function(owner, name, cb) {
 };
 EventManager.prototype.subscribeTx = function(id, cb) {
 	var that = this;
-
-    var schema_id = ""
-    if(that.chainsql.connect.schemaID !=undefined){
-      schema_id = that.chainsql.connect.schemaID
-	}
-	
+		
 	var messageTx = {
 		"command": "subscribe",
-		"transaction": id,
-		schema_id: schema_id,
+		"transaction": id
 	};
 	if (!that.onMessage) {
 		_onMessage(that);
@@ -255,7 +249,7 @@ function _decryptData(pass,tx){
 
 	if(tx.Raw){
 		if(pass){
-			const algType = tx.publicKey.slice(0,2) === "47" ? "gmAlg" : "aes";
+			const algType = tx.SigningPubKey.slice(0,2) === "47" ? "gmAlg" : "aes";
 			tx.Raw = crypto.symDecrypt(pass, tx.Raw, algType);
 		}else{
 			tx.Raw = util.convertHexToString(tx.Raw);

@@ -1,6 +1,6 @@
 {
   "name": "chainsql-wechat-applet",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "An database driver for chainsql ",
   "main": "src/index.js",
   "scripts": {
@@ -8,7 +8,10 @@
   "dependencies": {
     "chainsql-keypairs": "^0.11.1",
     "chainsql-lib-applet": "^1.0.8",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "web3-core-helpers": "1.0.0-beta.36",
+    "web3-eth-abi": "1.0.0-beta.36",
+    "web3-utils": "1.0.0-beta.36"
   },
   "repository": {
     "type": "git",

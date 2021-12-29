@@ -337,14 +337,9 @@ function checkExpect(opt) {
 }
 
 function checkSubError(data){
-  if (data.status == 'db_error'
-      || data.status == 'validate_error'
-      || data.status == 'db_timeout'
+  if (data.status == 'validate_error'
       || data.status == 'validate_timeout'
-      || data.status == 'db_noDbConfig'
-      || data.status == 'db_noSyncConfig'
-      || data.status == 'db_noAutoSync'
-      || data.status == 'db_noTableExistInDB'){
+      || data.status.substring(0,3) == 'db_'){
         return true;
       }else{
         return false;

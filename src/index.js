@@ -1,5 +1,5 @@
 'use strict'
-const crypto = require('../lib/crypto');
+const crypto = require('./lib/crypto');
 const keypairs = require('chainsql-keypairs');
 const EventManager = require('./eventManager')
 const _ = require('lodash');
@@ -7,17 +7,18 @@ const _ = require('lodash');
 const RippleAPI = require('chainsql-lib-applet').ChainsqlLibAPI;
 const Submit = require('./submit');
 const Ripple = require('./ripple');
-const chainsqlError = require('../lib/error');
+const chainsqlError = require('./lib/error');
 
 _.assign(RippleAPI.prototype, {
 	prepareTx: require('./txPayment')
 })
 const addressCodec = require('chainsql-address-codec');
-const validate = require('../lib/validate')
+const validate = require('./lib/validate')
 const Connection = require('./connect');
-const util = require('../lib/util');
+const Contract = require('./smartContract');
+const util = require('./lib/util');
 const { utils } = require('elliptic');
-const opType = require('../lib/config').opType;
+const opType = require('./lib/config').opType;
 const convertStringToHex = util.convertStringToHex;
 const getCryptAlgTypeFromAccout = util.getCryptAlgTypeFromAccout;
 
@@ -138,6 +139,10 @@ ChainsqlAPI.prototype.setRestrict = function (mode) {
 ChainsqlAPI.prototype.setNeedVerify = function (isNeed) {
 	isNeed ? this.needVerify = 1 : this.needVerify = 0;
 }
+ChainsqlAPI.prototype.contract = function(jsonInterface, address, options) {
+  this.contractObj = new Contract(this, jsonInterface, address, options);
+  return this.contractObj;
+}
 
 ChainsqlAPI.prototype.generateAddress = function () {
 
@@ -208,6 +213,11 @@ ChainsqlAPI.prototype.escrowExecute = function (sOwnerAddr, nCreateEscrowSeq) {
 ChainsqlAPI.prototype.escrowCancel = function (sOwnerAddr, nCreateEscrowSeq) {
 	let ripple = new Ripple(this);
 	return ripple.escrowCancel(sOwnerAddr, nCreateEscrowSeq);
+}
+
+ChainsqlAPI.prototype.payToContract = function (contractAddr, value, gas) {
+	let ripple = new Ripple(this);
+	return ripple.payToContract(contractAddr, value, gas);
 }
 
 ChainsqlAPI.prototype.getAccountInfo = function (address, cb) {
@@ -948,7 +958,6 @@ ChainsqlAPI.prototype.modifySchema = function(schemaInfo){
 
 	// 修改子链
 	this.schemaModifyTx = true;
-
 	this.payment = schemaModifyTxJson;
 	return this;
 };

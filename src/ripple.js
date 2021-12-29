@@ -1,7 +1,7 @@
 'use strict'
-var util = require('../lib/util');
+var util = require('./lib/util');
 var Submit = require('./submit');
-const FloatOperation = require('../lib/floatOperation');
+const FloatOperation = require('./lib/floatOperation');
 var chainsqlLibUtils = require('chainsql-lib-applet').ChainsqlLibUtil;
 
 class Ripple extends Submit {
@@ -72,12 +72,6 @@ Ripple.prototype.prepareJson = function () {
 						if (fee > 0) {
 							txJson.source.maxAmount.value = (FloatOperation.accAdd(parseFloat(value), fee)).toString();
 						}
-					}
-
-					//self.connect
-
-					if(self.ChainsqlAPI.connect.schemaID != undefined){
-						self.ChainsqlAPI.api.schemaID = self.ChainsqlAPI.connect.schemaID;
 					}
 
 					self.ChainsqlAPI.api.preparePayment(self.ChainsqlAPI.connect.address, txJson, instructions)
@@ -215,6 +209,16 @@ Ripple.prototype.accountSet = function (opt) {
 		setting.transferRate = opt.rate;
 	}
 	//
+	this.txType = "AccountSet";
+	this.txJSON = setting;
+	return this;
+}
+Ripple.prototype.whitelistSet = function (whitelists, flag) {
+	var self = this;
+	var setting = {};
+	setting.whitelists = whitelists;
+	setting.setFlag = flag;
+	
 	this.txType = "AccountSet";
 	this.txJSON = setting;
 	return this;
