@@ -152,7 +152,6 @@ function onMessage(that,dataRes){
 		var key;
 		if (data.type === 'table') {
 			key = data.tablename + data.owner;
-			_onChainsqlMessage(that,key,data,data.owner,data.tablename);
 		}
 		if (data.type === 'singleTransaction') {
 			key = data.transaction.hash;
@@ -181,9 +180,6 @@ function onMessage(that,dataRes){
 			});
 			let output = contractObj._decodeEventABI(currentEvent, data);
 			that.cache[key](null, output);
-			// delete that.cache[key];
-			// let keyIndex = contractObj.registeredEvent.indexOf(key);
-			// contractObj.registeredEvent.splice(keyIndex,1);
 		}
 	}
 }
@@ -197,76 +193,6 @@ function _isChainsqlType(data){
 		return true;
 	}else{
 		return false;
-	}
-}
-
-function _onChainsqlMessage(that,key,data,owner,name){
-	if(that.cachePass[key]){
-		_makeCallback(that,key,data);
-	}else{
-		if(data.transaction.OpType === 2 || data.transaction.OpType === 3 || data.transaction.OpType === 11){
-			that.cachePass[key] = null;
-			_makeCallback(that,key,data);
-		} else {
-			util.getUserToken(that.connect,owner,that.chainsql.connect.address,name).then(function(tokenData){
-				var token = tokenData[owner + name];
-				if (token != '') {
-					var secret = util.decodeToken(that.chainsql, token);
-					that.cachePass[key] = secret;
-					_makeCallback(that,key,data);
-				}else{
-					that.cachePass[key] = null;
-					_makeCallback(that,key,data);
-				}
-			}).catch(function(err){
-				if(err.name === "tabUnauthorized"){
-					console.log(err.message);
-					that.cachePass[key] = null;
-					_makeCallback(that,key,data);
-				} else {
-					console.error(err);
-				}
-			});
-		}
-	}
-}
-
-function _makeCallback(that,key,data){
-	_decryptData(that.cachePass[key],data.transaction);
-	if (that.cache[key]) {
-		that.cache[key](null, data);
-	}
-}
-
-function _decryptData(pass,tx){
-	if(tx.Tables){
-		var table = tx.Tables[0].Table;
-		table.TableName = util.convertHexToString(table.TableName);
-		if(table.TableNewName){
-			table.TableNewName = util.convertHexToString(table.TableNewName);
-		}
-	}
-
-	if(tx.Raw){
-		if(pass){
-			const algType = tx.SigningPubKey.slice(0,2) === "47" ? "gmAlg" : "aes";
-			tx.Raw = crypto.symDecrypt(pass, tx.Raw, algType);
-		}else{
-			tx.Raw = util.convertHexToString(tx.Raw);
-		}
-	}
-
-	if(tx.Statements){
-		var statement = util.convertHexToString(tx.Statements);
-		var stateJson = JSON.parse(statement);
-		for(var i=0; i<stateJson.length; i++){
-			_decryptData(pass,stateJson[i]);
-		}
-		tx.Statements = stateJson;
-	}
-
-	if(tx.OperationRule){
-		tx.OperationRule = util.convertHexToString(tx.OperationRule);
 	}
 }
 

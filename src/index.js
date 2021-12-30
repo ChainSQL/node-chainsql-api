@@ -13,19 +13,11 @@ _.assign(RippleAPI.prototype, {
 	prepareTx: require('./txPayment')
 })
 const addressCodec = require('chainsql-address-codec');
-const validate = require('./lib/validate')
 const Connection = require('./connect');
 const Contract = require('./smartContract');
 const util = require('./lib/util');
-const { utils } = require('elliptic');
-const opType = require('./lib/config').opType;
 const convertStringToHex = util.convertStringToHex;
 const getCryptAlgTypeFromAccout = util.getCryptAlgTypeFromAccout;
-
-const getUserToken = util.getUserToken;
-const getTxJson = util.getTxJson;
-const generateToken = util.generateToken;
-const decodeToken = util.decodeToken;
 
 class ChainsqlAPI extends Submit {
 	constructor(algType = "normal") {
@@ -370,179 +362,6 @@ ChainsqlAPI.prototype.getLedgerVersion = function (cb) {
 	}
 };
 
-ChainsqlAPI.prototype.beginTran = function () {
-	if (this.connect && this.connect.address) {
-		this.cache = [];
-		this.transaction = true;
-		return;
-	}
-}
-
-function handleCommit(ChainSQL, object, resolve, reject) {
-	var isFunction = false;
-
-	let cbResult = util.parseCb(object);
-	isFunction = cbResult.isFunction;
-
-	var cb = function (error, data) {
-		if (isFunction) {
-			if (object == null)
-				object = callback;
-			object(error, data)
-		} else {
-			if (error) {
-				reject(error);
-			} else {
-				resolve(data);
-			}
-		}
-	}
-
-	var ary = [];
-	var secretMap = {};
-	var cache = ChainSQL.cache;
-	for (var i = 0; i < cache.length; i++) {
-		var noRaw = [2, 3, 5, 7];
-		if (noRaw.indexOf(cache[i].OpType) != -1) {
-			continue;
-		}
-
-		if (cache[i].OpType == 1) {
-			var key = ChainSQL.connect.address + cache[i].TableName;
-			if (cache[i].confidential) {
-				secretMap[key] = generateToken(ChainSQL.connect.secret);
-			} else {
-				secretMap[key] = " ";
-			}
-			//secretMap[cache[i].TableName] = generateToken(ChainSQL.connect.secret);
-		}
-
-		if (cache[i].OpType != 1) {
-			var address = cache[i].Owner ? cache[i].Owner : ChainSQL.connect.address;
-			var key = address + cache[i].TableName;
-			if (!secretMap[key]) {
-				ary.push(getUserToken(ChainSQL.api.connection, address, ChainSQL.connect.address, ChainSQL.cache[i].TableName));
-			}
-		}
-	};
-
-	Promise.all(ary).then(function (data) {
-		for (var i = 0; i < data.length; i++) {
-			for (var key in data[i]) {
-				secretMap[key] = data[i][key];
-			}
-		};
-
-		var payment = {
-			"TransactionType": "SQLTransaction",
-			"Account": ChainSQL.connect.address,
-			"Statements": [],
-			"StrictMode": ChainSQL.strictMode,
-			"NeedVerify": ChainSQL.needVerify
-		};
-
-		for (var i = 0; i < cache.length; i++) {
-			var address = cache[i].Owner ? cache[i].Owner : ChainSQL.connect.address;
-			var key = address + cache[i].TableName;
-			if (secretMap[key] && secretMap[key] != " ") {
-				var token = secretMap[key];
-
-				var secret = decodeToken(ChainSQL, token);
-				if (cache[i].Raw) {
-					if (cache[i].OpType != opType.t_grant) {
-						var regSoftGMSeed = /^[a-zA-Z1-9]{51,51}/
-						let algType = "aes";
-						if(ChainSQL.connect.secret === "gmAlg"){
-						  algType = "gmAlg";
-						}else if(regSoftGMSeed.test(ChainSQL.connect.secret)){
-						  algType = "softGMAlg";
-						}
-						cache[i].Raw = crypto.symEncrypt(secret, JSON.stringify(cache[i].Raw), algType).toUpperCase();
-					} else {
-						cache[i].Raw = convertStringToHex(JSON.stringify(cache[i].Raw));
-					}
-				};
-
-				if (cache[i].OpType == opType['t_assign'] || cache[i].OpType == opType['t_grant']) {
-					token = crypto.eciesEncrypt(secret, cache[i].publicKey);
-				};
-
-				if (cache[i].OpType == opType['t_assign'] || cache[i].OpType == opType['t_grant'] || cache[i].OpType == opType['t_create']) {
-					cache[i].Token = token;
-					//remove publicKey field
-					delete cache[i].publicKey;
-				}
-			} else {
-				cache[i].Raw = convertStringToHex(JSON.stringify(cache[i].Raw));
-				delete cache[i].publicKey;
-			}
-
-			var tableName = cache[i].TableName;
-			cache[i].Tables = [{
-				Table: {
-					TableName: convertStringToHex(tableName)
-				}
-			}];
-			delete cache[i].TableName;
-			delete cache[i].confidential;
-			payment.Statements.push(cache[i]);
-		}
-
-		//clear transactin status
-		ChainSQL.transaction = false;
-		ChainSQL.cache = [];
-
-		getTxJson(ChainSQL, payment).then(function (data) {
-			var payment = data.tx_json;
-			payment.Statements = convertStringToHex(JSON.stringify(payment.Statements));
-			ChainSQL.api.prepareTx(payment).then(function (data) {
-
-
-				var txJson = JSON.parse(data.txJSON);
-
-				var dropsPerByte = Math.ceil(1000000.0 / 1024);
-				ChainSQL.api.getServerInfo().then(res => {
-				 			  
-				  if(res.validatedLedger.dropsPerByte != undefined){
-
-					dropsPerByte = parseInt(res.validatedLedger.dropsPerByte);
-				  }
-
-				  txJson.Fee = util.calcFee(txJson,dropsPerByte);
-				  data.txJSON = JSON.stringify(txJson);
-				  let signedRet = ChainSQL.api.sign(data.txJSON, ChainSQL.connect.secret);
-				  ChainSQL.handleSignedTx(ChainSQL, signedRet, cbResult.expectOpt, resolve, reject);				  
-					  
-				}).catch(err => {
-					cb(err, null);
-				});
-		  
-
-			}).catch(function (error) {
-				cb(error, null);
-			});
-		}).catch(function (error) {
-			ChainSQL.transaction = false;
-			cb(error, null);
-		});
-	}).catch(error => {
-		ChainSQL.transaction = false;
-		cb(error, null);
-	});
-}
-
-ChainsqlAPI.prototype.commit = function (cb) {
-	var that = this;
-
-	if ((typeof cb) != 'function') {
-		return new Promise(function (resolve, reject) {
-			handleCommit(that, cb, resolve, reject);
-		});
-	} else {
-		handleCommit(that, cb, null, null);
-	}
-};
-
 ChainsqlAPI.prototype.sign = function (json, secret, option) {
 	if (!json.Fee) {
 		json.Fee = "50";
@@ -550,56 +369,6 @@ ChainsqlAPI.prototype.sign = function (json, secret, option) {
 	let ripple = new RippleAPI();
 	return ripple.sign(JSON.stringify(json), secret, option);
 };
-
-ChainsqlAPI.prototype.eciesEncrypt = function (plainText, publicKey) {
-	return crypto.eciesEncrypt(plainText,publicKey);
-}
-
-ChainsqlAPI.prototype.eciesDecrypt = function (cipher, secret) {
-	var keypair = keypairs.deriveKeypair(secret);
-	return crypto.eciesDecrypt(cipher,keypair.privateKey);
-}
-
-
-
-/**
- * 对称加密
- * @param {*} plainText 
- * @param {*} publicKey 
- */
-ChainsqlAPI.prototype.symEncrypt = function (symKey, plaintext, algType = 'aes') {
-	return crypto.symEncrypt(symKey,plaintext,algType);
-}
-
-/**
- * 对称解密
- * @param {*} cipher 
- * @param {*} privateKey 
- */
-ChainsqlAPI.prototype.symDecrypt = function (symKey, encryptedHex, algType = 'aes') {
-
-	return crypto.symDecrypt(symKey, encryptedHex, algType);
-}
-
-/**
- * 非对称加密
- * @param {*} plainText 
- * @param {*} publicKey 
- */
-ChainsqlAPI.prototype.asymEncrypt = function (plainText, publicKey) {
-	return keypairs.asymEncrypt(plainText,publicKey);
-}
-
-/**
- * 非对称解密
- * @param {*} cipher 
- * @param {*} privateKey 
- */
-ChainsqlAPI.prototype.asymDecrypt = function (cipher, privateKey) {
-
-	return keypairs.asymDecrypt(cipher,privateKey);
-}
-
 
 ChainsqlAPI.prototype.getAccountTables = function(address, bGetDetailInfo=false){
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
@@ -683,44 +452,6 @@ ChainsqlAPI.prototype.getBySqlUser = function(sql){
 		}).catch(function(err) {
 			reject(err);
 		});
-	});
-};
-
-ChainsqlAPI.prototype.createRandom = function() {
-	const chainsqlCon = this.connect;
-	return chainsqlCon.api.connection.request({
-		command: "g_createrandom"
-	});
-};
-
-ChainsqlAPI.prototype.generatCryptData = function(smAlgType, dataSetCount, plainLen) {
-	const chainsqlCon = this.connect;
-	return chainsqlCon.api.connection.request({
-		command: "g_cryptdata",
-		alg_type: smAlgType,
-		data_set_count: dataSetCount,
-		plain_data_len: plainLen
-	});
-};
-
-ChainsqlAPI.prototype.setEncTabToSync = function(address, tableName) {
-	const chainsqlCon = this.connect;
-	return chainsqlCon.api.connection.request({
-		command: "g_addEncTabToSync",
-		account: address,
-		tablename: tableName
-	});
-};
-ChainsqlAPI.prototype.getSyncTabAccount = function() {
-	const chainsqlCon = this.connect;
-	return chainsqlCon.api.connection.request({
-		command: "g_getSyncPub"
-	});
-};
-ChainsqlAPI.prototype.getNodeAccount = function() {
-	const chainsqlCon = this.connect;
-	return chainsqlCon.api.connection.request({
-		command: "g_getNodePub"
 	});
 };
 
@@ -961,9 +692,5 @@ ChainsqlAPI.prototype.modifySchema = function(schemaInfo){
 	this.payment = schemaModifyTxJson;
 	return this;
 };
-
-function callback(data, callback) {
-
-}
 
 module.exports = ChainsqlAPI;
