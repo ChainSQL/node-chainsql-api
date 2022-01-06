@@ -8,6 +8,8 @@ const RippleAPI = require('chainsql-lib-applet').ChainsqlLibAPI;
 const Submit = require('./submit');
 const Ripple = require('./ripple');
 const chainsqlError = require('./lib/error');
+const rfc1751 = require('rfc1751.js')
+const brorand = require('brorand')
 
 _.assign(RippleAPI.prototype, {
 	prepareTx: require('./txPayment')
@@ -138,38 +140,49 @@ ChainsqlAPI.prototype.contract = function(jsonInterface, address, options) {
 
 ChainsqlAPI.prototype.generateAddress = function () {
 
-	var account = {secret:"",address:""};
-	var keypair;
-	let ripple = new RippleAPI();
-	if (arguments.length == 0) {
-		account = ripple.generateAddress();
-		keypair = keypairs.deriveKeypair(account.secret);
-	} else {
-		if(typeof(arguments[0]) === "object" ) {
-            let seed = keypairs.generateSeed(arguments[0]);
-			keypair  = keypairs.deriveKeypair(seed);
+	let createAccount = function (options) {
+		let account = {}
+		let keypair
+		if (typeof(options) === "object") {
+			if (options.mnemonic && options.mnemonic.length >= 16) {
+				options.entropy = rfc1751.etob(options.mnemonic)
+			}
+			let seed = keypairs.generateSeed(options);
+			keypair = keypairs.deriveKeypair(seed);
 
-			if(typeof(seed) !== "object"){
+			if (typeof (seed) !== "object") {
 				// ed25519
 				account.secret = seed;
-			}else{
+				account.mnemonic = rfc1751.btoe(options.entropy)
+			} else {
 				// softGMAlg
 				account.secret = util.encodeChainsqlAccountSecret(keypair.privateKey)
 			}
-
 		} else {
 			keypair = keypairs.deriveKeypair(arguments[0])
 			account.secret =arguments[0]
 		}
-
 		account.address = keypairs.deriveAddress(keypair.publicKey);
+
+		var opt = {
+			version: 35
+		}
+		var buf = Buffer.from(keypair.publicKey, 'hex');
+		account.publicKey = addressCodec.encode(buf, opt);
+		account.publicKey_hex = keypair.publicKey
+		account.privateKey_hex = keypair.privateKey
+		return account
 	}
-	var opt = {
-		version: 35
+
+	let options
+	if (arguments.length == 0) {
+		options = {
+			entropy: brorand(16)
+		}
+	} else {
+		options = arguments[0]
 	}
-	var buf = Buffer.from(keypair.publicKey, 'hex');
-	account.publicKey = addressCodec.encode(buf, opt);
-	return account;
+	return createAccount(options)
 }
 
 ChainsqlAPI.prototype.pay = function (account, amount, memos) {

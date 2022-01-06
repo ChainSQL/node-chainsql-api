@@ -11,7 +11,8 @@
     "lodash": "^4.17.21",
     "web3-core-helpers": "1.0.0-beta.36",
     "web3-eth-abi": "1.0.0-beta.36",
-    "web3-utils": "1.0.0-beta.36"
+    "web3-utils": "1.0.0-beta.36",
+    "rfc1751.js": "^1.0.0"
   },
   "repository": {
     "type": "git",
