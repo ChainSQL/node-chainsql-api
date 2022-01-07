@@ -170,7 +170,6 @@ ChainsqlAPI.prototype.generateAddress = function () {
 		var buf = Buffer.from(keypair.publicKey, 'hex');
 		account.publicKey = addressCodec.encode(buf, opt);
 		account.publicKey_hex = keypair.publicKey
-		account.privateKey_hex = keypair.privateKey
 		return account
 	}
 
@@ -181,6 +180,11 @@ ChainsqlAPI.prototype.generateAddress = function () {
 		}
 	} else {
 		options = arguments[0]
+		if (typeof(options) === "object") {
+			if(!options.mnemonic && !options.entropy) {
+				options.entropy = brorand(16)
+			}
+		}
 	}
 	return createAccount(options)
 }
