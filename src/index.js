@@ -173,16 +173,28 @@ ChainsqlAPI.prototype.generateAddress = function () {
 		return account
 	}
 
+	let randomValues = function(length) {
+		let array = [];
+		if (global.wx) {
+			for (var i = 0, l = length; i < l; i++) {
+				array[i] = Math.floor(Math.random() * 256);
+			}
+		} else {
+			array = brorand(length)
+		}
+		return array
+	}
+
 	let options
 	if (arguments.length == 0) {
 		options = {
-			entropy: brorand(16)
+			entropy: randomValues(16)
 		}
 	} else {
 		options = arguments[0]
 		if (typeof(options) === "object") {
 			if(!options.mnemonic && !options.entropy) {
-				options.entropy = brorand(16)
+				options.entropy = randomValues(16)
 			}
 		}
 	}
