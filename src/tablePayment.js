@@ -74,9 +74,7 @@ function checkTablePayment(payment)
   if(payment.address === undefined)  return "account is null, please use the function 'as' first.";
   return "";
 }
-function prepareTablePayment(payment, chainsqlApi) {
-  var instructions = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
-  //validate.preparePayment({ address: address, payment: payment, instructions: instructions });
+function prepareTablePayment(payment, chainsqlApi,instructions) {
   let err = checkTablePayment(payment)
   if( err != "")  return Promise.reject(err);
   var txJSON = createPaymentTransaction(payment);
@@ -86,7 +84,7 @@ function prepareTablePayment(payment, chainsqlApi) {
 function prepareTable(ChainSQL, payment, resolve, reject) {
 
 
-	prepareTablePayment(payment, ChainSQL.api).then(function (tx_json) {
+	prepareTablePayment(payment, ChainSQL.api,ChainSQL.instructions).then(function (tx_json) {
 
       var dropsPerByte = Math.ceil(1000000.0 / 1024);;
     

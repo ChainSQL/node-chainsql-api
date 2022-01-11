@@ -20,7 +20,6 @@ class Table extends Submit {
 		this.txHashField = null;
     this.ledgerSeqField = null;
     this.ledgerTimeField = null;
-		this.instructions = ChainsqlAPI.instructions;
 	}
 
 	submit (cb) {
@@ -455,11 +454,9 @@ Table.prototype.prepareJson = function() {
 }
 
 function prepareTable(ChainSQL, payment, resolve, reject) {
-
-  var connect = ChainSQL.connect;
   tryEncryptRaw(ChainSQL,payment,ChainSQL.tab).then(function (raw) {
       payment.raw = raw;
-		  connect.api.prepareTable(connect, payment, resolve, reject);
+		  ChainSQL.connect.api.prepareTable(ChainSQL.ChainsqlAPI, payment, resolve, reject);
 	}).catch(function(error) {
 		reject(error);
 	});
