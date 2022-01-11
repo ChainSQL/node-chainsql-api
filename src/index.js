@@ -8,6 +8,8 @@ const RippleAPI = require('chainsql-lib').ChainsqlLibAPI;
 const Submit = require('./submit');
 const Ripple = require('./ripple');
 const chainsqlError = require('./lib/error');
+const rfc1751 = require('rfc1751.js');
+const brorand = require('brorand');
 
 _.assign(RippleAPI.prototype, {
 	prepareTable: require('./tablePayment'),
@@ -151,39 +153,65 @@ ChainsqlAPI.prototype.contract = function(jsonInterface, address, options) {
 }
 
 ChainsqlAPI.prototype.generateAddress = function () {
+	let createAccount = function (options) {
+		let account = {}
+		let keypair
+		if (typeof (options) === "object") {
+			if (options.mnemonic && options.mnemonic.length >= 16) {
+				options.entropy = rfc1751.etob(options.mnemonic)
+			}
+			let seed = keypairs.generateSeed(options);
+			keypair = keypairs.deriveKeypair(seed);
 
-	var account = {secret:"",address:""};
-	var keypair;
-	let ripple = new RippleAPI();
-	if (arguments.length == 0) {
-		account = ripple.generateAddress();
-		keypair = keypairs.deriveKeypair(account.secret);
-	} else {
-		if(typeof(arguments[0]) === "object" ) {
-            let seed = keypairs.generateSeed(arguments[0]);
-			keypair  = keypairs.deriveKeypair(seed);
-
-			if(typeof(seed) !== "object"){
+			if (typeof (seed) !== "object") {
 				// ed25519
 				account.secret = seed;
-			}else{
+				account.mnemonic = rfc1751.btoe(options.entropy)
+			} else {
 				// softGMAlg
 				account.secret = util.encodeChainsqlAccountSecret(keypair.privateKey)
 			}
-
 		} else {
 			keypair = keypairs.deriveKeypair(arguments[0])
-			account.secret =arguments[0]
+			account.secret = arguments[0]
 		}
-
 		account.address = keypairs.deriveAddress(keypair.publicKey);
+
+		var opt = {
+			version: 35
+		}
+		var buf = Buffer.from(keypair.publicKey, 'hex');
+		account.publicKey = addressCodec.encode(buf, opt);
+		account.publicKey_hex = keypair.publicKey
+		return account
 	}
-	var opt = {
-		version: 35
+
+	let randomValues = function(length) {
+		let array = [];
+		if (global.wx) {
+			for (var i = 0, l = length; i < l; i++) {
+				array[i] = Math.floor(Math.random() * 256);
+			}
+		} else {
+			array = brorand(length)
+		}
+		return array;
 	}
-	var buf = Buffer.from(keypair.publicKey, 'hex');
-	account.publicKey = addressCodec.encode(buf, opt);
-	return account;
+
+	let options
+	if (arguments.length == 0) {
+		options = {
+			entropy: randomValues(16)
+		}
+	} else {
+		options = arguments[0]
+		if (typeof (options) === "object") {
+			if (!options.mnemonic && !options.entropy) {
+				options.entropy = randomValues(16)
+			}
+		}
+	}
+	return createAccount(options)
 }
 
 // active account

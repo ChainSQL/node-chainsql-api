@@ -23,7 +23,8 @@
     "web3-core-helpers": "1.0.0-beta.36",
     "web3-eth-abi": "1.0.0-beta.36",
     "web3-utils": "1.0.0-beta.36",
-    "rimraf": "^3.0.0"
+    "rimraf": "^3.0.0",
+    "rfc1751.js": "^1.0.0"
   },
   "devDependencies": {
     "assert-diff": "^1.0.1",
