@@ -1,6 +1,6 @@
 {
   "name": "chainsql-wechat-applet",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "An database driver for chainsql ",
   "main": "src/index.js",
   "scripts": {

@@ -398,6 +398,18 @@ ChainsqlAPI.prototype.sign = function (json, secret, option) {
 	let ripple = new RippleAPI();
 	return ripple.sign(JSON.stringify(json), secret, option);
 };
+ChainsqlAPI.prototype.symEncrypt = function (symKey, plaintext, algType = 'aes') {
+	return crypto.symEncrypt(symKey,plaintext,algType);
+}
+ChainsqlAPI.prototype.symDecrypt = function (symKey, encryptedHex, algType = 'aes') {
+	return crypto.symDecrypt(symKey, encryptedHex, algType);
+}
+ChainsqlAPI.prototype.asymEncrypt = function (plainText, publicKey, algType = 'ecies') {
+    return crypto.asymEncrypt(plainText, publicKey, algType);
+}
+ChainsqlAPI.prototype.asymDecrypt = function (cipher, privateKey, algType = 'ecies') {
+	return crypto.asymDecrypt(cipher,privateKey, algType);
+}
 
 ChainsqlAPI.prototype.getAccountTables = function(address, bGetDetailInfo=false){
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
