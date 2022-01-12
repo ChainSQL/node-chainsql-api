@@ -1,6 +1,6 @@
 {
   "name": "chainsql",
-  "version": "0.70.29",
+  "version": "0.70.30",
   "description": "A database driver for chainsql ",
   "main": "dist/npm/",
   "directories": {
