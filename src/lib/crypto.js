@@ -269,14 +269,14 @@ var symDecrypt = function(symKey, encryptedHex, algType = 'aes') {
 };
 
  var asymDecrypt = function(encryptedHex, privateKey, algType = 'ecies') {
-
     if(algType === "gmAlg") {
         return symKey = keypairs.gmAlgSm2Dec(privateKey, encryptedHex);
     }else if(algType === "softGMAlg"){
         var plainhex = keypairs.softGMAlgSm2Dec(privateKey, encryptedHex);
         return Buffer.from(plainhex, 'hex');
     }else {
-        return eciesDecrypt(encryptedHex, privateKey);
+        const keypair = keypairs.deriveKeypair(privateKey);
+        return eciesDecrypt(encryptedHex, keypair.privateKey);
       }
 };
 
