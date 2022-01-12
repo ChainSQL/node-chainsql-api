@@ -897,7 +897,7 @@ function handleContractPayment(contractObj, contractPaymet, onlyTxSign = false, 
     });
 }
 function prepareContractPayment(chainSQL, contractPayment){
-    var instructions = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+    var instructions = chainSQL.instructions;
     const txJSON = createContractPayment(contractPayment);
     return chainsqlLibUtils.prepareTransaction(txJSON, chainSQL.api, instructions);
 }
