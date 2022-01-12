@@ -246,12 +246,12 @@ var symEncrypt = function(symKey, plaintext, algType = 'aes') {
  */
  var asymEncrypt = function(plaintext, publicKey, algType = 'ecies') {
     if ( algType === "gmAlg" ) {
-		token = keypairs.gmAlgSm2Enc(publicKey, plaintext);
-  }else if(algType === "softGMAlg") {
-    var plaintextHex = Buffer.from(plaintext, 'utf8').toString("hex");
-    return keypairs.softGMAlgSm2Enc(plaintextHex,publicKey);
-  }else {
-		return eciesEncrypt(plaintext, publicKey);
+        token = keypairs.gmAlgSm2Enc(publicKey, plaintext);
+    }else if(algType === "softGMAlg") {
+        var plaintextHex = Buffer.from(plaintext, 'utf8').toString("hex");
+        return keypairs.softGMAlgSm2Enc(plaintextHex,publicKey);
+    }else {
+        return eciesEncrypt(plaintext, publicKey);
 	}
 };
 
@@ -273,13 +273,13 @@ var aesEncrypt = function(secret, plaintext) {
  * @returns string 解密后的明文
  */
 var symDecrypt = function(symKey, encryptedHex, algType = 'aes') {
-	if(algType === "gmAlg") {
-		return keypairs.gmAlgSymDec(symKey, encryptedHex);
+    if(algType === "gmAlg") {
+        return keypairs.gmAlgSymDec(symKey, encryptedHex);
     } else if(algType === "softGMAlg"){
         return keypairs.softGMAlgSymDec(symKey, encryptedHex);
-	}else {
-		return aesDecrypt(symKey, encryptedHex);
-	}
+    }else {
+        return aesDecrypt(symKey, encryptedHex);
+    }
 };
 
 /**

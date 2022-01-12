@@ -891,21 +891,11 @@ ChainsqlAPI.prototype.sign = function (json, secret, option) {
 	return ripple.sign(JSON.stringify(json), secret, option);
 };
 
-ChainsqlAPI.prototype.eciesEncrypt = function (plainText, publicKey) {
-	return crypto.eciesEncrypt(plainText,publicKey);
-}
-
-ChainsqlAPI.prototype.eciesDecrypt = function (cipher, secret) {
-	var keypair = keypairs.deriveKeypair(secret);
-	return crypto.eciesDecrypt(cipher,keypair.privateKey);
-}
-
-
-
 /**
  * 对称加密
- * @param {*} plainText 
- * @param {*} publicKey 
+ * @param {*} symKey 
+ * @param {*} plaintext 
+ * @param {*} algType 
  */
 ChainsqlAPI.prototype.symEncrypt = function (symKey, plaintext, algType = 'aes') {
 	return crypto.symEncrypt(symKey,plaintext,algType);
@@ -913,11 +903,11 @@ ChainsqlAPI.prototype.symEncrypt = function (symKey, plaintext, algType = 'aes')
 
 /**
  * 对称解密
- * @param {*} cipher 
- * @param {*} privateKey 
+ * @param {*} symKey 
+ * @param {*} encryptedHex 
+ * @param {*} algType 
  */
 ChainsqlAPI.prototype.symDecrypt = function (symKey, encryptedHex, algType = 'aes') {
-
 	return crypto.symDecrypt(symKey, encryptedHex, algType);
 }
 
@@ -925,21 +915,29 @@ ChainsqlAPI.prototype.symDecrypt = function (symKey, encryptedHex, algType = 'ae
  * 非对称加密
  * @param {*} plainText 
  * @param {*} publicKey 
+ * @param {*} algType 
  */
-ChainsqlAPI.prototype.asymEncrypt = function (plainText, publicKey) {
-	return keypairs.asymEncrypt(plainText,publicKey);
+ChainsqlAPI.prototype.asymEncrypt = function (plainText, publicKey, algType = 'ecies') {
+    return crypto.asymEncrypt(plainText, publicKey, algType);
 }
 
 /**
  * 非对称解密
  * @param {*} cipher 
  * @param {*} privateKey 
+ * @param {*} algType 
  */
-ChainsqlAPI.prototype.asymDecrypt = function (cipher, privateKey) {
-
-	return keypairs.asymDecrypt(cipher,privateKey);
+ChainsqlAPI.prototype.asymDecrypt = function (cipher, privateKey, algType = 'ecies') {
+	return crypto.asymDecrypt(cipher,privateKey, algType);
 }
 
+ChainsqlAPI.prototype.encryptText = function(plainText,listPublic) {
+    return crypto.encryptText(plainText,listPublic);
+}
+
+ChainsqlAPI.prototype.decryptText = function(cipherText,secret) {
+    return crypto.decryptText(cipherText,secret);
+}
 
 ChainsqlAPI.prototype.getAccountTables = function(address, bGetDetailInfo=false){
 	var connection = this.api ? this.api.connection : this.connect.api.connection;
@@ -1290,7 +1288,7 @@ ChainsqlAPI.prototype.modifySchema = function(schemaInfo){
 	if(!bValid){
 		throw new Error("Invalid modifySchema parameter");
 	}       
-	
+
 	var peerlists = []
 	var i   = 0;
 	var len = schemaInfo.PeerList.length
@@ -1327,10 +1325,7 @@ ChainsqlAPI.prototype.modifySchema = function(schemaInfo){
 	this.schemaModifyTx = true;
 	this.payment = schemaModifyTxJson;
 	return this;
-
 };
-
-
 
 function callback(data, callback) {
 
