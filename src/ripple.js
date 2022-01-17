@@ -2,7 +2,9 @@
 var util = require('./lib/util');
 var Submit = require('./submit');
 const FloatOperation = require('./lib/floatOperation');
+var Decimal = require('decimal.js');
 var chainsqlLibUtils = require('chainsql-lib').ChainsqlLibUtil;
+const { intersection } = require('lodash');
 
 class Ripple extends Submit {
 	constructor(ChainsqlAPI) {
@@ -59,7 +61,7 @@ Ripple.prototype.prepareJson = function () {
 							fee = parseFloat(data.min);
 						} else if (data.rate) {
 							//Only TransferRate or with TranferFeeMin < TransferFeeMax
-							fee = FloatOperation.accMul(parseFloat(value), data.rate - 1);
+							fee = FloatOperation.accMul(parseFloat(value), new Decimal(data.rate).sub(new Decimal(1)).toNumber());
 							if (data.min) {
 								fee = Math.max(fee, parseFloat(data.min));
 							}
