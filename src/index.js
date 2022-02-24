@@ -284,6 +284,11 @@ ChainsqlAPI.prototype.trustSet = function (amount) {
 	return ripple.trustSet(amount);
 }
 
+ChainsqlAPI.prototype.accountAuthorize = function (nFlag, bSet, account) {
+	let ripple = new Ripple(this);
+	return ripple.accountAuthorize(nFlag, bSet, account);
+}
+
 ChainsqlAPI.prototype.escrowCreate = function (sDestAddr, amount, opt) {
 	let ripple = new Ripple(this);
 	return ripple.escrowCreate(sDestAddr, amount, opt);
