@@ -78,25 +78,17 @@ class ChainsqlAPI extends Submit {
 	}
 };
 
-ChainsqlAPI.prototype.connect = function (url, cb) {
-	let ra = new RippleAPI({
-		server: url
-	});
+ChainsqlAPI.prototype.connect = function (url, opt) {
+	let conOpt = opt === undefined ? {} : opt;
+	conOpt.server =url;
+	let ra = new RippleAPI(conOpt);
 	let con = new Connection();
 	con.api = ra;
 	this.api = ra;
 	this.ChainsqlAPI = this;
 	this.connect = con;
 	this.event = new EventManager(this);
-	if ((typeof cb) != 'function') {
-		return con.connect();
-	} else {
-		con.connect().then(function (data) {
-			cb(null, data)
-		}).catch(function (err) {
-			cb(err);
-		});
-	}
+	return con.connect();
 }
 ChainsqlAPI.prototype.disconnect = function (cb) {
 	if ((typeof cb) != 'function') {

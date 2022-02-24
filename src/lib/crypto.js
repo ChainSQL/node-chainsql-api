@@ -138,9 +138,6 @@ function eciesDecrypt(messageHex, privateKey) {
     //console.log("plainMsg: ",plainMsgBuf.toString());
     return plainMsgBuf;
 }
-
-
-
 function hmac(key, bytes) {
     //debug('key: ', JSON.stringify(key));
     //debug('bytes: ', JSON.stringify(bytes));
