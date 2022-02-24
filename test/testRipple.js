@@ -32,7 +32,7 @@ var user3 = {
 
 var tagStep = {
     active: 1, gateWay: 2, escrow: 3,
-    balances: 4, getLedger: 5, getTxs: 6
+    balances: 4, getLedger: 5, getTxs: 6,authorize:7,
 }
 var sCurrency = "aaa"
 var whiteLists = [
@@ -45,12 +45,12 @@ main();
 async function main() {
     // let res = await c.connect('ws://101.201.40.124:5006');
     let res = await c.connect('ws://localhost:5510');
-    await c.setSchema("8B0BA6D8848C76E19433EE90E2A88210E403339F2C5AC750271EFC862A173894");
+   // await c.setSchema("8B0BA6D8848C76E19433EE90E2A88210E403339F2C5AC750271EFC862A173894");
 
     c.as(root);
     c.setRestrict(true);
     /**************************************/
-    let nStep = tagStep.gateWay;
+    let nStep = tagStep.authorize;
     switch (nStep) {
         case tagStep.active: testActive(); break;// 激活若干账户
         case tagStep.gateWay: testGateWay(); break;//部署网管，信任，发行币转账
@@ -58,6 +58,7 @@ async function main() {
         case tagStep.balances: testBalances(); break;//账户余额
         case tagStep.getTxs: testTransactions(); break;
         case tagStep.getLedger: testGetLedger(); break;
+        case tagStep.authorize: testAuthorize();break;
         default: break;
     }
     /**************************************/
@@ -250,4 +251,16 @@ var testGetLedger = async function () {
         .catch(function (err) {
             console.log("err:", err);
         });
+}
+
+var testAuthorize = async function(){
+    try {
+        //参数： 授权/取消授权哪个权限、是否是授权、给谁授权
+        // 12 转账的权限,  13 部署合约的权限, 14 创建表的权限, 15发行数字资产的权限, 16 admin权限
+        var ret = await c.accountAuthorize(12, true, user2.address).submit({ expect: 'validate_success' });
+        console.log("accountAuthorize ", ret);
+    } catch (error) {
+        console.error("accountAuthorize ", error);
+    }
+    
 }

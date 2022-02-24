@@ -108,6 +108,9 @@ Ripple.prototype.prepareJson = function () {
 	else if (transactionType === "PayToContract") {
 		return chainsqlLibUtils.prepareTransaction(txJson, this.ChainsqlAPI.api, {});
 	}
+	else if (transactionType === "Authorize") {
+		return chainsqlLibUtils.prepareTransaction(txJson, this.ChainsqlAPI.api, {});
+	}
 }
 
 Ripple.prototype.preparePayment = function (account, amount, memos) {
@@ -270,6 +273,21 @@ Ripple.prototype.trustSet = function (amount) {
 	//
 	this.txType = "TrustSet";
 	this.txJSON = trustline;
+	return this;
+}
+
+Ripple.prototype.accountAuthorize = function (nFlag, bSet, account) {
+	var self = this;
+	var setting = {};
+	setting.Account = this.ChainsqlAPI.connect.address;
+	if(bSet)
+		setting.SetFlag = nFlag;
+	else
+		setting.ClearFlag = nFlag;
+	setting.TransactionType = "Authorize";
+	setting.Destination = account;
+	this.txType = "Authorize";
+	this.txJSON = setting;
 	return this;
 }
 

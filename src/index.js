@@ -90,7 +90,7 @@ ChainsqlAPI.prototype.connect = function (url, cb) {
 	this.event = new EventManager(this);
 	if ((typeof cb) != 'function') {
 		return con.connect();
-	} else {
+	} else {  
 		con.connect().then(function (data) {
 			cb(null, data)
 		}).catch(function (err) {
@@ -290,6 +290,11 @@ ChainsqlAPI.prototype.getTransferFee = function (issuerAddr) {
 ChainsqlAPI.prototype.trustSet = function (amount) {
 	let ripple = new Ripple(this);
 	return ripple.trustSet(amount);
+}
+
+ChainsqlAPI.prototype.accountAuthorize = function (nFlag, bSet, account) {
+	let ripple = new Ripple(this);
+	return ripple.accountAuthorize(nFlag, bSet, account);
 }
 
 ChainsqlAPI.prototype.escrowCreate = function (sDestAddr, amount, opt) {
