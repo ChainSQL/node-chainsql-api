@@ -32,6 +32,21 @@ Submit.prototype.submit = function (expectOpt) {
 	});
 };
 
+Submit.prototype.submitSigned = function (signedRet,expectOpt) {
+	if(!expectOpt){
+		expectOpt = { expect:"send_success"}
+	}
+	let self = this;
+	return new Promise(function (resolve, reject) {
+		try {
+			self.handleSignedTx(self.ChainsqlAPI, signedRet, expectOpt, resolve, reject);
+		} catch (error) {
+			reject(error);
+		}
+	});
+};
+
+
 
 /**
  * @return {JsonObject} 
