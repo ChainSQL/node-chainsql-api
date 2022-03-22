@@ -5,46 +5,51 @@ const ChainsqlAPI = require('../src/index');
 const c = new ChainsqlAPI();
 
 var user = {
-	secret: "snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
-	address: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-	publickKey: "aBQG8RQAzjs1eTKFEAQXr2gS4utcDiEC9wmi7pfUPTi27VCahwgw"
+	secret: "pwWxLSLpWDHBa66Lweexg82vQNKWbTpMjgqgca2tsqLvJTLKCBz",
+	address: "zPoCNMA7jqWcuaVXJcXX9zsrCP5TAd3V48",
+	publickKey: "pYvDQNUrSAAEbTrR4aVp1b7k1e8oa9omuDYJN1wwsyobZQhSTPjzQ3k7szPjkfzj6hx3LktycvJTPCbwQDTsJoFAQkHwqiBH"
 };
+var root = {
+    secret: "xnoPBzXtMeMyMHUVTgbuqAfg1SUTb",
+    address: "zHb9CJAWyB4zj91VRWn96DkukG4bwdtyTh"
+}
 
+var issuer = {
+    secret: "xxXvas5HTwVwjpmGNLQDdRyYe2H6t",
+    address: "z4ypskpHPpMDtHsZvFHg8eDEdTjQrYYYV6"
+}
 main();
 async function main(){
 
     // await c.connect('ws://139.198.11.189:6006');
-    await c.connect('ws://127.0.0.1:6007');
+    await c.connect('ws://localhost:5510');
+    c.as(root)
     console.log('连接成功')
 
-    let info = await c.api.getAccountInfo("rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh");
+    let info = await c.api.getAccountInfo(root.address);
     console.log(info);
     c.getLedgerVersion(function(err,data){
         var payment = {
-            "Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+            "Account": root.address,
             "Amount":"1000000000",
-            "Destination": "rBuLBiHmssAMHWQMnEN7nXQXaVj7vhAv6Q",
+            "Destination": issuer.address,
             "TransactionType": "Payment",
             "Sequence": info.sequence,
             "LastLedgerSequence":data + 5,
             "Fee":"50"
         }
-        let signedRet = c.sign(payment,user.secret);
-        console.log(signedRet);
+
+        var opt = {
+            maxLedgerVersion:data + 1,
+            minLedgerVersion:data
+        }
+
+        let signedRet = c.sign(payment,root.secret);
         c.api.submit(signedRet.signedTransaction).then(function(data){
             console.log(data);
-        });
-
-        // var opt = {
-        //     maxLedgerVersion:data + 1,
-        //     minLedgerVersion:data
-        // }
-        // c.api.getTransaction(signedRet.id,opt).then(function(data){
-        //     console.log(data);
-        // }).catch(function(err){
-        //     console.log(err);
-        // })
-        
+                });
+       
+    })
         // setTimeout(function(){
         //     c.api.getTransaction(signedRet.id).then(function(data){
         //         console.log(data);
@@ -52,7 +57,7 @@ async function main(){
         //         console.log(err);
         //     })
         // },5000);
-    });
+  //  });
     
 
     var signed = "1200002400000006201B0000001061400000003B9ACA0068400000000000003273210330E7FC9D56BB25D6893BA3F317AE5BCF33B3291BD63DB32654A313222F7FD02074473045022100E684319763A47F8E4AA590ECBB4F16D4392E4DAB312A19ACC7E69F273DCD5FE702204DBBF8CB14FA8B723E35FB2659936DF6635BA4C80616B2563885AF5D91610B848114B5F762798A53D543A014CAF8B297CFF8F2F937E8831493CAB3CA5AA1B46E5A2A55BB8AA934A720ECD7A5";
