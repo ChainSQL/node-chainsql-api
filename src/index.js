@@ -577,6 +577,48 @@ ChainsqlAPI.prototype.getAccountTransactions = function (address, opts, cb) {
 	}
 };
 
+ChainsqlAPI.prototype.getContractTransactions = function (address, opts, cb) {
+	let callback, newOpt, singleArg;
+	let isCallback = false;
+	switch (arguments.length) {
+	case 1:
+		newOpt = {};
+		break;
+	case 2:
+		singleArg = arguments[1];
+		if ((typeof singleArg) === "function") {
+			callback = singleArg;
+			isCallback = true;
+		} else if ((typeof singleArg) === "object") {
+			newOpt = singleArg;
+		} else {
+			throw chainsqlError("wrong params, please check");
+		}
+		break;
+	case 3:
+		newOpt = opts;
+		if ((typeof cb) === "function") {
+			callback = cb;
+			isCallback = true;
+		} else {
+			throw chainsqlError("wrong params, please check");
+		}
+		break;
+	default:
+		throw chainsqlError("wrong params, please check");
+	}
+
+	if (isCallback) {
+		this.api.getContractTransactions(address, newOpt).then(function (data) {
+			callback(null, data);
+		}).catch(function (err) {
+			callback(err, null);
+		});
+	} else {
+		return this.api.getContractTransactions(address, newOpt);
+	}
+};
+
 ChainsqlAPI.prototype.getTransaction = function (hash,meta,meta_chain,cb) {
 	if ((typeof cb) != 'function') {
 		return this.api.getTransaction(hash,meta,meta_chain);

@@ -33,6 +33,7 @@ var user3 = {
 var tagStep = {
     active: 1, gateWay: 2, escrow: 3,
     balances: 4, getLedger: 5, getTxs: 6,authorize:7,
+    getContractTxs:8,getContractTxsAsync:9,
 }
 var sCurrency = "aaa"
 var whiteLists = [
@@ -50,7 +51,7 @@ async function main() {
     c.as(root);
     c.setRestrict(true);
     /**************************************/
-    let nStep = tagStep.authorize;
+    let nStep = tagStep.getContractTxs;
     switch (nStep) {
         case tagStep.active: testActive(); break;// 激活若干账户
         case tagStep.gateWay: testGateWay(); break;//部署网管，信任，发行币转账
@@ -59,6 +60,8 @@ async function main() {
         case tagStep.getTxs: testTransactions(); break;
         case tagStep.getLedger: testGetLedger(); break;
         case tagStep.authorize: testAuthorize();break;
+        case tagStep.getContractTxs: getContractTransactions();break;
+        case tagStep.getContractTxsAsync: getContractTransactionsAsync();break;
         default: break;
     }
     /**************************************/
@@ -199,7 +202,7 @@ var testBalances = async function () {
 var testTransactions = async function () {
     let res;
     //
-    let bAll_one = true;
+    let bAll_one = false;
     let bMore = true;
     //
     if (bAll_one) {
@@ -216,7 +219,7 @@ var testTransactions = async function () {
     if (bMore) {
         let nLimit = 10;
         var options = {
-            limit: nLimit
+            limit: nLimit,
         };
         while (true) {
             res = await c.api.getTransactions(root.address, options);
@@ -259,6 +262,49 @@ var testAuthorize = async function(){
         // 12 转账的权限,  13 部署合约的权限, 14 创建表的权限, 15发行数字资产的权限, 16 admin权限
         var ret = await c.accountAuthorize(12, true, user2.address).submit({ expect: 'validate_success' });
         console.log("accountAuthorize ", ret);
+    } catch (error) {
+        console.error("accountAuthorize ", error);
+    }
+    
+}
+
+var getContractTransactions = async function(){
+    try {
+        var options = {
+            limit: 3,
+            ledgerIndexMin:1,
+            ledgerIndexMax:100,
+             marker:{
+                ledger:53,
+                seq:5300002
+             }
+        };
+		var obj = await c.getContractTransactions("zwCkG85oeRsmMpQs2auAV8Tc6kQF5aWsr6", options);
+		console.log("getContractTransactions ", obj);
+    } catch (error) {
+        console.error("accountAuthorize ", error);
+    }
+    
+}
+
+var getContractTransactionsAsync = async function(){
+    try {
+        var options = {
+            limit: 3,
+            ledgerIndexMin:1,
+            ledgerIndexMax:100,
+             marker:{
+                ledger:53,
+                seq:5300002
+             }
+        };
+		var obj = await c.getContractTransactions("zwCkG85oeRsmMpQs2auAV8Tc6kQF5aWsr6", options,  function callback(err,data){
+            if(err)
+                console.err("getContractTransactionsAsync", err)
+            else
+                console.info("getContractTransactionsAsync", data)
+        });
+		//console.log("getContractTransactions ", obj);
     } catch (error) {
         console.error("accountAuthorize ", error);
     }
