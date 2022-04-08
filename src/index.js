@@ -726,6 +726,7 @@ ChainsqlAPI.prototype.beginTran = function () {
 		this.transaction = true;
 		return;
 	}
+	throw chainsqlError("connect is undefine or connect.address is undefine")
 }
 
 function handleCommit(ChainSQL, object, resolve, reject) {
@@ -1363,6 +1364,27 @@ ChainsqlAPI.prototype.modifySchema = function(schemaInfo){
 	// 修改子链
 	this.schemaModifyTx = true;
 	this.payment = schemaModifyTxJson;
+	return this;
+};
+
+ChainsqlAPI.prototype.deleteSchema = function(schemaInfo){
+
+	let bValid = (schemaInfo !== undefined) 
+				&& (schemaInfo.SchemaID !== undefined) 
+
+	if(!bValid){
+		throw new Error("Invalid deleteSchema parameter");
+	}       
+
+	var schemaDeleteTxJson = {
+		Account: this.connect.address,
+		SchemaID: schemaInfo.SchemaID,
+		TransactionType: 'SchemaDelete'
+	};
+
+	// 修改子链
+	this.schemaModifyTx = true;
+	this.payment = schemaDeleteTxJson;
 	return this;
 };
 
