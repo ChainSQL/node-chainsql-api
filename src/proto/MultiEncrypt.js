@@ -15,7 +15,6 @@ $root.MultiEncrypt = (function() {
      * Properties of a MultiEncrypt.
      * @exports IMultiEncrypt
      * @interface IMultiEncrypt
-     * @property {Uint8Array} publicOther MultiEncrypt publicOther
      * @property {Array.<MultiEncrypt.IHashToken>|null} [hashTokenPair] MultiEncrypt hashTokenPair
      * @property {Uint8Array} cipher MultiEncrypt cipher
      */
@@ -35,14 +34,6 @@ $root.MultiEncrypt = (function() {
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
-
-    /**
-     * MultiEncrypt publicOther.
-     * @member {Uint8Array} publicOther
-     * @memberof MultiEncrypt
-     * @instance
-     */
-    MultiEncrypt.prototype.publicOther = $util.newBuffer([]);
 
     /**
      * MultiEncrypt hashTokenPair.
@@ -84,11 +75,10 @@ $root.MultiEncrypt = (function() {
     MultiEncrypt.encode = function encode(message, writer) {
         if (!writer)
             writer = $Writer.create();
-        writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.publicOther);
         if (message.hashTokenPair != null && message.hashTokenPair.length)
             for (var i = 0; i < message.hashTokenPair.length; ++i)
-                $root.MultiEncrypt.HashToken.encode(message.hashTokenPair[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-        writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.cipher);
+                $root.MultiEncrypt.HashToken.encode(message.hashTokenPair[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+        writer.uint32(/* id 2, wireType 2 =*/18).bytes(message.cipher);
         return writer;
     };
 
@@ -124,14 +114,11 @@ $root.MultiEncrypt = (function() {
             var tag = reader.uint32();
             switch (tag >>> 3) {
             case 1:
-                message.publicOther = reader.bytes();
-                break;
-            case 2:
                 if (!(message.hashTokenPair && message.hashTokenPair.length))
                     message.hashTokenPair = [];
                 message.hashTokenPair.push($root.MultiEncrypt.HashToken.decode(reader, reader.uint32()));
                 break;
-            case 3:
+            case 2:
                 message.cipher = reader.bytes();
                 break;
             default:
@@ -139,8 +126,6 @@ $root.MultiEncrypt = (function() {
                 break;
             }
         }
-        if (!message.hasOwnProperty("publicOther"))
-            throw $util.ProtocolError("missing required 'publicOther'", { instance: message });
         if (!message.hasOwnProperty("cipher"))
             throw $util.ProtocolError("missing required 'cipher'", { instance: message });
         return message;
@@ -173,8 +158,6 @@ $root.MultiEncrypt = (function() {
     MultiEncrypt.verify = function verify(message) {
         if (typeof message !== "object" || message === null)
             return "object expected";
-        if (!(message.publicOther && typeof message.publicOther.length === "number" || $util.isString(message.publicOther)))
-            return "publicOther: buffer expected";
         if (message.hashTokenPair != null && message.hasOwnProperty("hashTokenPair")) {
             if (!Array.isArray(message.hashTokenPair))
                 return "hashTokenPair: array expected";
@@ -201,11 +184,6 @@ $root.MultiEncrypt = (function() {
         if (object instanceof $root.MultiEncrypt)
             return object;
         var message = new $root.MultiEncrypt();
-        if (object.publicOther != null)
-            if (typeof object.publicOther === "string")
-                $util.base64.decode(object.publicOther, message.publicOther = $util.newBuffer($util.base64.length(object.publicOther)), 0);
-            else if (object.publicOther.length)
-                message.publicOther = object.publicOther;
         if (object.hashTokenPair) {
             if (!Array.isArray(object.hashTokenPair))
                 throw TypeError(".MultiEncrypt.hashTokenPair: array expected");
@@ -239,14 +217,7 @@ $root.MultiEncrypt = (function() {
         var object = {};
         if (options.arrays || options.defaults)
             object.hashTokenPair = [];
-        if (options.defaults) {
-            if (options.bytes === String)
-                object.publicOther = "";
-            else {
-                object.publicOther = [];
-                if (options.bytes !== Array)
-                    object.publicOther = $util.newBuffer(object.publicOther);
-            }
+        if (options.defaults)
             if (options.bytes === String)
                 object.cipher = "";
             else {
@@ -254,9 +225,6 @@ $root.MultiEncrypt = (function() {
                 if (options.bytes !== Array)
                     object.cipher = $util.newBuffer(object.cipher);
             }
-        }
-        if (message.publicOther != null && message.hasOwnProperty("publicOther"))
-            object.publicOther = options.bytes === String ? $util.base64.encode(message.publicOther, 0, message.publicOther.length) : options.bytes === Array ? Array.prototype.slice.call(message.publicOther) : message.publicOther;
         if (message.hashTokenPair && message.hashTokenPair.length) {
             object.hashTokenPair = [];
             for (var j = 0; j < message.hashTokenPair.length; ++j)
@@ -285,7 +253,7 @@ $root.MultiEncrypt = (function() {
          * @memberof MultiEncrypt
          * @interface IHashToken
          * @property {Uint8Array} publicHash HashToken publicHash
-         * @property {Uint8Array} token HashToken token
+         * @property {string} token HashToken token
          */
 
         /**
@@ -313,11 +281,11 @@ $root.MultiEncrypt = (function() {
 
         /**
          * HashToken token.
-         * @member {Uint8Array} token
+         * @member {string} token
          * @memberof MultiEncrypt.HashToken
          * @instance
          */
-        HashToken.prototype.token = $util.newBuffer([]);
+        HashToken.prototype.token = "";
 
         /**
          * Creates a new HashToken instance using the specified properties.
@@ -344,7 +312,7 @@ $root.MultiEncrypt = (function() {
             if (!writer)
                 writer = $Writer.create();
             writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.publicHash);
-            writer.uint32(/* id 2, wireType 2 =*/18).bytes(message.token);
+            writer.uint32(/* id 2, wireType 2 =*/18).string(message.token);
             return writer;
         };
 
@@ -383,7 +351,7 @@ $root.MultiEncrypt = (function() {
                     message.publicHash = reader.bytes();
                     break;
                 case 2:
-                    message.token = reader.bytes();
+                    message.token = reader.string();
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -426,8 +394,8 @@ $root.MultiEncrypt = (function() {
                 return "object expected";
             if (!(message.publicHash && typeof message.publicHash.length === "number" || $util.isString(message.publicHash)))
                 return "publicHash: buffer expected";
-            if (!(message.token && typeof message.token.length === "number" || $util.isString(message.token)))
-                return "token: buffer expected";
+            if (!$util.isString(message.token))
+                return "token: string expected";
             return null;
         };
 
@@ -449,10 +417,7 @@ $root.MultiEncrypt = (function() {
                 else if (object.publicHash.length)
                     message.publicHash = object.publicHash;
             if (object.token != null)
-                if (typeof object.token === "string")
-                    $util.base64.decode(object.token, message.token = $util.newBuffer($util.base64.length(object.token)), 0);
-                else if (object.token.length)
-                    message.token = object.token;
+                message.token = String(object.token);
             return message;
         };
 
@@ -477,18 +442,12 @@ $root.MultiEncrypt = (function() {
                     if (options.bytes !== Array)
                         object.publicHash = $util.newBuffer(object.publicHash);
                 }
-                if (options.bytes === String)
-                    object.token = "";
-                else {
-                    object.token = [];
-                    if (options.bytes !== Array)
-                        object.token = $util.newBuffer(object.token);
-                }
+                object.token = "";
             }
             if (message.publicHash != null && message.hasOwnProperty("publicHash"))
                 object.publicHash = options.bytes === String ? $util.base64.encode(message.publicHash, 0, message.publicHash.length) : options.bytes === Array ? Array.prototype.slice.call(message.publicHash) : message.publicHash;
             if (message.token != null && message.hasOwnProperty("token"))
-                object.token = options.bytes === String ? $util.base64.encode(message.token, 0, message.token.length) : options.bytes === Array ? Array.prototype.slice.call(message.token) : message.token;
+                object.token = message.token;
             return object;
         };
 

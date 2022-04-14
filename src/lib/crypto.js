@@ -378,31 +378,23 @@ var encryptText = function(plainText,listPublic){
     var listPubHash = [];
     var listPassCipher = [];
 
-    // random keypair
-    const seed = keypairs.generateSeed();
-    const ephKeyPair = keypairs.deriveKeypair(seed);
-    var ephPrivKey = Secp256k1.keyFromPrivate(ephKeyPair.privateKey, 'hex');
-    var ephPublicKey = ephKeyPair.publicKey;
     for(var i=0; i<listPublic.length; i++){
         var publicKey = listPublic[i];
+        var algorithm = keypairs.getAlgFromPubKey(publicKey);
         if(publicKey.length != 2 * PUBLICKEY_LENGTH){
             var decodedPublic = decodePublic(publicKey);
             publicKey = Bytes2HexString(decodedPublic);
         }
-        //publickey -hash
-        var pubKey = Secp256k1.keyFromPublic(publicKey, 'hex');
+        
+        var passCipher = asymEncrypt(password, publicKey, algorithm);
+        listPassCipher.push(passCipher);
         var pubHash = quarterSha512(Buffer.from(publicKey, 'hex'));
         listPubHash.push(pubHash);
-
-        //encrypt
-        var passCipher = simpleEncrypt(password,pubKey,ephPrivKey);
-        listPassCipher.push(passCipher);
     }
 
     return new Promise(function(resolve,reject){
         //create a new message
         var data = {};
-        data.publicOther =Buffer.from(ephPublicKey,'hex');
         data.cipher = Buffer.from(aesCipher,'hex');
         data.hashTokenPair = [];
         for(var i=0; i<listPubHash.length; i++){
@@ -424,25 +416,79 @@ var encryptText = function(plainText,listPublic){
     })
 }
 
+
+// var encryptText = function(plainText,listPublic){
+//     if(listPublic.length == 0){
+//         throw new ("PublicKey list is empty");
+//     }
+//     //AES encrypt
+//     var password = crypto.randomBytes(AESKeyLength);
+//     var aesCipher = aesEncrypt(password,plainText);
+
+//     //
+//     var listPubHash = [];
+//     var listPassCipher = [];
+
+//     // random keypair
+//     const seed = keypairs.generateSeed();
+//     const ephKeyPair = keypairs.deriveKeypair(seed);
+//     var ephPrivKey = Secp256k1.keyFromPrivate(ephKeyPair.privateKey, 'hex');
+//     var ephPublicKey = ephKeyPair.publicKey;
+//     for(var i=0; i<listPublic.length; i++){
+//         var publicKey = listPublic[i];
+//         if(publicKey.length != 2 * PUBLICKEY_LENGTH){
+//             var decodedPublic = decodePublic(publicKey);
+//             publicKey = Bytes2HexString(decodedPublic);
+//         }
+//         //publickey -hash
+//         var pubKey = Secp256k1.keyFromPublic(publicKey, 'hex');
+//         var pubHash = quarterSha512(Buffer.from(publicKey, 'hex'));
+//         listPubHash.push(pubHash);
+
+//         //encrypt
+//         var passCipher = simpleEncrypt(password,pubKey,ephPrivKey);
+//         listPassCipher.push(passCipher);
+//     }
+
+//     return new Promise(function(resolve,reject){
+//         //create a new message
+//         var data = {};
+//         data.publicOther =Buffer.from(ephPublicKey,'hex');
+//         data.cipher = Buffer.from(aesCipher,'hex');
+//         data.hashTokenPair = [];
+//         for(var i=0; i<listPubHash.length; i++){
+//             var tokenPair = {
+//                 publicHash : listPubHash[i],
+//                 token : listPassCipher[i]
+//             }
+//             data.hashTokenPair.push(tokenPair);
+//         }
+//         var message = multiProto.MultiEncrypt.create(data);  
+//         var buffer = multiProto.MultiEncrypt.encode(message).finish();
+        
+//         zlibCompressText(buffer).then(function(res){
+//             // if(err) reject(err);
+//             resolve(res.toString('hex'));
+//         }).catch(function(err){
+//             reject(err);
+//         })
+//     })
+// }
+
 var decryptText = function(cipherText,secret){
     return new Promise(function(resolve,reject){
-        //Zlib-decompress
         var cipherBytes = Buffer.from(cipherText,'hex');
         zlibDeCompressText(cipherBytes).then(function(res){
             var message = multiProto.MultiEncrypt.decode(res);
             var keypair = keypairs.deriveKeypair(secret);
-            var privateKey = keypair.privateKey;
             var sPubHashSelf = quarterSha512(Buffer.from(keypair.publicKey,'hex'));
-            
+            var algorithm = keypairs.getAlgFromPrivateKey(secret);
             var password;
-            var pubOther = message.publicOther;
             var listPubHashToken = message.hashTokenPair;
             for(var i=0; i<listPubHashToken.length; i++){
                 var hashTokenPair = listPubHashToken[i];
                 if(_.isEqual(hashTokenPair.publicHash, Buffer.from(sPubHashSelf))){
-                    var ephPrivKey = Secp256k1.keyFromPrivate(privateKey, 'hex');
-                    var pubKey = Secp256k1.keyFromPublic(pubOther);
-                    password = simpleDecrypt(hashTokenPair.token,ephPrivKey,pubKey);
+                    password = asymDecrypt(hashTokenPair.token,secret,algorithm);
                     break;
                 }
             }
@@ -457,6 +503,40 @@ var decryptText = function(cipherText,secret){
         })
     });
 }
+
+
+// var decryptText = function(cipherText,secret){
+//     return new Promise(function(resolve,reject){
+//         var cipherBytes = Buffer.from(cipherText,'hex');
+//         zlibDeCompressText(cipherBytes).then(function(res){
+//             var message = multiProto.MultiEncrypt.decode(res);
+//             var keypair = keypairs.deriveKeypair(secret);
+//             var privateKey = keypair.privateKey;
+//             var sPubHashSelf = quarterSha512(Buffer.from(keypair.publicKey,'hex'));
+            
+//             var password;
+//             var pubOther = message.publicOther;
+//             var listPubHashToken = message.hashTokenPair;
+//             for(var i=0; i<listPubHashToken.length; i++){
+//                 var hashTokenPair = listPubHashToken[i];
+//                 if(_.isEqual(hashTokenPair.publicHash, Buffer.from(sPubHashSelf))){
+//                     var ephPrivKey = Secp256k1.keyFromPrivate(privateKey, 'hex');
+//                     var pubKey = Secp256k1.keyFromPublic(pubOther);
+//                     password = simpleDecrypt(hashTokenPair.token,ephPrivKey,pubKey);
+//                     break;
+//                 }
+//             }
+//             if(password){
+//                 var plain = aesDecrypt(password,message.cipher);
+//                 resolve(plain);
+//             }else{
+//                 reject('error when get aesKey')
+//             }
+//         }).catch(function(err){
+//             reject(err);
+//         })
+//     });
+// }
 
 module.exports = {
     eciesEncrypt,
