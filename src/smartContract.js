@@ -11,7 +11,7 @@ var abi = require('web3-eth-abi');
 var utils = require('web3-utils');
 var formatters = require('web3-core-helpers').formatters;
 
-const preDefOptions = ["ContractData", "arguments", "ContractValue", "Gas", "expect"];
+const preDefOptions = ["ContractData", "arguments", "ContractValue", "Gas", "ledger_index", "expect"];
 /**
  * Contract constructor for creating new contract instance
  *
@@ -838,12 +838,16 @@ function handleContractCall(curFunObj, callObj, callBack, resolve, reject) {
     const contractObj = curFunObj._parent;
     var connect = contractObj.connect;
     const contractData = callObj.data.length >= 2 ? callObj.data.slice(2) : callObj.data;
-    connect.api.connection.request({
+    let requestJson = {
         command: 'contract_call',
         account : connect.address,
         contract_address : callObj.to,
         contract_data : contractData.toUpperCase()
-    }).then(function(data) {
+    };
+    if(callObj.ledger_index !== undefined) {
+        requestJson.ledger_index = callObj.ledger_index;
+    }
+    connect.api.connection.request(requestJson).then(function(data) {
         // if (data.status != 'success'){
         //     callBackFun(new Error(data), null);
         // }

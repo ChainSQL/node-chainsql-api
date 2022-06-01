@@ -116,7 +116,8 @@ Submit.prototype.handleSignedTx = function (ChainSQL, signed, expectOpt, resolve
 				reject(err);
 			} else {
 				// success
-				if (expectOpt.expect === data.status
+				if (((expectOpt.expect === "db_success" && expectOpt.expect === data.status) ||
+					(expectOpt.expect === "validate_success" && (expectOpt.expect === data.status || data.status.substring(0,3) == 'db_'))) 
 					&& data.type === 'singleTransaction') {
 					resolve({
 						status: expectOpt.expect,
