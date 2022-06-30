@@ -1121,6 +1121,21 @@ ChainsqlAPI.prototype.getLedgerTxs = function(ledgerIndex,includeSuccess,include
 
 };
 
+ChainsqlAPI.prototype.getTxCount = function(ledgerIndex, chainsqlTx) {
+	var connect = this.connect;
+
+	return new Promise(function(resolve, reject){
+		connect.api.connection.request({
+			command: 'tx_count',
+			ledger_index: ledgerIndex,
+			chainsql_tx: chainsqlTx
+		}).then(function(data){
+			resolve(data);
+		}).catch(function(err){
+			reject(err);
+		});
+	});
+};
 
 ChainsqlAPI.prototype.signFromString = function (messageHex, secret) {
 
