@@ -1403,6 +1403,21 @@ ChainsqlAPI.prototype.deleteSchema = function(schemaInfo){
 	return this;
 };
 
+ChainsqlAPI.prototype.monitorStatis = function(){
+	var connection = this.api ? this.api.connection : this.connect.api.connection;
+	return new Promise(function(resolve, reject){
+
+		var params = {};
+		params.command = 'monitor_statis';
+
+		connection.request(params).then(function(data){
+			resolve(data);
+		}).catch(function(err){
+			reject(err);
+		});
+	});
+};
+
 function callback(data, callback) {
 
 }
