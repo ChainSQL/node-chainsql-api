@@ -620,10 +620,14 @@ ChainsqlAPI.prototype.getContractTransactions = function (address, opts, cb) {
 };
 
 ChainsqlAPI.prototype.getTransaction = function (hash,meta,meta_chain,cb) {
+	var option = {
+		meta : meta,
+		meta_chain: meta_chain
+	}
 	if ((typeof cb) != 'function') {
-		return this.api.getTransaction(hash,meta,meta_chain);
+		return this.api.getTransaction(hash,option);
 	} else {
-		this.api.getTransaction(hash,meta,meta_chain).then(function (data) {
+		this.api.getTransaction(hash,option).then(function (data) {
 			cb(null, data);
 		}).catch(function (err) {
 			cb(err);
