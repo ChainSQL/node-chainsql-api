@@ -121,6 +121,9 @@ Ripple.prototype.preparePayment = function (account, amount, memos) {
 	else {
 		throw new Error('error amount, amount must be object type or number type')
 	}
+    if("0x" === account.substr(0,2)) {
+        account = util.encodeChainsqlAddr(account.slice(2));
+    }
 	//
 	let payment = {
 		source: {
