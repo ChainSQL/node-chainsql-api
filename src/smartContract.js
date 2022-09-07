@@ -27,6 +27,9 @@ var Contract = function Contract(chainsql, jsonInterface, address, options) {
 
     this.chainsql = chainsql;
     this.connect = chainsql.connect;
+    if("0x" === address.substr(0,2)) {
+        address = util.encodeChainsqlAddr(address.slice(2));
+    }
 
     if(!(this instanceof Contract)) {
         throw chainsqlError('Please use the "new" keyword to instantiate a chainsql contract() object!');
