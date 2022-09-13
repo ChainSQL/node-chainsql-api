@@ -27,7 +27,7 @@ var Contract = function Contract(chainsql, jsonInterface, address, options) {
 
     this.chainsql = chainsql;
     this.connect = chainsql.connect;
-    if("0x" === address.substr(0,2)) {
+    if("0x" === address.substring(0,2)) {
         address = util.encodeChainsqlAddr(address.slice(2));
     }
 
