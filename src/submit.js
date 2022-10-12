@@ -109,7 +109,7 @@ Submit.prototype.handleSignedTx = function (ChainSQL, signed, expectOpt, resolve
 	// var isFunction = false;
 	// let expectOpt = {expect:"send_success"};
 
-	if (expectOpt.expect !== "send_success") {
+	if (expectOpt.expect !== "send_success" && !expectOpt.isNeedPeerSign) {
 		// subscribe event
 		ChainSQL.event.subscribeTx(signed.id, function (err, data) {
 			if (err) {
@@ -148,7 +148,7 @@ Submit.prototype.handleSignedTx = function (ChainSQL, signed, expectOpt, resolve
 	}
 
 	// submit transaction
-  ChainSQL.api.submit(signed.signedTransaction).then(function (result) {
+  ChainSQL.api.submit(signed.signedTransaction, expectOpt.isNeedPeerSign).then(function (result) {
 		//console.log('submit ', JSON.stringify(result));
 		if (result.resultCode !== 'tesSUCCESS') {
 			if(expectOpt.expect !== "send_success") {
@@ -161,7 +161,7 @@ Submit.prototype.handleSignedTx = function (ChainSQL, signed, expectOpt, resolve
 			if (expectOpt.expect === 'send_success') {
 				resolve({
 					status: 'send_success',
-					tx_hash: signed.id
+					tx_hash: result.txJson.hash
 				});
 			}
 		}

@@ -261,13 +261,14 @@ function checkUserMatchPublicKey(user,publicKey){
 
 function parseCb(cb) {
 	var isFunction = false;
-	let expectOpt = { expect: "send_success" };
+	let expectOpt = { expect: "send_success", isNeedPeerSign:false};
 	let cbCheckRet = checkCbOpt(cb);
 	if (cbCheckRet.status === "success") {
 		if (cbCheckRet.type === "function") {
 			isFunction = cbCheckRet.isFunction;
 		} else {
 			expectOpt.expect = cbCheckRet.expect;
+      expectOpt.isNeedPeerSign = cbCheckRet.isNeedPeerSign;
 		}
 	} else {
 		throw new Error(cbCheckRet.errMsg);
@@ -309,10 +310,19 @@ function checkCbOpt(cbOpt) {
 			if(checkExpect(cbOpt)) {
 				retObj.status = "success";
 				retObj.expect = cbOpt.expect;
+        retObj.isNeedPeerSign = false;
 			} else {
 				retObj.errMsg = "Unknown 'expect' value, please check!";
 			}
-		}
+		} else if(Object.getOwnPropertyNames(cbOpt).length === 2 && cbOpt.hasOwnProperty("expect") && cbOpt.hasOwnProperty("isNeedPeerSign")){
+      if(checkExpect(cbOpt)) {
+				retObj.status = "success";
+				retObj.expect = cbOpt.expect;
+        retObj.isNeedPeerSign = cbOpt.isNeedPeerSign;
+			} else {
+				retObj.errMsg = "Unknown 'expect' value, please check!";
+			}
+    }
 		else {
 			retObj.errMsg = "submit option is wrong, please check!";
 		}
