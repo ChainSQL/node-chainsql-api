@@ -31,8 +31,8 @@ main();
 async function main() {
     await c.connect('ws://127.0.0.1:6006');
     console.log("connect successfully.");
-
-    var signRet,res;
+    
+     var signRet,res;
     // 1. 设置多方签名列表
     var signerListSet = getSignerListSetJson(root.address,[delegate1.address,delegate2.address,delegate3.address])
     await c.api.prepareTx(signerListSet);
@@ -49,8 +49,21 @@ async function main() {
     console.log(signRet);
     signRet = c.sign(signRet.tx_json,delegate3.secret,{signAs:delegate3.address});
     console.log(signRet);
-    res = await c.submitSigned(signRet,{expect:'validate_success'})
-    console.log("submit signerListSet result:"+ JSON.stringify(res));
+    try {
+        res = await c.submitSigned(signRet,{expect:'validate_success'})
+        console.log("submit signerListSet result:"+ JSON.stringify(res));
+    } catch (error) {
+        console.log("submit signerListSet result:"+ error);
+    }
+
+    try {
+        // 需要节点签名
+        res = await c.submitSigned(signRet,{expect:'send_success', isNeedPeerSign:true})
+        console.log("submit signerListSet result:"+ JSON.stringify(res));
+    } catch (error) {
+        console.log("submit signerListSet result:"+ error);
+    }
+    
 
 }
 

@@ -33,9 +33,6 @@ Submit.prototype.submit = function (expectOpt) {
 };
 
 Submit.prototype.submitSigned = function (signedRet,expectOpt) {
-	if(!expectOpt){
-		expectOpt = { expect:"send_success"}
-	}
 	let self = this;
 	return new Promise(function (resolve, reject) {
 		try {
@@ -108,7 +105,9 @@ Submit.prototype.signTx = function () {
 Submit.prototype.handleSignedTx = function (ChainSQL, signed, expectOpt, resolve, reject) {
 	// var isFunction = false;
 	// let expectOpt = {expect:"send_success"};
-
+	if(!expectOpt){
+		expectOpt = { expect:"send_success"}
+	}
 	if (expectOpt.expect !== "send_success" && !expectOpt.isNeedPeerSign) {
 		// subscribe event
 		ChainSQL.event.subscribeTx(signed.id, function (err, data) {
